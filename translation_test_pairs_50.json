@@ -1,0 +1,304 @@
+{
+  "pairs": [
+    {
+      "id": 1,
+      "tamil": "ஒரு நபரை ஏமாற்றி பணம் பெறுவது எந்த சட்டப் பிரிவின் கீழ் குற்றமாகும்?",
+      "english": "Under which section of the law is cheating to obtain money considered an offence?"
+    },
+    {
+      "id": 2,
+      "tamil": "ஏமாற்றுதல் குற்றத்திற்கான தண்டனை என்ன?",
+      "english": "What is the punishment for the offence of cheating?"
+    },
+    {
+      "id": 3,
+      "tamil": "ஒரு நபரிடம் தவறான தகவலை வழங்கி சொத்தைப் பெறுவது எந்த குற்றமாகும்?",
+      "english": "What offence is committed if a person obtains property by providing false information?"
+    },
+    {
+      "id": 4,
+      "tamil": "கைது செய்யப்படும் போது சந்தேக நபருக்கு என்ன உரிமைகள் உள்ளன?",
+      "english": "What rights does a suspect have when he is arrested?"
+    },
+    {
+      "id": 5,
+      "tamil": "குற்றம் சாட்டப்பட்ட நபர் காவல்துறையிடம் தகவல்களை வழங்க மறுக்க முடியுமா?",
+      "english": "Can an accused person refuse to give information to the police?"
+    },
+    {
+      "id": 6,
+      "tamil": "மிரட்டல் மூலம் பணம் கேட்பது எந்த குற்றமாகும்?",
+      "english": "What offence is committed when someone demands money by threats?"
+    },
+    {
+      "id": 7,
+      "tamil": "கைது செய்யும் போது காவல்துறையினர் என்ன தகவல்களை அறிவிக்க வேண்டும்?",
+      "english": "What must the police inform at the time of arrest?"
+    },
+    {
+      "id": 8,
+      "tamil": "பெண்களை இரவில் காவல் நிலையத்தில் கைது செய்ய முடியுமா?",
+      "english": "Can women be arrested at night at a police station?"
+    },
+    {
+      "id": 9,
+      "tamil": "சாட்சியை வற்புறுத்துவது எந்த சட்டப் பிரிவின் கீழ் வரும்?",
+      "english": "Under which section does coercing a witness fall?"
+    },
+    {
+      "id": 10,
+      "tamil": "வழக்கு விசாரணையின் போது குற்றம் சாட்டப்பட்ட நபர் நீதிமன்றத்தில் இருக்க வேண்டுமா?",
+      "english": "Is it mandatory for the accused to be present in court during trial?"
+    },
+    {
+      "id": 11,
+      "tamil": "நீதிமன்றம் ஜாமீன் வழங்க மறுக்கும் சூழ்நிலைகள் யாவை?",
+      "english": "In what situations can the court refuse bail?"
+    },
+    {
+      "id": 12,
+      "tamil": "கைது ஆணை இன்றி கைது செய்யும் அதிகாரம் எப்போது பயன்படுத்தலாம்?",
+      "english": "When can police exercise the power to arrest without a warrant?"
+    },
+    {
+      "id": 13,
+      "tamil": "மிரட்டல் செய்து ஆவணத்தில் கையொப்பம் பெறுவது குற்றமா?",
+      "english": "Is it an offence to obtain a signature on a document by threats?"
+    },
+    {
+      "id": 14,
+      "tamil": "குற்றம் விசாரணையின் போது காவல்துறையினர் எந்த பதிவுகளை வைத்திருக்க வேண்டும்?",
+      "english": "What records must the police maintain during a criminal investigation?"
+    },
+    {
+      "id": 15,
+      "tamil": "ஒரு நபரை கடத்தி பணம் கேட்பது எந்த குற்றமாக கணக்கிடப்படுகிறது?",
+      "english": "What offence is kidnapping a person for ransom considered?"
+    },
+    {
+      "id": 16,
+      "tamil": "ஒருவர் உதவி கோரும்போது காவல்துறையினர் உடனடி நடவடிக்கை எடுக்க வேண்டுமா?",
+      "english": "Are police required to take immediate action when someone requests help?"
+    },
+    {
+      "id": 17,
+      "tamil": "சாட்சியத்தை அழிப்பது குற்றமா?",
+      "english": "Is destroying evidence an offence?"
+    },
+    {
+      "id": 18,
+      "tamil": "சிறுவர் மீது குற்றம் செய்தால் தண்டனை எவ்வாறு மாறும்?",
+      "english": "How does punishment change when the offence is committed against a minor?"
+    },
+    {
+      "id": 19,
+      "tamil": "பொய்ச் சான்று அளிப்பதற்கான தண்டனை என்ன?",
+      "english": "What is the punishment for giving false testimony?"
+    },
+    {
+      "id": 20,
+      "tamil": "மோசடி மூலம் பெற்ற பணத்தை திருப்பித் தர மறுத்தால் என்ன நடவடிக்கை எடுக்கப்படும்?",
+      "english": "What action can be taken if a person refuses to return money obtained fraudulently?"
+    },
+    {
+      "id": 21,
+      "tamil": "குற்றம் விசாரணையின் போது வழக்கறிஞரை அணுகும் உரிமை உள்ளதா?",
+      "english": "Does a person have the right to consult a lawyer during a criminal investigation?"
+    },
+    {
+      "id": 22,
+      "tamil": "கைது செய்யப்பட்ட நபரை எத்தனை மணி நேரத்திற்குள் நீதிமன்றத்தில் ஆஜர்படுத்த வேண்டும்?",
+      "english": "Within how many hours must an arrested person be produced before court?"
+    },
+    {
+      "id": 23,
+      "tamil": "வீட்டில் திடீர் சோதனை நடத்த காவல்துறையினர் எந்த ஆவணத்தை கொண்டிருக்க வேண்டும்?",
+      "english": "What document must police have to conduct a surprise search at a residence?"
+    },
+    {
+      "id": 24,
+      "tamil": "மருத்துவ அறிக்கை இன்றி தாக்குதல் குற்றம் நிரூபிக்க முடியுமா?",
+      "english": "Can an assault offence be proved without a medical report?"
+    },
+    {
+      "id": 25,
+      "tamil": "நீதிமன்ற உத்தரவை மீறுவது எந்த வகை குற்றமாகும்?",
+      "english": "What type of offence is committed by disobeying a court order?"
+    },
+    {
+      "id": 26,
+      "tamil": "ஒரு சம்பவத்தை புகாரளிக்காமல் மறைப்பது குற்றமா?",
+      "english": "Is it an offence to hide an incident without reporting it?"
+    },
+    {
+      "id": 27,
+      "tamil": "ஆயுதம் கொண்டு மிரட்டுவது எந்த சட்டப் பிரிவின் கீழ் குற்றமாகும்?",
+      "english": "Under what legal section is threatening with a weapon considered an offence?"
+    },
+    {
+      "id": 28,
+      "tamil": "குற்றம் சாட்டப்பட்ட நபரை காவல் தடுப்பில் வைத்திருக்க அதிகபட்ச காலம் என்ன?",
+      "english": "What is the maximum period an accused can be held in police custody?"
+    },
+    {
+      "id": 29,
+      "tamil": "அவதூறு குற்றத்திற்கான தண்டனை என்ன?",
+      "english": "What is the punishment for the offence of defamation?"
+    },
+    {
+      "id": 30,
+      "tamil": "திருட்டு குற்றத்தில் பொருள் மீட்கப்படாவிட்டால் என்ன தண்டனை விதிக்கப்படும்?",
+      "english": "What punishment applies if stolen property is not recovered in a theft case?"
+    },
+    {
+      "id": 31,
+      "tamil": "பொது இடத்தில் சண்டை போடுவது குற்றமா?",
+      "english": "Is it an offence to engage in fighting in a public place?"
+    },
+    {
+      "id": 32,
+      "tamil": "வயதான சாட்சியை மிரட்டுவதற்கான தண்டனை என்ன?",
+      "english": "What is the punishment for threatening an elderly witness?"
+    },
+    {
+      "id": 33,
+      "tamil": "சொத்தை சேதப்படுத்த திட்டமிடுவது குற்றமா?",
+      "english": "Is planning to destroy property considered an offence?"
+    },
+    {
+      "id": 34,
+      "tamil": "மனநலம் பாதிக்கப்பட்ட நபர் குற்றம் செய்தால் தண்டனை மாறுமா?",
+      "english": "Does punishment change if an offence is committed by a mentally ill person?"
+    },
+    {
+      "id": 35,
+      "tamil": "ஆயுதமின்றி கொள்ளை செய்தாலும் அது கொள்ளையா?",
+      "english": "Is it still considered robbery if committed without a weapon?"
+    },
+    {
+      "id": 36,
+      "tamil": "பொய்யான ஆவணத்தை உருவாக்குவது எந்த குற்றமாகும்?",
+      "english": "What offence is committed by creating a false document?"
+    },
+    {
+      "id": 37,
+      "tamil": "சட்டவிரோதமாக கட்டிடத்தில் நுழைவது குற்றமா?",
+      "english": "Is it an offence to enter a building unlawfully?"
+    },
+    {
+      "id": 38,
+      "tamil": "மருந்துகளை சட்டவிரோதமாக விற்பது எந்த குற்றமாகும்?",
+      "english": "What offence is committed by selling drugs illegally?"
+    },
+    {
+      "id": 39,
+      "tamil": "தாக்குதல் செய்தால் உடனடியாக கைது செய்ய முடியுமா?",
+      "english": "Can a person be immediately arrested for committing assault?"
+    },
+    {
+      "id": 40,
+      "tamil": "ஆபாசமாக நடந்து கொள்வது குற்றமா?",
+      "english": "Is behaving indecently considered an offence?"
+    },
+    {
+      "id": 41,
+      "tamil": "சிறையில் அடைக்காமல் அபராதம் மட்டும் விதிக்கக்கூடிய குற்றங்கள் எவை?",
+      "english": "Which offences allow only fines without imprisonment?"
+    },
+    {
+      "id": 42,
+      "tamil": "பொது பணியாளரை தாக்குவது எந்த சட்டப் பிரிவின் கீழ் குற்றமாகும்?",
+      "english": "Under which legal provision is assaulting a public officer an offence?"
+    },
+    {
+      "id": 43,
+      "tamil": "தொலைபேசியில் மிரட்டல் செய்தால் அது சைபர் குற்றமா?",
+      "english": "Is issuing threats over the phone considered a cyber offence?"
+    },
+    {
+      "id": 44,
+      "tamil": "குற்றம் நிரூபிக்க சாட்சி அவசியமா?",
+      "english": "Is a witness mandatory to prove a criminal offence?"
+    },
+    {
+      "id": 45,
+      "tamil": "ஆயுதம் வைத்திருப்பதற்கான அனுமதி இல்லாமல் வைத்திருப்பதற்கான தண்டனை என்ன?",
+      "english": "What is the punishment for possessing a weapon without permit?"
+    },
+    {
+      "id": 46,
+      "tamil": "பெண்களை அவமதிக்கும் உள்ளடக்கத்தை பகிர்வது குற்றமா?",
+      "english": "Is sharing content that insults women considered an offence?"
+    },
+    {
+      "id": 47,
+      "tamil": "நீதிமன்றத்தில் பொய்யான ஆவணத்தை சமர்ப்பிப்பது குற்றமா?",
+      "english": "Is submitting a false document in court an offence?"
+    },
+    {
+      "id": 48,
+      "tamil": "காவல்துறையினருக்கு தவறான தகவல் வழங்குவது எந்த சட்டப் பிரிவின் கீழ் வரும்?",
+      "english": "Under which section does giving false information to the police fall?"
+    },
+    {
+      "id": 49,
+      "tamil": "சமூக ஊடகங்களில் ஒருவரை அவதூறு செய்வது குற்றமா?",
+      "english": "Is defaming someone on social media considered an offence?"
+    },
+    {
+      "id": 50,
+      "tamil": "குற்றம் செய்த நபர் தப்பிச் சென்றால் என்ன நடவடிக்கை எடுக்கப்படும்?",
+      "english": "What action is taken if an offender escapes after committing a crime?"
+    },
+    {
+      "id": 51,
+      "tamil": "ஒரு நபரை பொய்யாக குற்றம் சாட்டினால் அது எந்த குற்றமாக கருதப்படும்?",
+      "english": "What offence is committed when a person is falsely accused of a crime?"
+    },
+    {
+      "id": 52,
+      "tamil": "குற்றம் விசாரணையில் சிசிடிவி காட்சிகள் சாட்சியமாக பயன்படுத்தப்படுமா?",
+      "english": "Can CCTV footage be used as evidence in a criminal investigation?"
+    },
+    {
+      "id": 53,
+      "tamil": "காவல் நிலையத்தில் துன்புறுத்தல் ஏற்பட்டால் புகார் அளிக்கும் நடைமுறை என்ன?",
+      "english": "What is the procedure for filing a complaint if harassment occurs at a police station?"
+    },
+    {
+      "id": 54,
+      "tamil": "சாட்சியம் இன்றி கைது செய்யப்பட்டால் நபர் என்ன செய்யலாம்?",
+      "english": "What can a person do if they are arrested without sufficient evidence?"
+    },
+    {
+      "id": 55,
+      "tamil": "தொலைபேசி பதிவுகள் நீதிமன்றத்தில் சாட்சியமாக பயன்படுத்தப்படுமா?",
+      "english": "Can phone records be used as evidence in court?"
+    },
+    {
+      "id": 56,
+      "tamil": "காவல் விசாரணையின் போது வழக்கறிஞர் இல்லாமல் விசாரணை நடத்த முடியுமா?",
+      "english": "Can an investigation be conducted without a lawyer during police interrogation?"
+    },
+    {
+      "id": 57,
+      "tamil": "ஒரு நபரை தற்கொலை செய்ய தூண்டுவது எந்த குற்றமாகும்?",
+      "english": "What offence is committed by abetting a person's suicide?"
+    },
+    {
+      "id": 58,
+      "tamil": "ஒரு சாட்சியை லஞ்சம் கொடுத்து பாதிக்க முயற்சிப்பது குற்றமா?",
+      "english": "Is it an offence to bribe a witness to influence their testimony?"
+    },
+    {
+      "id": 59,
+      "tamil": "பொது இடத்தில் போதை பொருள் செல்வாக்கில் வாகனம் ஓட்டுவது எந்த சட்டத்தின் கீழ் குற்றமாகும்?",
+      "english": "Under which law is driving under the influence in a public place considered an offence?"
+    },
+    {
+      "id": 60,
+      "tamil": "ஒரு நபரின் தனியுரிமையை மீறுவது குற்றமா?",
+      "english": "Is violating a person's privacy considered an offence?"
+    }
+  ]
+}
