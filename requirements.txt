@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+chromadb
+sentence-transformers
+scikit-learn
+networkx
+google-generativeai
+python-dotenv
+torch
+transformers
+numpy
