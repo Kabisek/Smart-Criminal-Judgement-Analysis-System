@@ -1,0 +1,77 @@
+{
+  "case_metadata": {
+    "case_name": "Upul de Silva v. Attorney-General",
+    "case_number": "S.C. APPEAL NO. 4/99; COURT OF APPEAL NO. 182/95; HIGH COURT NEGOMBO NO. 07/94",
+    "court": "Supreme Court of Sri Lanka",
+    "citation": "[1999] 2 Sri L.R. 324",
+    "dates": {
+      "hearing": [
+        "May 27, 1999"
+      ],
+      "decision": "June 24, 1999"
+    },
+    "judges": [
+      "G. P. S. De Silva, CJ.",
+      "Perera, J.",
+      "Weerasekera, J."
+    ],
+    "counsel": {
+      "appellant": [
+        "Padmasiri Nanayakkara",
+        "Tilakasiri Alahakoon",
+        "Ms. Swarna Perera"
+      ],
+      "respondent": [
+        "B. Aluvihare, SSC"
+      ]
+    },
+    "keywords": [
+      "Criminal Procedure",
+      "Appeal against conviction",
+      "Retrial",
+      "Acquittal",
+      "Criminal Breach of Trust",
+      "Criminal Misappropriation",
+      "Section 335(2)(a) of Code of Criminal Procedure Act"
+    ],
+    "legislation_referred": [
+      "Code of Criminal Procedure Act, No. 15 of 1979 (Sections 177, 335(2)(a), 337)",
+      "Penal Code (Sections 386, 388, 391, 454, 459)",
+      "Indian Code of Criminal Procedure (Section 386(b), 423(i)(b))"
+    ]
+  },
+  "headnotes": [
+    {
+      "point_number": 1,
+      "summary": "Where the Court of Appeal acting under section 335 (2) (a) of the Code of Criminal Procedure Act orders a retrial upon a determination of an appeal against a conviction, such retrial must necessarily be limited to the offence or offences upon which the accused had been convicted by the trial Court, and against which he had preferred an appeal and none other."
+    }
+  ],
+  "cases_referred": [
+    "Andhra Pradesh v. Thadi Narayanan - 1962 AIR SC 240",
+    "Gopalan v. The State of Kerala - 1962 Criminal Law Journal 427",
+    "King v. Kumaraswamy - 3 CWR 184",
+    "Attorney-General v. Ratwatte - 72 CLW 93, 95"
+  ],
+  "judgment_text": [
+    {
+      "section_title": "Background and Trial Court Decision",
+      "content": "The accused-appellant was indicted before the High Court of Negombo for Criminal Breach of Trust (Section 391 of the Penal Code) and using a forged document as genuine (Section 459 read with Section 454). The High Court Judge acquitted the accused of these charges but convicted him of Criminal Misappropriation under Section 177 of the Code of Criminal Procedure Act, No. 15 of 1979. He was sentenced to twelve months rigorous imprisonment, suspended for five years."
+    },
+    {
+      "section_title": "Court of Appeal Decision",
+      "content": "The appellant appealed to the Court of Appeal. The Court of Appeal held that the conviction for Criminal Misappropriation was invalid because: (a) it is not a cognate offence to Criminal Breach of Trust; (b) Section 177 was inapplicable as the facts were not doubtful; and (c) the charge was not read to the accused. Consequently, the appellant was discharged on the misappropriation charge. However, the Court of Appeal found that the evidence established Criminal Breach of Trust (Section 388) and ordered a retrial for that offence, setting aside the trial judge's findings."
+    },
+    {
+      "section_title": "Legal Issue: Scope of Retrial Orders",
+      "content": "The Supreme Court had to determine if the Court of Appeal's order for retrial on the charge of Criminal Breach of Trust (on which the accused had been acquitted) was valid under Section 335(2)(a) of the Code of Criminal Procedure Act, given that there was no appeal by the State against the acquittal under Section 337."
+    },
+    {
+      "section_title": "Analysis and Comparative Jurisprudence",
+      "content": "The Court examined Section 335(2)(a) and Section 337 of the Code of Criminal Procedure Act. It noted that no appeal had been filed against the acquittal. Relying on Indian Supreme Court decisions interpreting identical provisions (Andhra Pradesh v. Thadi Narayanan and Gopalan v. The State of Kerala), the Court held that in an appeal against conviction, the appellate court cannot set aside an order of acquittal and order a retrial on that acquitted charge unless there is a specific appeal against the acquittal by the State."
+    },
+    {
+      "section_title": "Conclusion",
+      "content": "Senior State Counsel conceded that the retrial must be limited to the offence upon which the accused was convicted and appealed against. The Supreme Court agreed, citing King v. Kumaraswamy regarding the principle against double jeopardy. The appeal was allowed, the order for retrial was set aside, and the appellant was acquitted."
+    }
+  ]
+}

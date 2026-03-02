@@ -1,0 +1,72 @@
+{
+  "case_metadata": {
+    "case_name": "K. G. Somapala v. The Attorney-General",
+    "case_number": "S. C. 933—M. C. Gampola, 1124",
+    "court": "Supreme Court of Sri Lanka",
+    "citation": "63 NLR 231",
+    "dates": {
+      "hearing": [],
+      "decision": "March 14, 1961"
+    },
+    "judges": [
+      "L. B. de Silva, J."
+    ],
+    "counsel": {
+      "appellant": [
+        "F. A. Abeywardene",
+        "K. Shinya",
+        "N. Senanayake"
+      ],
+      "respondent": [
+        "M. Hussein, Crown Counsel"
+      ]
+    },
+    "keywords": [
+      "Evidence",
+      "Criminal Prosecution",
+      "Motive",
+      "Admissibility",
+      "Bad Character",
+      "Prejudice",
+      "Retrial"
+    ],
+    "legislation_referred": [
+      "Ceylon Penal Code (Section 314)"
+    ]
+  },
+  "headnotes": [
+    {
+      "point_number": 1,
+      "summary": "In a criminal prosecution, evidence of the bad character of the accused, which is not necessary or relevant to prove the alleged motive for the offence, is inadmissible."
+    },
+    {
+      "point_number": 2,
+      "summary": "Where the prosecution led evidence that the accused's work was stopped because he had attempted to stab an Engineer, purportedly to prove motive for assaulting a complainant suspected of instigating the stoppage, such evidence was held to be inadmissible as it related to bad character and was not necessary to prove the motive."
+    }
+  ],
+  "cases_referred": [
+    "V. Coomaraswamy v. M. Meera Saibo and 5 others (5 Times of Ceylon Law Reports 63)"
+  ],
+  "judgment_text": [
+    {
+      "section_title": "Introduction and Charge",
+      "content": "The Accused-Appellant was charged for voluntarily causing hurt to one B. Robert Silva, a driver in the Ceylon Transport Board with hands, punishable under Section 314 of the Ceylon Penal Code. Accused was a mechanic employed in the Ceylon Transport Board. He was found guilty of the charge and was sentenced to 2 months' rigorous imprisonment and to pay a fine of Rs. 50/-. In default of payment of the fine, he was sentenced to one month's rigorous imprisonment."
+    },
+    {
+      "section_title": "Evidence of Motive and Admissibility",
+      "content": "At the trial, the prosecution led evidence of motive for this offence. Robert Silva stated that the accused was under the impression that he had instigated the Engineer to stop the accused's work. He further stated that accused's work was stopped as a result of his attempt to stab the Engineer of the Ceylon Transport Board. Clearly the evidence that accused's work was stopped because he attempted to stab the Engineer of the Ceylon Transport Board was not necessary or relevant for the purpose of proving the motive that the accused had against the complainant Robert Silva. The alleged motive that Accused had against the Complainant was that he suspected that the Complainant was instrumental in having him interdicted from work over another incident."
+    },
+    {
+      "section_title": "Prejudice to the Accused",
+      "content": "Learned Crown Counsel conceded that this evidence was inadmissible to prove the alleged motive. He argued, however, that no prejudice has been caused to the accused as the learned Magistrate has not referred to this aspect of the evidence in his reasons for the conviction. It is quite clear in this case that the Magistrate has taken a very serious view of the offence of this accused in view of the sentence passed in this case. There is no doubt that he was strongly influenced by the evidence that the accused had previously attempted to stab the C. T. B. Engineer. He commenced his reasons by stating, 'The sooner the Ceylon Transport Board gets rid of undesirable people like the accused the better it is for this establishment'. Even if it can be said in this case which I am not prepared to do, that the learned Magistrate was in fact not prejudiced against the accused by this inadmissible evidence of accused's previous bad character, this evidence is very likely to prejudice any judge deciding this case."
+    },
+    {
+      "section_title": "Legal Precedent and Decision on Retrial",
+      "content": "In V. Coomaraswamy v. M. Meera Saibo and 5 others it was held 'It is not suggested that the learned Magistrate was influenced by these statements but the accused may very well have gained the impression that he was so influenced. It is necessary not only that administration of justice should be pure but it should be seen to be pure and considered to be pure'. In this case I have carefully considered whether this case should be sent back for a retrial as the conviction of the accused cannot possibly stand. Considering the trivial nature of the charge and the nature of the evidence in support of the prosecution case, I do not think that the accused should be put to the trouble and expense of standing another trial in this case."
+    },
+    {
+      "section_title": "Conclusion",
+      "content": "I accordingly allow the appeal and set aside the conviction and sentence of the accused and acquit him."
+    }
+  ]
+}
