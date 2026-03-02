@@ -1,0 +1,75 @@
+{
+  "case_metadata": {
+    "case_name": "Fernando v. Themis Appuhamy",
+    "case_number": "55—6—D. C. Colombo, 876",
+    "court": "Supreme Court of Ceylon",
+    "citation": "41 NLR 454",
+    "dates": {
+      "hearing": [],
+      "decision": "March 13, 1940"
+    },
+    "judges": [
+      "Howard C.J.",
+      "Keuneman J."
+    ],
+    "counsel": {
+      "appellants": [
+        "N. E. Weerasooria, K.C.",
+        "E. B. Wikremanayake",
+        "H. A. Koattegoda",
+        "C. V. Ranawake"
+      ],
+      "respondents": [
+        "H. V. Perera, K.C.",
+        "Dodwell Gunawardena"
+      ]
+    },
+    "keywords": [
+      "Power of Attorney",
+      "Recitals",
+      "Operative Part",
+      "Principal and Agent",
+      "Termination of Authority",
+      "Interpretation of Deeds"
+    ],
+    "legislation_referred": []
+  },
+  "headnotes": [
+    {
+      "point_number": 1,
+      "summary": "Recitals in a power of attorney control the generality of the operative part of the instrument. Where the recitals indicate a specific purpose (e.g., managing a timber business), general powers granted in the operative part are restricted to that purpose."
+    },
+    {
+      "point_number": 2,
+      "summary": "Where a power of attorney was given for the purpose of managing the principal's business as a timber merchant, the cessation of that business automatically cancelled the power of attorney. Consequently, deeds of transfer executed by the attorney after the business had ceased were held to be executed without authority."
+    }
+  ],
+  "cases_referred": [
+    "Danby v. Coutts & Co. (29 Ch. D. 500)",
+    "Attwood v. Munnings (108 E. R. 727)",
+    "Lewis v. Ramsdale (55 L. T. 179)",
+    "Harper v. Gadsell (1 L. R. 5 Q. B. 422)"
+  ],
+  "judgment_text": [
+    {
+      "section_title": "Introduction and Facts",
+      "content": "This is an appeal by the defendants from a judgment of the Additional District Judge of Colombo dated December 9, 1938, holding that certain deeds of transfer (No. 129 and 130 dated December 1, 1936) were executed without authority. The second defendant executed these deeds transferring properties to the first defendant using a power of attorney (No. 1000, exhibit P3) granted by the plaintiff on May 6, 1933. The plaintiff had ceased to carry on his business as a timber merchant in or about February 1935, prior to the execution of the deeds."
+    },
+    {
+      "section_title": "Validity of the Deeds and Existence of Debts",
+      "content": "The main issue was whether the second defendant had authority to execute the deeds after the plaintiff's business had ended. The defence argued that the execution was justified to raise money for debts incurred while the business was active. The Court found that the evidence regarding such debts was vague and not established. Consequently, the District Judge rightly resolved that the transfer was not justified by the existence of business debts."
+    },
+    {
+      "section_title": "Legal Principles: Recitals Controlling Operative Part",
+      "content": "The defendants contended that the power of attorney, being registered and not cancelled, supplied the necessary authority. The Court rejected this, citing established case law holding that recitals in a power of attorney control the generality of the operative part. In 'Danby v. Coutts & Co.', 'Attwood v. Munnings', 'Lewis v. Ramsdale', and 'Harper v. Gadsell', it was held that general words in a power of attorney are limited by the special purposes recited in the instrument."
+    },
+    {
+      "section_title": "Application to the Present Case",
+      "content": "Applying these principles, the Court examined the recitals in the power of attorney (P3), which stated the plaintiff was carrying on business as a timber merchant and was unable to do so personally. The operative part nominated the second defendant to act 'in respect of my said business'. The phraseology indicated that the purpose of the power was the management of the plaintiff's timber business. Therefore, with the closing down of that business, the authority of the second defendant to act under the power of attorney was automatically cancelled."
+    },
+    {
+      "section_title": "Order on Costs and Conclusion",
+      "content": "Regarding the second defendant's claim that no order for costs should have been made against him as he was an added defendant with no interest, the Court noted that he filed an answer and took an active part in the action. Thus, he cannot complain about the costs order. Both appeals were dismissed with costs."
+    }
+  ]
+}

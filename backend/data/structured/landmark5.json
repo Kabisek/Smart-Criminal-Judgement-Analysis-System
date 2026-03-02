@@ -1,0 +1,84 @@
+{
+  "case_metadata": {
+    "case_name": "Thilakaratne v. Attorney-General",
+    "case_number": "C.A. NO. 106/87; H. C. ANURADHAPURA NO. 23/86",
+    "court": "Court of Appeal of Sri Lanka",
+    "citation": "[1989] 2 Sri LR 191",
+    "dates": {
+      "hearing": [
+        "March 03, 1989"
+      ],
+      "decision": "April 27, 1989"
+    },
+    "judges": [
+      "Ramanathan, J.",
+      "W. N. D. Perera, J.",
+      "Wijeyaratne, J."
+    ],
+    "counsel": {
+      "appellant": [
+        "W. P. Wijehayake"
+      ],
+      "respondent": [
+        "Mrs. B. J. Tillakaratne, State Counsel"
+      ]
+    },
+    "keywords": [
+      "Criminal Procedure",
+      "Trial in absentia",
+      "Assigning counsel",
+      "Absconding",
+      "Right to re-open proceedings",
+      "Sentencing disparity"
+    ],
+    "legislation_referred": [
+      "Code of Criminal Procedure Act, No. 15 of 1979 (Sections 195(g), 241(1), 241(2), 241(3), 241(4))",
+      "Judicature Act, No. 2 of 1978 (Section 41)",
+      "Constitution of Sri Lanka (Section 13(3))",
+      "Penal Code (Sections 32, 380, 382)"
+    ]
+  },
+  "headnotes": [
+    {
+      "point_number": 1,
+      "summary": "Where an accused is being tried in absentia under section 241(1) of the Criminal Procedure Code, it is undesirable for the court to assign a counsel to defend him without his consent. Although intended for his benefit, such a step would trigger section 241(4), thereby depriving the accused of the valuable right to re-open the proceedings under section 241(3) if he later proves his absence was bona fide."
+    },
+    {
+      "point_number": 2,
+      "summary": "Section 195(g) of the Criminal Procedure Code, which provides for assigning counsel, contemplates a situation where the accused is physically present in court and requests counsel upon being questioned."
+    },
+    {
+      "point_number": 3,
+      "summary": "Section 241(2) does not make it obligatory for the court to assign counsel to an absent accused. This section applies where an absent accused has retained counsel or where a counsel continues to appear for an accused who absconds during the trial."
+    }
+  ],
+  "cases_referred": [
+    "Sudharman de Silva v. The Attorney-General (1986) 1 S.L.R. 9"
+  ],
+  "judgment_text": [
+    {
+      "section_title": "Introduction and Charges",
+      "content": "The 1st, 2nd, and 3rd accused were charged in the High Court of Anuradhapura on two counts: (1) Robbery of cash Rs. 18,552/40 and a bicycle, causing hurt to Ukkubanda Semasinghe, punishable under sections 380 and 382 read with section 32 of the Penal Code; and (2) Robbery of a bicycle from Punchi Bandage Ratnayake, punishable under section 380 read with section 32. The accused appeared on 22.9.1986 represented by counsel. On the trial date 17.1.86, the 1st accused was absent without excuse. A warrant was issued for 20.1.87."
+    },
+    {
+      "section_title": "Events of the Trial Date",
+      "content": "On 20.1.87, the 1st accused was initially present in the court premises but absconded before the case was called. His surety testified that the accused had come to court but left. The trial Judge, satisfied that the 1st accused was absconding, proceeded with the trial in absentia. The 2nd and 3rd accused pleaded guilty and were sentenced. The trial proceeded against the 1st accused. Evidence was led showing the accused had robbed a school principal and teacher of payroll money, armed with a pistol and knife. The 1st accused was found guilty and sentenced to 10 years rigorous imprisonment and fines."
+    },
+    {
+      "section_title": "Post-Trial Proceedings",
+      "content": "The 1st accused was arrested and produced in court on 7.12.87. On 13.1.88, his counsel submitted he had been unwell but tendered no medical certificate. The High Court Judge refused bail and ordered the sentence to be carried out. No application was made under section 241(3) of the Criminal Procedure Code to show bona fide absence and reopen the case. An appeal was filed arguing insufficient evidence of absconding and failure to assign counsel."
+    },
+    {
+      "section_title": "Legal Analysis: Absconding",
+      "content": "The Court rejected the ground that there was insufficient evidence of absconding. The accused was present on the morning of the trial but left without excuse. It was only a year later that a claim of illness was made, unsupported by any medical certificate. The conclusion that the 1st accused was absconding was inescapable."
+    },
+    {
+      "section_title": "Legal Analysis: Assigning Counsel in Absentia",
+      "content": "The Court addressed the argument that the failure to assign counsel vitiated the conviction. Section 195(g) applies only when an accused is present. While Section 241(2) ensures an absent accused's right to be defended is not prejudiced, it does not mandate the court to assign counsel. Crucially, Section 241(4) prevents an accused defended by an attorney from reopening proceedings under Section 241(3). Therefore, assigning counsel to an absent accused without consent is detrimental as it deprives them of the statutory right to reopen the case if they can prove bona fide absence. The trial Judge's conduct in not assigning counsel was correct."
+    },
+    {
+      "section_title": "Sentencing and Conclusion",
+      "content": "The Court considered the disparity in sentences between the 1st accused (10 years) and the others (3 years). The disparity was justified because the 1st accused was armed with a pistol, fired a shot, caused extensive injuries with a knife, and had previous convictions. The appeal was dismissed, and the conviction and sentences were affirmed."
+    }
+  ]
+}

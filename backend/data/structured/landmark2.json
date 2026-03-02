@@ -1,0 +1,93 @@
+{
+  "case_metadata": {
+    "case_name": "The Queen v. M. Sathasivam",
+    "case_number": "S. C. 1 Western Circuit—M. C. Colombo South, 38,682",
+    "court": "Assize Court (Supreme Court)",
+    "citation": "54 NLR 255",
+    "dates": {
+      "decision": "March 24, 1953"
+    },
+    "judges": [
+      "Gratiaen J."
+    ],
+    "counsel": {
+      "crown": [
+        "T. S. Fernando, Solicitor-General",
+        "Douglas Jansze, Crown Counsel",
+        "Ananda Pereira, Crown Counsel",
+        "Vincent Thamotheram, Crown Counsel"
+      ],
+      "accused": [
+        "Colvin R. de Silva",
+        "T. W. Rajaratnam",
+        "Ananda de Silva"
+      ]
+    },
+    "keywords": [
+      "Evidence Ordinance Section 32(1)",
+      "Evidence Ordinance Section 8(1)",
+      "Evidence Ordinance Section 8(2)",
+      "Admissibility of Evidence",
+      "Hearsay",
+      "Motive",
+      "Conduct",
+      "Prejudicial Evidence",
+      "Judicial Discretion"
+    ],
+    "legislation_referred": [
+      "Evidence Ordinance (Sections 8(1), 8(2), 11, 32(1))"
+    ]
+  },
+  "headnotes": [
+    {
+      "point_number": 1,
+      "summary": "A letter written by a deceased person to the police expressing fear or suspicion of the accused, in anticipation of the accused's return from abroad, is not admissible under Section 32(1) of the Evidence Ordinance if it amounts to mere general expressions not directly related to the circumstances of the transaction resulting in death."
+    },
+    {
+      "point_number": 2,
+      "summary": "Such a letter is not admissible to prove motive under Section 8(1) of the Evidence Ordinance unless there is independent evidence that the allegations in the letter had come to the knowledge of the accused and induced resentment in his mind."
+    },
+    {
+      "point_number": 3,
+      "summary": "The letter is not admissible to prove conduct of the deceased under Section 8(2) read with Section 11 unless there is independent evidence to support the suggestion that the deceased was apprehensive of danger to her safety."
+    },
+    {
+      "point_number": 4,
+      "summary": "Evidence of trifling weight which is gravely prejudicial to the accused, even if technically admissible, ought to be excluded by the Judge if its potential prejudice is out of proportion to its true evidential value."
+    }
+  ],
+  "cases_referred": [
+    "Narayana Swami v. Emperor (A.I.R. 1939 P.C. 47)",
+    "R. v. Buckley (13 Cox. 293)",
+    "D. P. P. v. Ritchie (1914) A.C. 545",
+    "Golak Behari Takal v. The Emperor (42 C.W.N. 129)",
+    "Noor Mohamed v. The King (1949) A.C. 182",
+    "Harris v. D. P. P."
+  ],
+  "judgment_text": [
+    {
+      "section_title": "Introduction and Facts",
+      "content": "The prisoner is charged with murdering his wife on the morning of 9th October, 1951. The prisoner had been in England while the deceased remained in Ceylon. Divorce proceedings for malicious desertion had been instituted by the deceased. The Crown sought to introduce a letter (P24) written by the deceased on 17th September 1951 to the Superintendent of Police, Colombo, anticipating the prisoner's return and expressing fear that he might use violence and requesting police protection."
+    },
+    {
+      "section_title": "Admissibility under Section 32(1)",
+      "content": "The defence objected to the reception of the letter P24. The Solicitor-General argued it was admissible under Section 32(1) of the Evidence Ordinance. The Court held that the statements in the letter amounted to mere general expressions indicating fear or suspicion and were not directly related to the occasion of her death. Citing Narayana Swami v. Emperor, the Court ruled that the circumstances must have some proximate relation to the actual occurrence. Thus, the letter was not admissible under Section 32(1)."
+    },
+    {
+      "section_title": "Admissibility under Section 8(1) - Motive",
+      "content": "The Crown argued the letter was relevant under Section 8(1) to establish motive. The theory was that the prisoner's knowledge of the letter caused resentment. The Court held that for this to be admissible, the Crown must prove the prisoner actually knew of the letter and resented it. Without independent evidence of such knowledge and resentment, the letter could not be admitted to prove motive. The Court distinguished R. v. Buckley, where prior threats were admitted because there was a direct link to the motive."
+    },
+    {
+      "section_title": "Admissibility under Section 8(2) - Conduct",
+      "content": "The Crown alternatively argued admissibility under Section 8(2) as evidence of the deceased's conduct (seeking police protection due to fear). The Court found this relevance remote. The suggestion that her cordiality towards the accused was feigned due to fear required independent evidence of her apprehension. Until such evidence was forthcoming, Section 8(2) did not apply. The Court distinguished the Indian case Golak Behari Takal v. The Emperor, noting that in that case, the complaint related to the specific crime (conspiracy) under investigation."
+    },
+    {
+      "section_title": "Discretion to Exclude Prejudicial Evidence",
+      "content": "The Court emphasized the principle from Noor Mohamed v. The King and Harris v. D.P.P. that a Judge should exclude evidence that has only trifling weight but is gravely prejudicial to the accused. The evidential value of P24 standing alone was slender, while its prejudicial effect on the jury would be substantial. Justice required that unless the truth of the document's contents could be proved by independent evidence for a relevant purpose, it should be excluded to ensure a fair trial."
+    },
+    {
+      "section_title": "Ruling",
+      "content": "The objection to the reception of the letter P24 and related oral evidence was upheld. The document was ruled out for the present, subject to any fresh application by the Crown if independent evidence establishing its relevance became available later."
+    }
+  ]
+}
