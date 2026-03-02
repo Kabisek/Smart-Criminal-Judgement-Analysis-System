@@ -1,0 +1,88 @@
+/* Professional Legal Theme Enhancements */
+:root {
+  --primary: #1B2B48;
+  --accent: #B8860B;
+  --bg-body: #FBFBFB;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-body);
+}
+
+/* Glassmorphism for Header */
+.glass-header {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(27, 43, 72, 0.85);
+  border-bottom: 2px solid rgba(184, 134, 11, 0.3);
+}
+
+/* Smooth Transitions */
+.premium-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(27, 43, 72, 0.12);
+}
+
+/* Animated Underline for Links */
+.nav-link-refined {
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-link-refined::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.nav-link-refined:hover::after {
+  width: 100%;
+}
+
+/* Hero Section Refinement */
+.hero-gradient {
+  background: linear-gradient(135deg, #1B2B48 0%, #2C3E5B 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-gradient::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(184, 134, 11, 0.05) 0%, transparent 70%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease forwards;
+}
