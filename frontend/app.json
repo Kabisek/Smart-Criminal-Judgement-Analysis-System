@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Smart Criminal Judgment Analysis",
+    "slug": "smart-judgment-analysis",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "smartjudgment",
+    "userInterfaceStyle": "automatic",
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": ["expo-router"]
+  }
+}
