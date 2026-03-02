@@ -34,8 +34,7 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # ==================== ChromaDB / Vector Stores ====================
-chroma_db/
-*.pkl
+
 
 # ==================== IDE & OS ====================
 .idea/
