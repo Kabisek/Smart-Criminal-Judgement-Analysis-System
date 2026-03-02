@@ -1,0 +1,37 @@
+============================================================
+NEW CASE SIMILARITY SEARCH REPORT
+============================================================
+
+Test Case File: ../data/raw/response_1.json
+Case Text Length: 5903 characters
+Similar Cases Found: 10
+
+TOP SIMILAR CASES:
+------------------------------------------------------------
+
+Rank 1: 2021_AppealCourt_November_criminal_judgment_1133
+  Similarity: 0.5286
+  Year: 2021, Court: AppealCourt
+  File: ..\data\judgments\2021\AppealCourt\November_criminal_judgment_1133.pdf
+
+Rank 2: 2022_AppealCourt_February_criminal_judgment_1148
+  Similarity: 0.5131
+  Year: 2022, Court: AppealCourt
+  File: ..\data\judgments\2022\AppealCourt\February_criminal_judgment_1148.pdf
+
+Rank 3: 2021_AppealCourt_March_criminal_judgment_1125
+  Similarity: 0.4903
+  Year: 2021, Court: AppealCourt
+  File: ..\data\judgments\2021\AppealCourt\March_criminal_judgment_1125.pdf
+
+Rank 4: 2024_AppealCourt_February_criminal_judgment_1155
+  Similarity: 0.4789
+  Year: 2024, Court: AppealCourt
+  File: ..\data\judgments\2024\AppealCourt\February_criminal_judgment_1155.pdf
+
+Rank 5: 2023_AppealCourt_November_criminal_judgment_1178
+  Similarity: 0.4756
+  Year: 2023, Court: AppealCourt
+  File: ..\data\judgments\2023\AppealCourt\November_criminal_judgment_1178.pdf
+
+============================================================

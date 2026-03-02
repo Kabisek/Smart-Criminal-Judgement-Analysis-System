@@ -1,0 +1,32 @@
+{
+  "status": "success",
+  "analyzed_case_file": {
+    "case_header": {
+      "file_number": "L-SYN-2026-0106",
+      "date_of_analysis": "January 06, 2026",
+      "subject": "Criminal Case Analysis - 2026"
+    },
+    "incident_timeline": {
+      "what_happened": "My name is Kumar. I operate a sizable hardware establishment in Jaffna. For the preceding five years, an individual identified as Rajan was employed as an accountant at my establishment. He was exclusively responsible for managing all financial accounts pertaining to the store's revenue and expenditure, as well as all banking transactions. During the annual audit of our establishment conducted last month, a significant financial irregularity was uncovered in the accounts.",
+      "where_it_happened": "Jaffna",
+      "key_dates": []
+    },
+    "parties_and_roles": {
+      "accused": "Accused as mentioned in case",
+      "complainant": "Complainant as described in case",
+      "doubters_witnesses": []
+    },
+    "argument_synthesis": {
+      "prosecution_logic": [
+        "Evidence supports prosecution case based on available facts"
+      ],
+      "defense_logic": [
+        "Defense presents counter-arguments based on available evidence"
+      ],
+      "reasonable_doubt_factors": [
+        "Factors creating reasonable doubt based on defense arguments"
+      ]
+    },
+    "final_judicial_opinion": "The case requires careful evaluation of all evidence, witness credibility, and legal precedents. Both prosecution and defense present compelling arguments that must be weighed by the court."
+  }
+}

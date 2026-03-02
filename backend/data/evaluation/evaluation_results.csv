@@ -1,0 +1,9 @@
+,model_type,perfect_retrieval_rate,average_rank,n_queries,n_neighbors,n_clusters,inertia,silhouette_score,davies_bouldin_score,n_noise,accuracy,precision,recall,f1_score,n_samples_train,n_samples_test,n_classes
+nearest_neighbors,nearest_neighbors,0.94,0.06,100,5,,,,,,,,,,,,
+kmeans,kmeans,,,,,10,38.32069397,0.10957412,2.602541963,,,,,,,,
+dbscan,dbscan,,,,,1,,-1,inf,0,,,,,,,
+knn_classifier_k3,knn_classifier_k3,,,,,,,,,,0.910602911,0.912939473,0.910602911,0.910394502,1120,481,10
+knn_classifier_k5,knn_classifier_k5,,,,,,,,,,0.908523909,0.911089563,0.908523909,0.908241892,1120,481,10
+knn_classifier_k7,knn_classifier_k7,,,,,,,,,,0.898128898,0.901130389,0.898128898,0.897301129,1120,481,10
+random_forest,random_forest,,,,,,,,,,1,1,1,1,1120,481,10
+svm,svm,,,,,,,,,,0.995841996,0.995907476,0.995841996,0.995842853,1120,481,10

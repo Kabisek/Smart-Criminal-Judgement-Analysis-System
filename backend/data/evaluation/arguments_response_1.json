@@ -1,0 +1,372 @@
+{
+  "case_id": "case_20260106_120934",
+  "file_type": "unknown",
+  "cluster_id": 1,
+  "similar_cases": [
+    {
+      "case_id": "2021_AppealCourt_November_criminal_judgment_1133",
+      "distance": 0.4714054465293884,
+      "year": 2021,
+      "judge_names": "R. Gurusinghe,N. Bandula Karunarathna,J. Tenny Fernando,J.  \n  \nThe,G. Sooriyarathne Banda \n \n \n \n \n \n \n \nAccused,G. Sooriyarathne Banda \n \n \n \n \n \n \n \n  \n                                                                  Accused \n \n \n \n \n \n    And Now Between"
+    },
+    {
+      "case_id": "2022_AppealCourt_February_criminal_judgment_1148",
+      "distance": 0.4869353175163269,
+      "year": 2022,
+      "judge_names": "J.  \n                Neil Iddawala,K. Sivapatha Sundaram,J.  \nThe,J.  \nCounsel,J.  \nJudge,the Magistrate"
+    },
+    {
+      "case_id": "2021_AppealCourt_March_criminal_judgment_1125",
+      "distance": 0.5097489953041077,
+      "year": 2021,
+      "judge_names": "he could find their place,P.Kumararatnam,M.Ajith Kumara,Devika Abeyratne,leading evidence has endevoured to elicit from the child whether he was \ncompetent to give evidence by asking various general questions as to parents,R. Coomaraswami"
+    },
+    {
+      "case_id": "2024_AppealCourt_February_criminal_judgment_1155",
+      "distance": 0.5211182236671448,
+      "year": 2024,
+      "judge_names": "him,J. \nIn,J. \nThe,evaluating the defence evidence,considering \nthe \ndefence \nevidence \nwhich \nrendered \nsubsequent \nconsideration of the defence evidence,J. \n \nCounsel,A. Kaluarachchi,A. Kaluarachchi \n \nHonorable Justice Menaka Wijesundera,M. Hannadige,Wickum,V. Attorney \nGeneral,J. \n \n       Wickum,A. Kaluarachchi \n                                                                   Judge,Menaka Wijesundera"
+    },
+    {
+      "case_id": "2023_AppealCourt_November_criminal_judgment_1178",
+      "distance": 0.5243761539459229,
+      "year": 2023,
+      "judge_names": "the Appellant departed,J. \nThe,P. Kumararatnam,the \nLearned High Court Judge on,B. Abayakoon,the court,Sampath,analysing the grounds of appeal advanced in this \ncase"
+    }
+  ],
+  "arguments": [
+    {
+      "title": "Robbery and Murder Charges",
+      "content": "Argument supporting prosecution position citing similar cases ['2021_AppealCourt_November_criminal_judgment_1133', '2022_AppealCourt_February_criminal_judgment_1148']. Include specific judge statements from model patterns if available.",
+      "perspective": "prosecution",
+      "strength_score": 0.9,
+      "supporting_cases": [
+        "2021_AppealCourt_November_criminal_judgment_1133",
+        "2022_AppealCourt_February_criminal_judgment_1148"
+      ],
+      "judge_names": [
+        "R. Gurusinghe",
+        "N. Bandula Karunarathna",
+        "J. Tenny Fernando"
+      ],
+      "judge_statements": [
+        "The accused-appellant was indited along with the first accused for having committed the offence of murder"
+      ],
+      "legal_principles": [
+        "Elements of Robbery",
+        "Murder"
+      ],
+      "penal_codes": [
+        "Section 32(1) of the Code of Criminal Procedure Act"
+      ],
+      "model_extracted_points": [
+        "The intruders broke into the home, caused the death of Sirisena, caused grievous hurt to Kamalu, and placed a knife to the narrator's neck"
+      ]
+    },
+    {
+      "title": "Alibi Defense",
+      "content": "Argument supporting defense position citing similar cases ['2021_AppealCourt_March_criminal_judgment_1125', '2024_AppealCourt_February_criminal_judgment_1155']. Include specific judge statements from model patterns if available.",
+      "perspective": "defense",
+      "strength_score": 0.7,
+      "supporting_cases": [
+        "2021_AppealCourt_March_criminal_judgment_1125",
+        "2024_AppealCourt_February_criminal_judgment_1155"
+      ],
+      "judge_names": [
+        "Devika Abeyratne",
+        "P. Kumararatnam",
+        "Menaka Wijesundera"
+      ],
+      "judge_statements": [
+        "The accused appellant in this case Wanni Arachchi Kankanamge Jinawansha was convicted of the murder"
+      ],
+      "legal_principles": [
+        "Alibi",
+        "Self-Defense"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "Chandi Malli's lawyers are now asserting that at the time of the incident, Chandi Malli was at a wedding ceremony 100 kilometers away"
+      ]
+    },
+    {
+      "title": "Mitigating Factors",
+      "content": "Argument for mitigating factors citing similar cases ['2023_AppealCourt_November_criminal_judgment_1178']. Include specific judge statements from model patterns if available.",
+      "perspective": "mitigating",
+      "strength_score": 0.6,
+      "supporting_cases": [
+        "2023_AppealCourt_November_criminal_judgment_1178"
+      ],
+      "judge_names": [
+        "Sampath B. Abayakoon",
+        "P. Kumararatnam"
+      ],
+      "judge_statements": [
+        "The above-named Appellant was indicted by the Attorney General for following offences"
+      ],
+      "legal_principles": [
+        "Mitigating Factors",
+        "Diminished Capacity"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "The video clip has been presented as evidence for Chandi Malli's alibi"
+      ]
+    },
+    {
+      "title": "Aggravating Factors",
+      "content": "Aggressive argument citing binding precedents ['2021_AppealCourt_November_criminal_judgment_1133', '2022_AppealCourt_February_criminal_judgment_1148']. Include specific judge statements from model patterns if available.",
+      "perspective": "aggressive",
+      "strength_score": 0.8,
+      "supporting_cases": [
+        "2021_AppealCourt_November_criminal_judgment_1133",
+        "2022_AppealCourt_February_criminal_judgment_1148"
+      ],
+      "judge_names": [
+        "R. Gurusinghe",
+        "N. Bandula Karunarathna",
+        "J. Tenny Fernando"
+      ],
+      "judge_statements": [
+        "The accused-appellant was indited along with the first accused for having committed the offence of murder"
+      ],
+      "legal_principles": [
+        "Aggravating Factors",
+        "Pre-Meditation"
+      ],
+      "penal_codes": [
+        "Section 32(1) of the Code of Criminal Procedure Act"
+      ],
+      "model_extracted_points": [
+        "The initial threat, 'Today, we will not spare you. If you do not withdraw the land case, we will kill you,' establishes the intent and connection between the violence and the underlying dispute"
+      ]
+    }
+  ],
+  "scored_arguments": [
+    {
+      "title": "Robbery and Murder Charges",
+      "strategic_score": 0.63,
+      "success_probability": 0.2835,
+      "risk_assessment": "very_high",
+      "priority_rank": 1
+    },
+    {
+      "title": "Aggravating Factors",
+      "strategic_score": 0.56,
+      "success_probability": 0.252,
+      "risk_assessment": "very_high",
+      "priority_rank": 2
+    },
+    {
+      "title": "Alibi Defense",
+      "strategic_score": 0.49,
+      "success_probability": 0.2205,
+      "risk_assessment": "very_high",
+      "priority_rank": 3
+    },
+    {
+      "title": "Mitigating Factors",
+      "strategic_score": 0.36,
+      "success_probability": 0.162,
+      "risk_assessment": "very_high",
+      "priority_rank": 4
+    }
+  ],
+  "strategic_report": {
+    "summary": {
+      "total_arguments": 4,
+      "average_strategic_score": 0.51,
+      "average_success_probability": 0.2295
+    },
+    "priority_breakdown": {
+      "high_priority": 3,
+      "medium_priority": 1,
+      "low_priority": 0
+    },
+    "risk_distribution": {
+      "very_high": 4
+    },
+    "success_probability_ranges": {
+      "high_success": 0,
+      "medium_success": 0,
+      "low_success": 4
+    },
+    "top_arguments": [
+      {
+        "title": "Robbery and Murder Charges",
+        "strategic_score": 0.63,
+        "success_probability": 0.2835,
+        "risk_assessment": "very_high",
+        "priority_rank": 1
+      },
+      {
+        "title": "Aggravating Factors",
+        "strategic_score": 0.56,
+        "success_probability": 0.252,
+        "risk_assessment": "very_high",
+        "priority_rank": 2
+      },
+      {
+        "title": "Alibi Defense",
+        "strategic_score": 0.49,
+        "success_probability": 0.2205,
+        "risk_assessment": "very_high",
+        "priority_rank": 3
+      },
+      {
+        "title": "Mitigating Factors",
+        "strategic_score": 0.36,
+        "success_probability": 0.162,
+        "risk_assessment": "very_high",
+        "priority_rank": 4
+      }
+    ],
+    "strategic_recommendations": [
+      "Focus primary effort on 3 top-priority arguments",
+      "Strengthen 4 high-risk arguments or develop contingency plans",
+      "Consider revising or replacing 4 low-probability arguments"
+    ]
+  },
+  "adversarial_results": {
+    "enhanced_arguments": [
+      {
+        "original": {
+          "title": "Robbery and Murder Charges",
+          "content": "Argument supporting prosecution position citing similar cases ['2021_AppealCourt_November_criminal_judgment_1133', '2022_AppealCourt_February_criminal_judgment_1148']. Include specific judge statements from model patterns if available.",
+          "perspective": "prosecution",
+          "strength_score": 0.9,
+          "supporting_cases": [
+            "2021_AppealCourt_November_criminal_judgment_1133",
+            "2022_AppealCourt_February_criminal_judgment_1148"
+          ],
+          "judge_names": [
+            "R. Gurusinghe",
+            "N. Bandula Karunarathna",
+            "J. Tenny Fernando"
+          ],
+          "judge_statements": [
+            "The accused-appellant was indited along with the first accused for having committed the offence of murder"
+          ],
+          "legal_principles": [
+            "Elements of Robbery",
+            "Murder"
+          ],
+          "penal_codes": [
+            "Section 32(1) of the Code of Criminal Procedure Act"
+          ],
+          "model_extracted_points": [
+            "The intruders broke into the home, caused the death of Sirisena, caused grievous hurt to Kamalu, and placed a knife to the narrator's neck"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "original": {
+          "title": "Alibi Defense",
+          "content": "Argument supporting defense position citing similar cases ['2021_AppealCourt_March_criminal_judgment_1125', '2024_AppealCourt_February_criminal_judgment_1155']. Include specific judge statements from model patterns if available.",
+          "perspective": "defense",
+          "strength_score": 0.7,
+          "supporting_cases": [
+            "2021_AppealCourt_March_criminal_judgment_1125",
+            "2024_AppealCourt_February_criminal_judgment_1155"
+          ],
+          "judge_names": [
+            "Devika Abeyratne",
+            "P. Kumararatnam",
+            "Menaka Wijesundera"
+          ],
+          "judge_statements": [
+            "The accused appellant in this case Wanni Arachchi Kankanamge Jinawansha was convicted of the murder"
+          ],
+          "legal_principles": [
+            "Alibi",
+            "Self-Defense"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "Chandi Malli's lawyers are now asserting that at the time of the incident, Chandi Malli was at a wedding ceremony 100 kilometers away"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "original": {
+          "title": "Mitigating Factors",
+          "content": "Argument for mitigating factors citing similar cases ['2023_AppealCourt_November_criminal_judgment_1178']. Include specific judge statements from model patterns if available.",
+          "perspective": "mitigating",
+          "strength_score": 0.6,
+          "supporting_cases": [
+            "2023_AppealCourt_November_criminal_judgment_1178"
+          ],
+          "judge_names": [
+            "Sampath B. Abayakoon",
+            "P. Kumararatnam"
+          ],
+          "judge_statements": [
+            "The above-named Appellant was indicted by the Attorney General for following offences"
+          ],
+          "legal_principles": [
+            "Mitigating Factors",
+            "Diminished Capacity"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "The video clip has been presented as evidence for Chandi Malli's alibi"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "original": {
+          "title": "Aggravating Factors",
+          "content": "Aggressive argument citing binding precedents ['2021_AppealCourt_November_criminal_judgment_1133', '2022_AppealCourt_February_criminal_judgment_1148']. Include specific judge statements from model patterns if available.",
+          "perspective": "aggressive",
+          "strength_score": 0.8,
+          "supporting_cases": [
+            "2021_AppealCourt_November_criminal_judgment_1133",
+            "2022_AppealCourt_February_criminal_judgment_1148"
+          ],
+          "judge_names": [
+            "R. Gurusinghe",
+            "N. Bandula Karunarathna",
+            "J. Tenny Fernando"
+          ],
+          "judge_statements": [
+            "The accused-appellant was indited along with the first accused for having committed the offence of murder"
+          ],
+          "legal_principles": [
+            "Aggravating Factors",
+            "Pre-Meditation"
+          ],
+          "penal_codes": [
+            "Section 32(1) of the Code of Criminal Procedure Act"
+          ],
+          "model_extracted_points": [
+            "The initial threat, 'Today, we will not spare you. If you do not withdraw the land case, we will kill you,' establishes the intent and connection between the violence and the underlying dispute"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      }
+    ],
+    "simulation_summary": {
+      "total_arguments_tested": 4,
+      "total_counter_arguments": 0,
+      "average_robustness": 0.5,
+      "most_common_counter_strategy": "cite_precedent",
+      "strategy_distribution": {
+        "cite_precedent": 0,
+        "challenge_evidence": 0,
+        "procedural_challenge": 0
+      }
+    },
+    "strategic_recommendations": [
+      "Focus on strengthening 0 arguments with low robustness scores",
+      "Address common weak points: Precedent distinguishability, Binding authority, Material differences",
+      "Prepare additional evidence to counter anticipated challenges"
+    ]
+  }
+}

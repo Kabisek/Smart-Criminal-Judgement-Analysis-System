@@ -1,0 +1,11 @@
+rank,case_id,similarity_score,distance,year,court,text_length,file_path
+1,2021_AppealCourt_November_criminal_judgment_1133,0.5285945534706116,0.47140545,2021,AppealCourt,11290,..\data\judgments\2021\AppealCourt\November_criminal_judgment_1133.pdf
+2,2022_AppealCourt_February_criminal_judgment_1148,0.5130646824836731,0.48693532,2022,AppealCourt,3769,..\data\judgments\2022\AppealCourt\February_criminal_judgment_1148.pdf
+3,2021_AppealCourt_March_criminal_judgment_1125,0.49025100469589233,0.509749,2021,AppealCourt,18330,..\data\judgments\2021\AppealCourt\March_criminal_judgment_1125.pdf
+4,2024_AppealCourt_February_criminal_judgment_1155,0.4788817763328552,0.5211182,2024,AppealCourt,16889,..\data\judgments\2024\AppealCourt\February_criminal_judgment_1155.pdf
+5,2023_AppealCourt_November_criminal_judgment_1178,0.47562384605407715,0.52437615,2023,AppealCourt,17462,..\data\judgments\2023\AppealCourt\November_criminal_judgment_1178.pdf
+6,2022_AppealCourt_November_criminal_judgment_1153,0.46967804431915283,0.53032196,2022,AppealCourt,5285,..\data\judgments\2022\AppealCourt\November_criminal_judgment_1153.pdf
+7,2023_AppealCourt_November_criminal_judgment_1150,0.46792149543762207,0.5320785,2023,AppealCourt,13078,..\data\judgments\2023\AppealCourt\November_criminal_judgment_1150.pdf
+8,2021_AppealCourt_February_criminal_judgment_1126,0.46029388904571533,0.5397061,2021,AppealCourt,7087,..\data\judgments\2021\AppealCourt\February_criminal_judgment_1126.pdf
+9,2023_AppealCourt_July_criminal_judgment_1121,0.4596741199493408,0.5403259,2023,AppealCourt,25841,..\data\judgments\2023\AppealCourt\July_criminal_judgment_1121.pdf
+10,2024_AppealCourt_August_criminal_judgment_1150,0.45927512645721436,0.5407249,2024,AppealCourt,15402,..\data\judgments\2024\AppealCourt\August_criminal_judgment_1150.pdf

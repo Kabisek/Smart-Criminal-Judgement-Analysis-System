@@ -1,0 +1,46 @@
+{
+  "status": "success",
+  "analyzed_case_file": {
+    "case_header": {
+      "file_number": "L-SYN-2023-0106",
+      "date_of_analysis": "January 06, 2026",
+      "subject": "Criminal Case Analysis - 2023"
+    },
+    "incident_timeline": {
+      "what_happened": "The accused was charged with theft under Section 379 of the Penal Code. The incident occurred on October 12, 2023, at a residential property in Colombo. The prosecution alleges that the accused, a former domestic employee, stole valuable items. The defense claims the accused was at a temple during the time of the incident (alibi defense). No CCTV footage is available. A neighbor claims to have seen the accused leaving the area. The court must determine whether the circumstantial evidence is sufficient for conviction.",
+      "where_it_happened": "residential property in Colombo",
+      "key_dates": [
+        "October 12, 2023: Date of incident",
+        "October 12, 2023: Date of incident"
+      ]
+    },
+    "parties_and_roles": {
+      "accused": "Accused as mentioned in case",
+      "complainant": "Complainant as described in case",
+      "doubters_witnesses": [
+        {
+          "name": "Witness (Neighbor)",
+          "role": "Eyewitness claiming to see accused leaving scene",
+          "doubt_factor": "Visual identification occurred at night, may have limited reliability"
+        },
+        {
+          "name": "Temple Priest (Potential Alibi Witness)",
+          "role": "Potential alibi witness",
+          "doubt_factor": "May not be able to confirm exact timing of presence"
+        }
+      ]
+    },
+    "argument_synthesis": {
+      "prosecution_logic": [
+        "Evidence supports prosecution case based on available facts"
+      ],
+      "defense_logic": [
+        "Defense presents counter-arguments based on available evidence"
+      ],
+      "reasonable_doubt_factors": [
+        "Factors creating reasonable doubt based on defense arguments"
+      ]
+    },
+    "final_judicial_opinion": "The case requires careful evaluation of all evidence, witness credibility, and legal precedents. Both prosecution and defense present compelling arguments that must be weighed by the court."
+  }
+}
