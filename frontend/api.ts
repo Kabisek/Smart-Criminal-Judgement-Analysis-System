@@ -300,13 +300,63 @@ export async function uploadAndAnalyze(file: File): Promise<NormalizedAnalysisRe
   return normalizeUnifiedResponse(analysisRes, argsRes);
 }
 
+/**
+ * Call only the /analyze endpoint (case analysis + bounding-box data).
+ */
+export async function analyzeCaseOnly(fileUri: string, fileName: string): Promise<NormalizedAnalysisResponse> {
+  const fd = new FormData();
+  if (Platform.OS === 'web') {
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+    fd.append('file', blob, fileName);
+  } else {
+    fd.append('file', { uri: fileUri, name: fileName, type: 'application/octet-stream' } as any);
+  }
+  const res = await fetch(API_ANALYZE, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error(`Analysis failed (${res.status})`);
+  const json = await res.json();
+  return normalizeUnifiedResponse(json);
+}
 
+/**
+ * Call only the /arguments endpoint (argument generation + adversarial).
+ */
+export async function generateArgumentsOnly(fileUri: string, fileName: string): Promise<NormalizedAnalysisResponse> {
+  const fd = new FormData();
+  if (Platform.OS === 'web') {
+    const response = await fetch(fileUri);
+    const blob = await response.blob();
+    fd.append('file', blob, fileName);
+  } else {
+    fd.append('file', { uri: fileUri, name: fileName, type: 'application/octet-stream' } as any);
+  }
+  const res = await fetch(API_ARGUMENTS, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error(`Argument generation failed (${res.status})`);
+  const json = await res.json();
+  return normalizeUnifiedResponse(json);
+}
+
+// --- NORMALIZATION LAYER ---
+
+export interface SourceSpanData {
+  field_id: string;
+  page: number;
+  start_char: number;
+  end_char: number;
+  matched_text: string;
+}
+
+export interface PageTextData {
+  page_num: number;
+  text: string;
+}
 
 export interface NormalizedAnalysisResponse {
   status: string;
   analyzed_case?: AnalyzedCase;
   arguments_report?: ArgumentsReport;
-  
+  document_text?: PageTextData[];
+  source_spans?: SourceSpanData[];
   // Legacy support for Component 1
   input_metadata?: AnalysisResponse['input_metadata'];
   data?: AnalysisResponse['data'];
@@ -329,7 +379,13 @@ export function normalizeUnifiedResponse(item1: any, item2?: any): NormalizedAna
     };
   }
 
-  
+  // Bounding-box data from the /analyze endpoint
+  if (item1.document_text) {
+    normalized.document_text = item1.document_text;
+  }
+  if (item1.source_spans) {
+    normalized.source_spans = item1.source_spans;
+  }
 
   // Case 2: Arguments Report (ArgumentsResponse)
   const argsData = item2 || item1;
