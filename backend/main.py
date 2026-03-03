@@ -25,6 +25,11 @@ from comp1.core.engine import LegalResourceExtractor
 from comp2.api.routes import analyze, arguments, upload, status, results, history
 from comp2.api.config import API_V1_PREFIX
 
+# ── COMPONENT 3: Appeal Outcome Decision Support ─────────────────────────────
+# Handles: appeal outcome prediction, case similarity analysis, feature detection
+from comp3.api.routes import prediction as comp3_prediction, health as comp3_health
+from comp3.api.config import API_V1_PREFIX as COMP3_API_PREFIX
+
 """
 RESEARCH CONTRIBUTION: SECURE CONFIGURATION & API GATEWAY
 ---------------------------------------------------------
@@ -51,6 +56,10 @@ app.include_router(upload.router,     prefix=API_V1_PREFIX, tags=["upload"])
 app.include_router(status.router,     prefix=API_V1_PREFIX, tags=["status"])
 app.include_router(results.router,    prefix=API_V1_PREFIX, tags=["results"])
 app.include_router(history.router,    prefix=API_V1_PREFIX, tags=["history"])
+
+# ── COMPONENT 3: Mount appeal outcome prediction routers ─────────────────────
+app.include_router(comp3_prediction.router, prefix=COMP3_API_PREFIX, tags=["appeal-prediction"])
+app.include_router(comp3_health.router, prefix=COMP3_API_PREFIX, tags=["appeal-health"])
 
 # ── COMPONENT 1: Initialize ChromaDB / Legal-BERT engine ─────────────────────
 DB_PATH = os.path.join(os.getcwd(), "data", "chroma_db")
@@ -163,7 +172,8 @@ async def health_check():
         "service": "Smart Criminal Judgement System",
         "components": {
             "comp1_engine": "ready" if engine else "not initialized (run build_db.py)",
-            "comp2_api": "ready"
+            "comp2_api": "ready",
+            "comp3_appeal": "ready"
         }
     }
 
