@@ -2,7 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../components/AuthContext';
-
+import { Comp2Provider } from '../components/Comp2Context';
 
 export default function RootLayout() {
   return (
