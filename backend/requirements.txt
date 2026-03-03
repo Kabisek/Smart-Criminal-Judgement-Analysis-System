@@ -19,3 +19,5 @@ openai-whisper
 pydantic
 motor
 pymongo
+plotly
+torchvision
