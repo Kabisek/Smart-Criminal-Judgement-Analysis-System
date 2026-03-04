@@ -50,3 +50,7 @@ Thumbs.db
 *.pth
 *.onnx
 *.h5
+
+# ignore safetensors under comp1 BERT models
+backend/comp1/models/sri_lanka_legal_bert/*.safetensors
+backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
