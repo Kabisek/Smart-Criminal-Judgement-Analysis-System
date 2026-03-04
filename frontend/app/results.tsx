@@ -157,10 +157,7 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 16, color: colors.textSecondary },
   tabTextActive: { color: colors.primary, fontWeight: '600' },
   cardWrapper: {
-    ...(Platform.OS === 'web' && {
-      // @ts-ignore
-      animation: 'fadeInUp 0.5s ease forwards',
-    }),
+    opacity: 1,
   },
   section: { marginBottom: spacing.lg, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.primary, marginBottom: spacing.sm },
