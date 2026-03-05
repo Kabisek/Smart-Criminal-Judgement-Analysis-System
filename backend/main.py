@@ -49,6 +49,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── COMPONENT 4: Trilingual Legal Chatbot ─────────────────────────────────────
+from comp4.api.comp4_api import router as comp4_router
+
 # ── COMPONENT 2: Mount all adversarial analysis routers ───────────────────────
 app.include_router(analyze.router,    prefix=API_V1_PREFIX, tags=["analyze"])
 app.include_router(arguments.router,  prefix=API_V1_PREFIX, tags=["arguments"])
@@ -60,6 +63,9 @@ app.include_router(history.router,    prefix=API_V1_PREFIX, tags=["history"])
 # ── COMPONENT 3: Mount appeal outcome prediction routers ─────────────────────
 app.include_router(comp3_prediction.router, prefix=COMP3_API_PREFIX, tags=["appeal-prediction"])
 app.include_router(comp3_health.router, prefix=COMP3_API_PREFIX, tags=["appeal-health"])
+
+# ── COMPONENT 4: Mount Trilingual Legal Chatbot router ────────────────────────
+app.include_router(comp4_router)
 
 # ── COMPONENT 1: Initialize ChromaDB / Legal-BERT engine ─────────────────────
 DB_PATH = os.path.join(os.getcwd(), "data", "chroma_db")
