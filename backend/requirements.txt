@@ -21,3 +21,4 @@ motor
 pymongo
 plotly
 torchvision
+faiss-cpu

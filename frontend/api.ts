@@ -17,6 +17,7 @@ export const API_EXTRACT = API_BASE + '/extract';
 export const API_ANALYZE = API_BASE + '/api/v1/analyze';
 export const API_ARGUMENTS = API_BASE + '/api/v1/arguments';
 export const API_HEALTH = API_BASE + '/health';
+export const API_COMP4_CHAT = API_BASE + '/comp4/chat';
 export const API_HISTORY_SAVE = API_BASE + '/api/v1/history/save';
 export const API_HISTORY_LIST = API_BASE + '/api/v1/history/list';
 export const API_HISTORY_FETCH = (id: string) => API_BASE + `/api/v1/history/${id}`;
@@ -489,4 +490,40 @@ export interface AnalyzedCase {
   };
   // Allow arbitrary extra fields from backend
   [key: string]: any;
+}
+
+// ── Component 4 chat ──────────────────────────────────────────────────
+
+export interface Comp4ChatRequest {
+  message: string;
+  session_id?: string;
+}
+
+export interface Comp4ChatData {
+  Section?: string;
+  Simple_Explanation?: string;
+  Example?: string;
+  Punishment?: string;
+  Next_Steps?: string[];
+}
+
+export interface Comp4ChatResponse {
+  english_data: Comp4ChatData;
+  tamil_data?: Comp4ChatData;
+  sinhala_data?: Comp4ChatData;
+  detected_lang: string;
+  cached: boolean;
+  elapsed_ms?: number;
+}
+
+export async function chatWithComp4(data: Comp4ChatRequest): Promise<Comp4ChatResponse> {
+  const res = await fetch(API_COMP4_CHAT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to fetch from comp4 API');
+  }
+  return res.json();
 }

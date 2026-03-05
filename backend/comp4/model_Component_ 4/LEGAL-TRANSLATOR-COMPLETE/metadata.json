@@ -1,0 +1,23 @@
+{
+  "system": "Legal Translation System",
+  "languages": [
+    "English (eng_Latn)",
+    "Tamil (tam_Taml)",
+    "Sinhala (sin_Sinh)"
+  ],
+  "base_model": "facebook/nllb-200-distilled-600M",
+  "directions": [
+    "English → Tamil",
+    "Tamil → English",
+    "English → Sinhala",
+    "Sinhala → English",
+    "Tamil → Sinhala",
+    "Sinhala → Tamil"
+  ],
+  "folders": {
+    "base_model": "Original facebook/nllb-200-distilled-600M",
+    "adapter_tamil": "LoRA adapter — Tamil data (Phase 1)",
+    "adapter_sinhala": "LoRA adapter — Tamil+Sinhala data (Phase 2)",
+    "merged_model": "USE THIS — fully standalone, no peft needed"
+  }
+}
