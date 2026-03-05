@@ -54,3 +54,6 @@ Thumbs.db
 # ignore safetensors under comp1 BERT models
 backend/comp1/models/sri_lanka_legal_bert/*.safetensors
 backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
+
+# ignore large model files under comp4 (>100MB)
+backend/comp4/model_Component_ 4/**/model.safetensors
