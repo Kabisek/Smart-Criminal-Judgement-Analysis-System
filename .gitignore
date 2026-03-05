@@ -57,3 +57,4 @@ backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 
 # ignore large model files under comp4 (>100MB)
 backend/comp4/model_Component_ 4/**/model.safetensors
+/backend/comp1/data/structured
