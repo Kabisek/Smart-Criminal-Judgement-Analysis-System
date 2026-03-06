@@ -25,7 +25,8 @@ export default function ResultsScreen() {
   const header = analysis?.case_header ?? {};
   const timeline = analysis?.incident_timeline ?? {};
   const synthesis = analysis?.argument_synthesis ?? {};
-  const similarCases = report?.similar_cases ?? [
+  type SimilarCaseDisplay = { case_id?: string; id?: string; similarity?: number; similarity_score?: number };
+  const similarCases: SimilarCaseDisplay[] = report?.similar_cases ?? [
     { case_id: '2024_AppealCourt_September_criminal_judgment_1151', similarity: 0.52 },
     { case_id: '2023_AppealCourt_March_criminal_judgment_1166', similarity: 0.5 },
   ];
