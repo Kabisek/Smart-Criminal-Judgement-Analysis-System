@@ -27,7 +27,7 @@ from comp2.api.config import API_V1_PREFIX
 
 # ── COMPONENT 3: Appeal Outcome Decision Support ─────────────────────────────
 # Handles: appeal outcome prediction, case similarity analysis, feature detection
-from comp3.api.routes import prediction as comp3_prediction, health as comp3_health
+from comp3.api.routes import prediction as comp3_prediction, health as comp3_health, enhanced_prediction as comp3_enhanced
 from comp3.api.config import API_V1_PREFIX as COMP3_API_PREFIX
 
 """
@@ -63,6 +63,7 @@ app.include_router(history.router,    prefix=API_V1_PREFIX, tags=["history"])
 # ── COMPONENT 3: Mount appeal outcome prediction routers ─────────────────────
 app.include_router(comp3_prediction.router, prefix=COMP3_API_PREFIX, tags=["appeal-prediction"])
 app.include_router(comp3_health.router, prefix=COMP3_API_PREFIX, tags=["appeal-health"])
+app.include_router(comp3_enhanced.router, prefix=COMP3_API_PREFIX, tags=["appeal-enhanced"])
 
 # ── COMPONENT 4: Mount Trilingual Legal Chatbot router ────────────────────────
 app.include_router(comp4_router)

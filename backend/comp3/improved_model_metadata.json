@@ -1,0 +1,25 @@
+{
+    "model_type": "Calibrated Voting Ensemble",
+    "ensemble_models": [
+        "Gradient Boosting",
+        "Support Vector Machine",
+        "Logistic Regression"
+    ],
+    "cv_f1_score": 0.8570290041356685,
+    "test_accuracy": 0.7974683544303798,
+    "test_f1_score": 0.7991643914949945,
+    "test_precision": 0.801386140582895,
+    "test_recall": 0.7974683544303798,
+    "n_features": 199,
+    "n_train_samples": 1000,
+    "n_test_samples": 251,
+    "target_classes": [
+        "Appeal_Allowed",
+        "Appeal_Dismissed",
+        "Partly_Allowed"
+    ],
+    "training_date": "2026-03-01 16:40:46",
+    "overfitting_gap": 0.09802717563961239,
+    "smote_applied": true,
+    "feature_engineering": "improved_hybrid"
+}

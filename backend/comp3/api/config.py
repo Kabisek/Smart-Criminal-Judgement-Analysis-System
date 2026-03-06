@@ -23,24 +23,27 @@ API_V1_PREFIX = "/api/v1/appeal"
 ALLOWED_FILE_TYPES = [".pdf", ".txt", ".json", ".docx"]
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Model paths - now in comp3 directory
-MODEL_PATH = COMP3_DIR / "appeal_outcome_imbalance_week7.pkl"
-SELECTOR_PATH = COMP3_DIR / "selector_object.pkl"
-LABEL_ENCODER_PATH = COMP3_DIR / "label_encoder_outcome.pkl"
-X_TRAIN_PATH = COMP3_DIR / "X_train_bert.csv"
+# Model paths - updated to use improved models
+MODEL_PATH = COMP3_DIR / "improved_ensemble_model.pkl"
+SELECTOR_PATH = COMP3_DIR / "improved_selected_features.pkl"
+LABEL_ENCODER_PATH = COMP3_DIR / "improved_label_encoder.pkl"
+X_TRAIN_PATH = COMP3_DIR / "X_train_improved.csv"
 BERT_EMBEDDINGS_PATH = COMP3_DIR / "bert_embeddings_train.npy"
 DATASET_PATH = COMP3_DIR / "dataset_cleaned_v2.csv"
-Y_TRAIN_PATH = COMP3_DIR / "y_train_outcome.npy"
+Y_TRAIN_PATH = COMP3_DIR / "y_train_improved.npy"
+TFIDF_VECTORIZER_PATH = COMP3_DIR / "improved_tfidf_vectorizer.pkl"
+SCALER_PATH = COMP3_DIR / "improved_scaler.pkl"
 
 # BERT Model Configuration
 BERT_MODEL_NAME = "nlpaueb/legal-bert-base-uncased"
 BERT_MAX_LENGTH = 512
 
-# Feature Configuration
-NUM_TRADITIONAL_FEATURES = 59
-NUM_BERT_FEATURES = 768
-TOTAL_FEATURES = 827
-SELECTED_FEATURES = 150
+# Feature Configuration - updated for improved model
+NUM_TRADITIONAL_FEATURES = 49
+NUM_BERT_FEATURES = 100
+NUM_TFIDF_FEATURES = 50
+TOTAL_FEATURES = 199
+SELECTED_FEATURES = 199
 
 # Prediction thresholds
 HIGH_CONFIDENCE_THRESHOLD = 60.0
@@ -53,11 +56,11 @@ MIN_SIMILARITY_THRESHOLD = 30.0
 # Class labels
 CLASS_LABELS = ['Appeal_Allowed', 'Appeal_Dismissed', 'Partly_Allowed']
 
-# Model metadata defaults
+# Model metadata defaults - updated for improved model
 DEFAULT_METADATA = {
-    'accuracy': 0.6255,
-    'model_name': 'XGBoost Custom Weights',
-    'training_date': '2026-01-06',
-    'training_samples': 1000,
-    'num_features': 150
+    'accuracy': 0.7975,
+    'model_name': 'Improved Calibrated Ensemble',
+    'training_date': '2026-03-01',
+    'training_samples': 1092,
+    'num_features': 199
 }

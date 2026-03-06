@@ -22,6 +22,16 @@ export const API_HISTORY_SAVE = API_BASE + '/api/v1/history/save';
 export const API_HISTORY_LIST = API_BASE + '/api/v1/history/list';
 export const API_HISTORY_FETCH = (id: string) => API_BASE + `/api/v1/history/${id}`;
 
+// ── Component 3: Appeal Outcome Prediction ─────────────────────────────
+export const API_APPEAL_PREDICT = API_BASE + '/api/v1/appeal/predict';
+export const API_APPEAL_PREDICT_DETAILED = API_BASE + '/api/v1/appeal/predict/detailed';
+export const API_APPEAL_LEARN_ANALYZE = API_BASE + '/api/v1/appeal/learn/analyze';
+export const API_APPEAL_FIND_SIMILAR = API_BASE + '/api/v1/appeal/find/similar';
+export const API_APPEAL_ANALYZE_BATCH = API_BASE + '/api/v1/appeal/analyze/batch';
+export const API_APPEAL_MODEL_INFO = API_BASE + '/api/v1/appeal/model/info';
+export const API_APPEAL_HEALTH = API_BASE + '/api/v1/appeal/health';
+
+
 // ── Component-scoped history endpoints ───────────────────────────────
 export const API_HIST_C1_SAVE = API_BASE + '/api/v1/history/comp1/save';
 export const API_HIST_C1_LIST = API_BASE + '/api/v1/history/comp1/list';
@@ -177,6 +187,275 @@ export async function fetchComp2Detail(caseId: string): Promise<any> {
     return null;
   }
 }
+
+// ── Component 3: Appeal Outcome Prediction ─────────────────────────────
+
+export interface AppealPredictionRequest {
+  case_description: string;
+  offence_type?: string;
+  hc_sentence?: string;
+  appeal_duration?: number;
+}
+
+export interface DetailedPredictionRequest {
+  case_description: string;
+  user_type?: 'general' | 'lawyer' | 'student';
+  analysis_level?: 'basic' | 'standard' | 'detailed';
+  include_precedents?: boolean;
+  language?: 'en' | 'si' | 'ta';
+}
+
+export interface LearningRequest {
+  case_description: string;
+  learning_mode?: 'guided' | 'independent' | 'assessment';
+  difficulty_level?: 'beginner' | 'intermediate' | 'advanced';
+  include_feedback?: boolean;
+}
+
+export interface PredictionProbabilities {
+  Appeal_Allowed: number;
+  Appeal_Dismissed: number;
+  Partly_Allowed: number;
+}
+
+export interface DetectedFeatures {
+  grounds: string[];
+  evidence: string[];
+  offence: string[];
+  appeal_type: string[];
+  other: string[];
+}
+
+export interface DetailedPredictionResponse {
+  // Basic prediction
+  prediction: string;
+  confidence: number;
+  probabilities: PredictionProbabilities;
+  detected_features: DetectedFeatures;  // Add this missing field
+
+  // Enhanced analysis
+  legal_reasoning: string;
+  key_factors: Array<{
+    factor_name: string;
+    importance: number;
+    explanation: string;
+    supporting_evidence: string[];
+  }>;
+  risk_assessment: string;
+  strategy_recommendations: Array<{
+    recommendation: string;
+    priority: string;
+    rationale: string;
+    expected_impact: string;
+  }>;
+
+  // Similar cases
+  similar_cases: Array<{
+    case_id: string;
+    similarity_score: number;
+    case_summary: string;
+    outcome: string;
+    key_legal_points: string[];
+    citation?: string;
+    year?: number;
+  }>;
+
+  // Educational content
+  legal_concepts: string[];
+  methodology_explanation: string;
+
+  // Metadata
+  processing_time: number;
+  model_version: string;
+  feature_importance: Record<string, number>;
+  analysis_timestamp: string;
+}
+
+export interface EducationalResponse {
+  explanation_level: string;
+  legal_concepts: string[];
+  methodology_explanation: string;
+  quiz_questions: string[];
+  further_reading: string[];
+  case_study: Record<string, any>;
+  learning_objectives: string[];
+  concept_mastery: Record<string, number>;
+  next_topics: string[];
+}
+
+export interface SimilarCase {
+  case_id: string;
+  similarity: number;
+  outcome: string;
+  conviction_status: string;
+  facts: string;
+  offence: string;
+  high_court: string;
+  grounds: string;
+}
+
+export interface ModelMetadata {
+  accuracy: number;
+  model_name: string;
+  training_date: string;
+  training_samples: number;
+  num_features: number;
+}
+
+export interface AppealPredictionResponse {
+  status: string;
+  prediction: string;
+  confidence: number;
+  probabilities: PredictionProbabilities;
+  detected_features: DetectedFeatures;
+  similar_cases: SimilarCase[];
+  metadata: ModelMetadata;
+  timestamp: string;
+}
+
+export interface Comp3HistoryRecord {
+  case_id: string;
+  case_name: string;
+  payload: AppealPredictionResponse | DetailedPredictionResponse;
+  user_type?: 'general' | 'lawyer' | 'student';
+  analysis_level?: 'basic' | 'standard' | 'detailed';
+  timestamp: string;
+}
+
+export interface Comp3HistoryMetadata {
+  subject?: string;
+  accused?: string;
+}
+
+
+// ── Component 3 API Functions ─────────────────────────────────────
+
+export async function predictAppealOutcome(request: AppealPredictionRequest): Promise<AppealPredictionResponse | null> {
+  try {
+    const res = await fetch(API_APPEAL_PREDICT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      console.error('predictAppealOutcome failed:', res.status, res.statusText);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('predictAppealOutcome failed:', err);
+    return null;
+  }
+}
+
+export async function predictAppealOutcomeDetailed(request: DetailedPredictionRequest): Promise<DetailedPredictionResponse | null> {
+  try {
+    const res = await fetch(API_APPEAL_PREDICT_DETAILED, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      console.error('predictAppealOutcomeDetailed failed:', res.status, res.statusText);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('predictAppealOutcomeDetailed failed:', err);
+    return null;
+  }
+}
+
+export async function analyzeCaseForLearning(request: LearningRequest): Promise<EducationalResponse | null> {
+  try {
+    const res = await fetch(API_APPEAL_LEARN_ANALYZE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      console.error('analyzeCaseForLearning failed:', res.status, res.statusText);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('analyzeCaseForLearning failed:', err);
+    return null;
+  }
+}
+
+export async function findSimilarCases(request: { case_description: string; max_results?: number; similarity_threshold?: number }): Promise<any> {
+  try {
+    const res = await fetch(API_APPEAL_FIND_SIMILAR, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    if (!res.ok) {
+      console.error('findSimilarCases failed:', res.status, res.statusText);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error('findSimilarCases failed:', err);
+    return null;
+  }
+}
+
+export async function getAppealModelInfo(): Promise<any> {
+  try {
+    const res = await fetch(API_APPEAL_MODEL_INFO);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('getAppealModelInfo failed:', err);
+    return null;
+  }
+}
+
+export async function saveComp3History(record: Comp3HistoryRecord): Promise<void> {
+  try {
+    await fetch(API_BASE + '/api/v1/history/comp3/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record),
+    });
+  } catch (err) {
+    console.error('saveComp3History failed:', err);
+  }
+}
+
+export async function fetchComp3List(): Promise<HistorySummary[]> {
+  try {
+    const res = await fetch(API_BASE + '/api/v1/history/comp3/list');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error('fetchComp3List failed:', err);
+    return [];
+  }
+}
+
+export async function fetchComp3Detail(caseId: string): Promise<any> {
+  try {
+    const res = await fetch(API_BASE + `/api/v1/history/comp3/${caseId}`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch (err) {
+    console.error('fetchComp3Detail failed:', err);
+    return null;
+  }
+}
+
 
 export interface AnalysisRequest {
   english_transcript: string;

@@ -1,0 +1,235 @@
+{
+  "appeal_decision": {
+    "probabilities": {
+      "Appeal_Allowed": 21.28,
+      "Appeal_Dismissed": 75.76,
+      "Partly_Allowed": 2.96
+    },
+    "confidence_intervals": {
+      "Appeal_Allowed": [
+        16.28,
+        26.28
+      ],
+      "Appeal_Dismissed": [
+        70.76,
+        80.76
+      ],
+      "Partly_Allowed": [
+        0,
+        7.96
+      ]
+    },
+    "most_likely": "Appeal_Dismissed"
+  },
+  "conditional_outcomes": {
+    "if_appeal_allowed": {
+      "Acquitted": 38.2,
+      "Convicted_Reduced": 45.1,
+      "Modified_Charge": 11.7,
+      "Remanded_Retrial": 5.0
+    },
+    "if_appeal_partly_allowed": {
+      "Modified_Charge": 65.0,
+      "Convicted_Reduced": 30.0,
+      "Other": 5.0
+    },
+    "note": "Based on historical patterns from training data"
+  },
+  "final_outcomes": {
+    "outcomes": {
+      "Full_Acquittal": 8.13,
+      "Sentence_Reduced": 10.49,
+      "Conviction_Modified": 4.41,
+      "No_Relief_Same_Conviction": 75.76,
+      "Retrial_Ordered": 1.06
+    },
+    "most_likely": "No_Relief_Same_Conviction"
+  },
+  "explanation": {
+    "similar_cases": [
+      {
+        "rank": 1,
+        "case_id": "Case_661",
+        "similarity": 83.73037719726562,
+        "outcome": "Appeal_Dismissed",
+        "facts": "The Accused-Appellant, a known 'uncle' to the 6.5-year-old victim, took her from a neighbour's house to an abandoned house on 31-07-2008 under the pretense of picking mandarins. There, he removed her "
+      },
+      {
+        "rank": 2,
+        "case_id": "Case_18",
+        "similarity": 83.45390319824219,
+        "outcome": "Partly_Allowed",
+        "facts": "The deceased, a hotel caretaker, was found injured in the hotel garden and later succumbed to injuries. Prosecution alleged the accused, a three-wheeler driver, assaulted the deceased. Evidence relied"
+      },
+      {
+        "rank": 3,
+        "case_id": "Case_86",
+        "similarity": 83.04450225830078,
+        "outcome": "Partly_Allowed",
+        "facts": "The accused-appellant was charged with raping his former wife on 20/03/2009. The prosecutrix testified that she went to the Gramasevaka office to collect a certificate, the accused took it and went to"
+      },
+      {
+        "rank": 4,
+        "case_id": "Case_781",
+        "similarity": 82.77889251708984,
+        "outcome": "Appeal_Dismissed",
+        "facts": "Police filed an information under the Primary Court Procedure Act to prevent a breach of peace concerning possession of premises No. 16, Seethawaka Road, Avissawella. The 1st Appellant claimed to have"
+      },
+      {
+        "rank": 5,
+        "case_id": "Case_787",
+        "similarity": 82.72705078125,
+        "outcome": "Appeal_Dismissed",
+        "facts": "The accused was charged with Grave Sexual Abuse of a child under 16. On 17 March 2007, the victim (PW1) went to a bakery and was stopped by the accused, who dragged her to a house, forcibly removed he"
+      }
+    ],
+    "detected_features": {
+      "traditional_features": [
+        {
+          "feature": "Gnd Contradictions",
+          "value": 1.0
+        },
+        {
+          "feature": "Gnd Chain Of Custody",
+          "value": 1.0
+        },
+        {
+          "feature": "Gnd Wrong Identification",
+          "value": 1.0
+        },
+        {
+          "feature": "Gnd Dying Declaration Validity",
+          "value": 1.0
+        },
+        {
+          "feature": "Gnd Medical Inconsistency",
+          "value": 1.0
+        },
+        {
+          "feature": "Eyewitness Present",
+          "value": 1.0
+        },
+        {
+          "feature": "Dying Declaration Present",
+          "value": 1.0
+        },
+        {
+          "feature": "Confession Present",
+          "value": 1.0
+        },
+        {
+          "feature": "Coa Year",
+          "value": 2024.0
+        },
+        {
+          "feature": "Appeal Duration Days",
+          "value": 730.0
+        },
+        {
+          "feature": "Brief Facts Summary Length",
+          "value": 644.0
+        },
+        {
+          "feature": "Brief Facts Summary Word Count",
+          "value": 96.0
+        },
+        {
+          "feature": "Grounds Of Appeal Raw Text Summary Length",
+          "value": 257.6
+        },
+        {
+          "feature": "Grounds Of Appeal Raw Text Summary Word Count",
+          "value": 38.400000000000006
+        },
+        {
+          "feature": "Court Of Appeal Analysis Summary Length",
+          "value": 193.2
+        },
+        {
+          "feature": "Court Of Appeal Analysis Summary Word Count",
+          "value": 28.799999999999997
+        },
+        {
+          "feature": "Medical Evidence Score",
+          "value": 1.0
+        },
+        {
+          "feature": "Offence Category Grouped Firearms Weapons",
+          "value": 1.0
+        },
+        {
+          "feature": "Offence Category Grouped Murder Related",
+          "value": 1.0
+        },
+        {
+          "feature": "Medical Evidence Strength Weak",
+          "value": 1.0
+        },
+        {
+          "feature": "Chain Of Custody Quality Weak",
+          "value": 1.0
+        },
+        {
+          "feature": "Appeal Type Simplified Sentence Only",
+          "value": 1.0
+        }
+      ],
+      "bert_features": {
+        "dimensions": 768,
+        "note": "BERT captured semantic meaning from case description"
+      }
+    },
+    "key_factors": {
+      "note": "BERT-based model (99.8% of prediction weight)",
+      "interpretation": "Model learned patterns from 768-dimensional semantic embeddings of legal text",
+      "active_indicators": [
+        "Gnd Contradictions",
+        "Gnd Chain Of Custody",
+        "Gnd Wrong Identification",
+        "Gnd Dying Declaration Validity",
+        "Gnd Medical Inconsistency"
+      ]
+    },
+    "model_confidence": {
+      "level": "High",
+      "score": 75.76,
+      "interpretation": "High confidence"
+    }
+  },
+  "recommendations": {
+    "assessment": "Based on analysis of similar cases and legal patterns, the appeal has a 21.3% chance of being allowed. Model confidence is high.",
+    "primary_outcome_likelihood": {
+      "Appeal_Allowed": "Low",
+      "Appeal_Dismissed": "High",
+      "Partly_Allowed": "Low"
+    },
+    "strategy_note": "Focus on strongest legal grounds identified in case description. Consider settlement if dismissal probability exceeds 70%."
+  },
+  "metadata": {
+    "prediction_date": "2026-01-07 00:38:51",
+    "model_version": "1.0",
+    "model_name": "Stacking Ensemble (XGBoost + LightGBM + Random Forest)",
+    "model_accuracy": 60.16,
+    "training_data_cases": 1000,
+    "test_data_cases": 251,
+    "features_used": {
+      "total": 827,
+      "selected": 150,
+      "bert_embeddings": 149,
+      "traditional": 1
+    },
+    "similar_cases_analyzed": 5,
+    "overall_confidence": "High",
+    "uncertainty_factors": [
+      "Prediction based on historical patterns",
+      "Individual case circumstances may vary",
+      "Legal precedents evolve over time"
+    ],
+    "disclaimer": "This prediction is based on machine learning analysis of historical Court of Appeal data and should supplement, not replace, professional legal judgment. Consult qualified legal counsel for case-specific advice."
+  },
+  "input": {
+    "case_description": "\nThe accused was convicted by High Court Colombo for murder \nunder Section 296 of Penal Code. Sentenced to death penalty. \nThe incident occurred on 2020-05-15 at victim's house.\n\nHigh Court convicted based on:\n- Eyewitness testimony from 2 witnesses\n- Medical evidence showing multiple stab wounds\n- Recovery of knife from accused\n\nGrounds of appeal:\n1. Contradictions in prosecution evidence\n2. Wrong identification - poor lighting conditions\n3. Chain of custody issues with weapon\n4. Medical eviden...",
+    "input_length": 644,
+    "word_count": 96
+  }
+}

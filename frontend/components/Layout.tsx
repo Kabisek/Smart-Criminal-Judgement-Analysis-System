@@ -195,36 +195,23 @@ export function Layout({
   children: React.ReactNode;
   noPadding?: boolean;
 }) {
-  const isWeb = Platform.OS === 'web';
   return (
     <View style={styles.page}>
-      <View style={isWeb ? styles.boxedShell : undefined}>
-        <Header onMenuPress={() => { }} />
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[styles.main, !noPadding && styles.mainPadding]}
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-          <Footer />
-        </ScrollView>
-      </View>
+      <Header onMenuPress={() => { }} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.main, !noPadding && styles.mainPadding]}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+        <Footer />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#E8ECF0' },
-  boxedShell: {
-    flex: 1,
-    maxWidth: 1280,
-    width: '100%',
-    alignSelf: 'center',
-    backgroundColor: colors.bgBody,
-    ...(Platform.OS === 'web' && {
-      boxShadow: '0 0 30px rgba(0,0,0,0.08)',
-    }),
-  },
+  page: { flex: 1, backgroundColor: colors.bgBody },
   header: {
     backgroundColor: colors.bgHeader,
     paddingVertical: spacing.md,
@@ -235,7 +222,7 @@ const styles = StyleSheet.create({
     elevation: 8, // For Android
   },
   headerInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerInnerWeb: { width: '100%' },
+  headerInnerWeb: { maxWidth: 1240, marginHorizontal: 'auto', width: '100%' },
   logoWrap: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   logoIconContainer: {
     backgroundColor: colors.accent,
@@ -367,7 +354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   footerInner: {},
-  footerInnerWeb: { width: '100%' },
+  footerInnerWeb: { maxWidth: 1200, marginHorizontal: 'auto', width: '100%' },
   footerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

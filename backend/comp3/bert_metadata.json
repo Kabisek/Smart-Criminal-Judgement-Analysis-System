@@ -1,0 +1,10 @@
+{
+    "model_name": "nlpaueb/legal-bert-base-uncased",
+    "embedding_dim": 768,
+    "total_features": 827,
+    "bert_features": 768,
+    "previous_features": 59,
+    "train_samples": 1000,
+    "test_samples": 251,
+    "created_date": "2026-01-06 16:45:04"
+}
