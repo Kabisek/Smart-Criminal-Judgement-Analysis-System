@@ -19,6 +19,8 @@ from comp3.api.config import (
     BERT_EMBEDDINGS_PATH,
     DATASET_PATH,
     Y_TRAIN_PATH,
+    TFIDF_VECTORIZER_PATH,
+    SCALER_PATH,
     SIMILAR_CASES_TOP_K,
     DEFAULT_METADATA
 )
@@ -46,7 +48,9 @@ class PredictionService:
                 X_TRAIN_PATH,
                 BERT_EMBEDDINGS_PATH,
                 DATASET_PATH,
-                Y_TRAIN_PATH
+                Y_TRAIN_PATH,
+                TFIDF_VECTORIZER_PATH,
+                SCALER_PATH
             ]
             
             missing_files = []

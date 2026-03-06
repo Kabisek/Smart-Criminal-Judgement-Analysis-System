@@ -1,0 +1,4 @@
+Date,Week,Model,Technique,Test_Accuracy,F1_Weighted,Partly_Recall
+2026-01-06,6,Random Forest,Baseline,0.574,0.56,0.23
+2026-01-06,6,XGBoost,Original,0.5857,0.5719,0.34
+2026-01-06,6,XGBoost,SMOTE,0.5896414342629482,0.5851753223389767,0.34285714285714286

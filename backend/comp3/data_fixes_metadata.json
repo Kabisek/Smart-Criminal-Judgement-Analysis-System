@@ -1,0 +1,30 @@
+{
+    "fix_date": "2026-01-06 14:22:24",
+    "records": 1251,
+    "features": 98,
+    "changes": {
+        "removed_columns": [
+            "reserved_for_future_use"
+        ],
+        "fixed_negative_durations": 1,
+        "offense_categories_before": 324,
+        "offense_categories_after": 11,
+        "new_features": [
+            "offence_category_grouped",
+            "appeal_type_simplified"
+        ]
+    },
+    "offense_distribution": {
+        "Murder_Related": 448,
+        "Drug_Related": 258,
+        "Sexual_Offenses": 234,
+        "Other": 157,
+        "Fraud_Corruption": 80,
+        "Environmental": 33,
+        "Robbery_Theft": 25,
+        "Assault_Violence": 13,
+        "Firearms_Weapons": 1,
+        "Traffic_Vehicle": 1,
+        "Customs": 1
+    }
+}

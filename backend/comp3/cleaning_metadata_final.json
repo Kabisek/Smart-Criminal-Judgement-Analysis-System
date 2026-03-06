@@ -1,0 +1,44 @@
+{
+    "cleaning_date": "2026-01-06 13:15:44",
+    "original_records": 1607,
+    "final_records": 1251,
+    "data_retention_rate": "77.8%",
+    "outliers_removed": 1,
+    "offenses_imputed": 30,
+    "missing_offenses_remaining": 0,
+    "data_quality_score": 9.7,
+    "outcome_distribution": {
+        "Appeal_Dismissed": 588,
+        "Appeal_Allowed": 505,
+        "Partly_Allowed": 158
+    },
+    "conviction_distribution": {
+        "Convicted": 649,
+        "Acquitted": 394,
+        "Modified": 148,
+        "Remanded": 60
+    },
+    "offense_distribution": {
+        "Murder": 329,
+        "Drug Trafficking": 157,
+        "Rape": 65,
+        "Grave Sexual Abuse": 60,
+        "Bribery": 35,
+        "Other": 23,
+        "Forest Offence": 19,
+        "Trafficking and possession of heroin": 18,
+        "Drug Possession": 15,
+        "Robbery": 15,
+        "Murder and Robbery": 14,
+        "Attempted Murder": 13,
+        "Grave sexual abuse": 12,
+        "Murder and Attempted Murder": 10,
+        "Cheating": 9,
+        "Possession and trafficking of heroin": 8,
+        "Kidnapping and Grave Sexual Abuse": 7,
+        "Sexual Abuse": 6,
+        "Drug trafficking and possession of heroin": 6,
+        "Drug Trafficking and Possession": 6
+    },
+    "total_features": 97
+}

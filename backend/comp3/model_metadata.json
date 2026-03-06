@@ -1,0 +1,116 @@
+{
+  "project": "Sri Lankan Court Appeal Outcome Prediction",
+  "model_version": "1.0",
+  "model_type": "XGBoost + SMOTE",
+  "training_date": "2026-01-06 19:55:08",
+  "status": "Week 6 Complete - Baseline Model",
+  "dataset": {
+    "total_cases": 1251,
+    "train_samples": 1000,
+    "test_samples": 251,
+    "num_features": 150,
+    "feature_composition": {
+      "legal_features": 54,
+      "bert_embeddings": 96
+    }
+  },
+  "class_distribution": {
+    "train_original": {
+      "Allowed": 392,
+      "Dismissed": 485,
+      "Partly_Allowed": 123
+    },
+    "train_smote": {
+      "Allowed": 485,
+      "Dismissed": 485,
+      "Partly_Allowed": 485
+    },
+    "test": {
+      "Allowed": 113,
+      "Dismissed": 103,
+      "Partly_Allowed": 35
+    }
+  },
+  "performance": {
+    "test_accuracy": 0.5896414342629482,
+    "test_f1_weighted": 0.5851753223389767,
+    "test_f1_macro": 0.546889468362514,
+    "cv_accuracy_original": 0.673,
+    "baseline_comparison": {
+      "random_forest_accuracy": 0.574,
+      "improvement": "+1.56%"
+    },
+    "per_class_metrics": {
+      "Allowed": {
+        "precision": 0.6410256410256411,
+        "recall": 0.6637168141592921,
+        "f1-score": 0.6521739130434783,
+        "support": 113
+      },
+      "Dismissed": {
+        "precision": 0.5446428571428571,
+        "recall": 0.5922330097087378,
+        "f1-score": 0.5674418604651162,
+        "support": 103
+      },
+      "Partly_Allowed": {
+        "precision": 0.5454545454545454,
+        "recall": 0.34285714285714286,
+        "f1-score": 0.42105263157894735,
+        "support": 35
+      }
+    },
+    "confusion_matrix": [
+      [
+        75,
+        37,
+        1
+      ],
+      [
+        33,
+        61,
+        9
+      ],
+      [
+        9,
+        14,
+        12
+      ]
+    ]
+  },
+  "model_config": {
+    "algorithm": "XGBoost",
+    "smote_applied": true,
+    "smote_neighbors": 5,
+    "hyperparameters": {
+      "n_estimators": 150,
+      "max_depth": 5,
+      "learning_rate": 0.05,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "min_child_weight": 5,
+      "reg_alpha": 0.5,
+      "reg_lambda": 2.0,
+      "gamma": 0.1,
+      "random_state": 42
+    }
+  },
+  "files": {
+    "model": "appeal_outcome_model_xgboost_smote.pkl",
+    "features": "feature_names.pkl",
+    "smote": "smote_object.pkl",
+    "metadata": "model_metadata.json"
+  },
+  "known_issues": [
+    "Partly_Allowed class still underperforms (F1=0.42)",
+    "Overall accuracy 58.96% - target is 70%+",
+    "High CV-Test gap indicates some overfitting"
+  ],
+  "next_improvements": [
+    "Ensemble methods (Voting/Stacking)",
+    "Advanced feature engineering",
+    "Hyperparameter tuning with SMOTE",
+    "Deep learning models",
+    "Target: 65-70% accuracy"
+  ]
+}

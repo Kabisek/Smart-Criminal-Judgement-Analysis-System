@@ -1,0 +1,31 @@
+{
+    "cleaning_date": "2026-01-06 11:48:51",
+    "original_records": 1607,
+    "cleaned_records": 1252,
+    "removed_records": 355,
+    "target_variable_1": "outcome_clean",
+    "target_variable_2": "conviction_clean",
+    "target_variable_combined": "combined_outcome",
+    "outcome_distribution": {
+        "Appeal_Dismissed": 588,
+        "Appeal_Allowed": 505,
+        "Partly_Allowed": 159
+    },
+    "conviction_distribution": {
+        "Convicted": 649,
+        "Acquitted": 395,
+        "Modified": 148,
+        "Remanded": 60
+    },
+    "combined_distribution": {
+        "Dismissed_Convicted": 549,
+        "Allowed_Acquitted": 376,
+        "Partly_Convicted_Reduced": 85,
+        "Partly_Modified": 72,
+        "Allowed_Modified": 71,
+        "Allowed_Remanded": 43,
+        "Other": 23,
+        "Dismissed_Acquitted": 18,
+        "Allowed_Convicted_Reduced": 15
+    }
+}
