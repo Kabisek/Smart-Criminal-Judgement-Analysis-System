@@ -5,9 +5,7 @@ import { Platform } from 'react-native';
  */
 
 const getApiBase = (): string => {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:8000`;
-  }
+  // Force localhost for all platforms to avoid connection issues
   return 'http://127.0.0.1:8000';
 };
 
