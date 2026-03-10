@@ -15,7 +15,7 @@ import { CaseAnalysisPanel } from '../components/CaseAnalysisPanel';
 import { useComp2 } from '../components/Comp2Context';
 import { colors, spacing } from '../theme';
 import React, { useState, useEffect, useMemo } from 'react';
-import { analyzeCaseOnly, SourceSpanData } from '../api';
+import { analyzeCaseOnly, analyzeCaseFromText, SourceSpanData } from '../api';
 
 export default function CaseAnalysisScreen() {
   const router = useRouter();
@@ -41,8 +41,11 @@ export default function CaseAnalysisScreen() {
       if (file) {
         const result = await analyzeCaseOnly(file.uri, file.name);
         setAnalysisResult(result);
+      } else if (textInput) {
+        const result = await analyzeCaseFromText(textInput);
+        setAnalysisResult(result);
       } else {
-        setError('Text-based case analysis requires a document file. Please upload a document on the previous page.');
+        setError('No document selected. Go back and upload a file or enter text first.');
       }
     } catch (err: any) {
       console.error('Case analysis failed:', err);

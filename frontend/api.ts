@@ -614,6 +614,34 @@ export async function generateArgumentsOnly(fileUri: string, fileName: string): 
   return normalizeUnifiedResponse(json);
 }
 
+/**
+ * Generate arguments from raw text (text-input flow).
+ */
+export async function generateArgumentsFromText(text: string): Promise<NormalizedAnalysisResponse> {
+  const res = await fetch(API_BASE + '/api/v1/arguments/text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(`Argument generation failed (${res.status})`);
+  const json = await res.json();
+  return normalizeUnifiedResponse(json);
+}
+
+/**
+ * Analyze case from raw text (text-input flow).
+ */
+export async function analyzeCaseFromText(text: string): Promise<NormalizedAnalysisResponse> {
+  const res = await fetch(API_BASE + '/api/v1/analyze/text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(`Analysis failed (${res.status})`);
+  const json = await res.json();
+  return normalizeUnifiedResponse(json);
+}
+
 // --- NORMALIZATION LAYER ---
 
 export interface SourceSpanData {

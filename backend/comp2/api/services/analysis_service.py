@@ -2,6 +2,7 @@
 Analysis Service
 Orchestrates the complete ML pipeline for case analysis
 """
+import os
 import sys
 import pickle
 import pandas as pd
@@ -82,17 +83,17 @@ class AnalysisService:
             }
             logger.info(f"✅ Loaded {len(self.case_dict)} case records")
             
-            # Initialize LLM client and enhanced agent
+            # Initialize LLM client and enhanced agent (provider: groq | openrouter | ollama)
             try:
-                self.llm_client = LLMClient(provider="groq")
-                # Use LLM for argument generation (model_only_mode=False enables LLM-based arguments)
+                provider = os.getenv("LLM_PROVIDER", "groq").lower()
+                self.llm_client = LLMClient(provider=provider)
                 self.enhanced_agent = EnhancedLegalAgent(
-                    self.llm_client, 
+                    self.llm_client,
                     use_model_arguments=True,
-                    model_only_mode=False  # Use LLM for argument generation
+                    model_only_mode=False,  # Use LLM for rich arguments + adversarial simulation
                 )
-                logger.info(f"✅ LLM client initialized: {self.llm_client.provider}")
-                logger.info("✅ LLM-based argument generation enabled (Groq + model patterns)")
+                logger.info(f"[OK] LLM client initialized: {self.llm_client.provider}")
+                logger.info("[OK] Model-only argument generation enabled")
             except Exception as e:
                 logger.warning(f"⚠️ LLM client initialization failed: {e}")
                 self.llm_client = None
@@ -356,13 +357,57 @@ class AnalysisService:
                 case_dict=self.case_dict
             )
             
+            # Stage 6: Generate minimal analyzed_case for history (subject/accused)
+            analyzed_case = None
+            try:
+                analyzed_case = self.enhanced_agent.generate_analyzed_case_file(cleaned_text)
+            except Exception as e:
+                logger.warning(f"Could not generate analyzed_case for history: {e}")
+            
             logger.info("Arguments generation completed successfully")
-            return arguments_report
+            return {"arguments_report": arguments_report, "analyzed_case": analyzed_case}
             
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Error during arguments generation - {error_msg}")
             raise
+
+    async def generate_arguments_from_text(self, case_text: str):
+        """
+        Generate arguments report from raw text (for text-input flow).
+        Skips file extraction; uses text directly.
+        """
+        if not case_text or len(case_text.strip()) < 50:
+            raise ValueError("Case text is too short or empty (minimum 50 characters)")
+        # Write to temp file and reuse existing pipeline
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(case_text)
+            temp_path = f.name
+        try:
+            return await self.generate_arguments(temp_path)
+        finally:
+            import os
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+
+    async def analyze_case_from_text(self, case_text: str):
+        """
+        Analyze case from raw text (for text-input flow).
+        Returns analyzed_case with document_text as single page.
+        """
+        if not case_text or len(case_text.strip()) < 50:
+            raise ValueError("Case text is too short or empty (minimum 50 characters)")
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(case_text)
+            temp_path = f.name
+        try:
+            return await self.analyze_case(temp_path)
+        finally:
+            import os
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
 
 # Global analysis service instance (lazy initialization)
 _analysis_service = None

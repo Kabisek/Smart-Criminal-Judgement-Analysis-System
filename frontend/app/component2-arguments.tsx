@@ -14,6 +14,7 @@ import { colors, spacing } from '../theme';
 import React, { useState, useEffect } from 'react';
 import {
   generateArgumentsOnly,
+  generateArgumentsFromText,
   saveComp2History,
   NormalizedAnalysisResponse,
 } from '../api';
@@ -254,8 +255,12 @@ export default function ArgumentsScreen() {
         const result = await generateArgumentsOnly(file.uri, file.name);
         setArgumentsResult(result);
         autoSave(result);
+      } else if (textInput) {
+        const result = await generateArgumentsFromText(textInput);
+        setArgumentsResult(result);
+        autoSave(result);
       } else {
-        setError('Text-based argument generation requires a document file. Please upload a document on the previous page.');
+        setError('No document selected. Go back and upload a file or enter text first.');
       }
     } catch (err: any) {
       console.error('Argument generation failed:', err);
@@ -270,12 +275,14 @@ export default function ArgumentsScreen() {
     try {
       const report = data.arguments_report;
       const cf = data.analyzed_case?.analyzed_case_file;
+      const subject = cf?.case_header?.subject || report.case_id || 'Case Analysis';
+      const accused = cf?.parties_and_roles?.accused || '—';
       await saveComp2History({
         case_id: `C2_${report.case_id || Date.now()}`,
-        case_name: cf?.case_header?.subject || report.case_id || 'Untitled Analysis',
+        case_name: subject,
         payload: report,
-        subject: cf?.case_header?.subject || 'N/A',
-        accused: cf?.parties_and_roles?.accused || 'N/A',
+        subject,
+        accused,
       });
     } catch (err) {
       console.error('Auto-save comp2 failed:', err);

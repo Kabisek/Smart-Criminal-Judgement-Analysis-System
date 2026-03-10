@@ -1,9 +1,10 @@
-﻿"""
+"""
 Arguments Route
 Handles argument points generation (Output File 2)
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Body
 from pathlib import Path
+from pydantic import BaseModel
 from comp2.api.services.file_service import save_uploaded_file
 from comp2.api.services.analysis_service import get_analysis_service
 from comp2.api.config import ALLOWED_FILE_TYPES, MAX_FILE_SIZE
@@ -76,8 +77,9 @@ async def generate_arguments(file: UploadFile = File(...)):
         # Step 5: Generate arguments report
         logger.info(f"Starting arguments generation for {file.filename}...")
         try:
-            arguments_report = await analysis_service.generate_arguments(file_path=file_path)
-            logger.info(f"Arguments generation completed for {file.filename}")
+            result = await analysis_service.generate_arguments(file_path=file_path)
+            arguments_report = result.get("arguments_report", result) if isinstance(result, dict) else result
+            analyzed_case = result.get("analyzed_case") if isinstance(result, dict) else None
         except Exception as e:
             logger.error(f"Error during arguments generation: {e}")
             raise HTTPException(
@@ -89,13 +91,16 @@ async def generate_arguments(file: UploadFile = File(...)):
         similar_cases_count = len(arguments_report.get("similar_cases", []))
         
         # Step 7: Return results
-        return {
+        out = {
             "filename": file.filename,
             "file_size": len(contents),
             "arguments_report": arguments_report,
             "similar_cases_count": similar_cases_count,
             "status": "completed"
         }
+        if analyzed_case:
+            out["analyzed_case"] = analyzed_case
+        return out
         
     except HTTPException:
         raise
@@ -105,3 +110,51 @@ async def generate_arguments(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Internal server error: {str(e)}"
         )
+
+
+class TextInputRequest(BaseModel):
+    text: str
+
+
+@router.post("/arguments/text", response_model=ArgumentsResponse)
+async def generate_arguments_from_text(body: TextInputRequest = Body(...)):
+    """
+    Generate arguments from raw text (for text-input flow).
+    Use when the user pastes/enters case text instead of uploading a file.
+    """
+    try:
+        case_text = (body.text or "").strip()
+        if len(case_text) < 50:
+            raise HTTPException(
+                status_code=400,
+                detail="Case text is too short (minimum 50 characters required)"
+            )
+        if len(case_text) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Case text exceeds maximum size ({MAX_FILE_SIZE} bytes)"
+            )
+
+        logger.info(f"Generating arguments from text ({len(case_text)} chars)")
+
+        analysis_service = get_analysis_service()
+        result = await analysis_service.generate_arguments_from_text(case_text)
+        arguments_report = result.get("arguments_report", result) if isinstance(result, dict) else result
+        analyzed_case = result.get("analyzed_case") if isinstance(result, dict) else None
+
+        similar_cases_count = len(arguments_report.get("similar_cases", []))
+        out = {
+            "filename": "case_text.txt",
+            "file_size": len(case_text),
+            "arguments_report": arguments_report,
+            "similar_cases_count": similar_cases_count,
+            "status": "completed"
+        }
+        if analyzed_case:
+            out["analyzed_case"] = analyzed_case
+        return out
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in generate_arguments_from_text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -18,7 +18,7 @@ import { fetchComp2List, fetchComp2Detail, HistorySummary } from '../api';
 
 export default function Component2Screen() {
   const router = useRouter();
-  const { file, setFile, setTextInput, clear } = useComp2();
+  const { file, setFile, setTextInput, setArgumentsResult, clear } = useComp2();
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [textMode, setTextMode] = useState(false);
@@ -94,6 +94,10 @@ export default function Component2Screen() {
     try {
       const detail = await fetchComp2Detail(caseId);
       if (detail?.payload) {
+        setArgumentsResult({
+          status: 'completed',
+          arguments_report: detail.payload,
+        });
         router.push('/component2-arguments');
       }
     } catch (err) {
