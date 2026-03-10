@@ -86,9 +86,9 @@ function buildGraph(
 
       // Landmark Sub-branches (Judges, Court, KEY POINTS -> Principles)
       if (cat === 'binding_precedents') {
-        const metadataR = 70;
-        const keyPointsHubR = 110;
-        const principlesR = 180;
+        const metadataR = 90;
+        const keyPointsHubR = 140;
+        const principlesR = 210;
 
         // Basic metadata
         const metadataEntries = [
@@ -104,7 +104,7 @@ function buildGraph(
           const sid = `${nid}-${sub.key}`;
           nodes.push({
             id: sid,
-            label: `${sub.label}: ${sub.val.toString().substring(0, 15)}`,
+            label: `${sub.label}: ${sub.val.toString().substring(0, 18)}`,
             type: 'attribute', category: cat,
             baseX: hx + stagger_R * Math.cos(rrad) + metadataR * Math.cos(srad),
             baseY: hy - stagger_R * Math.sin(rrad) - metadataR * Math.sin(srad),
@@ -137,7 +137,7 @@ function buildGraph(
           const poff = principles.length > 1 ? (hi / (principles.length - 1) - 0.5) * pspan : 0;
           const prad = rrad + (poff * Math.PI) / 180;
           const pid = `${kpid}-hn-${hi}`;
-          const label = hn.length > 40 ? hn.substring(0, 37) + '...' : hn;
+          const label = hn.length > 45 ? hn.substring(0, 42) + '...' : hn;
 
           nodes.push({
             id: pid,
@@ -193,8 +193,8 @@ function GraphNode({ node, px, py, isSelCat, isSelRes, isExpanded, onWebMouseDow
   const isHub = node.type === 'hub';
   const isRes = node.type === 'resource';
   const isAttr = node.type === 'attribute';
-  const nW = isRoot ? 118 : isHub ? 134 : isAttr ? 100 : 154;
-  const nH = isRoot ? 40 : isHub ? 36 : isAttr ? 22 : 28;
+  const nW = isRoot ? 118 : isHub ? 134 : isAttr ? 110 : 180;
+  const nH = isRoot ? 40 : isHub ? 36 : isAttr ? 24 : 32;
 
   return (
     <View
@@ -381,7 +381,19 @@ export default function Component1Screen() {
       const hubsWithData = Object.entries(HUB_ANGLES)
         .filter(([cat]) => (analysisResult.data!.structured_data as any)[cat]?.length > 0)
         .map(([cat]) => cat);
-      setExpandedHubs(hubsWithData);
+
+      // Also expand landmark case nodes and their KEY POINTS hubs
+      const subHubs: string[] = [];
+      graphNodes.forEach(n => {
+        // Expand landmark resources and keypoints hubs
+        if (n.category === 'binding_precedents') {
+          if (n.type === 'resource' || n.item?._isKeyPointsHub) {
+            subHubs.push(n.id);
+          }
+        }
+      });
+
+      setExpandedHubs([...hubsWithData, ...subHubs]);
     }
   }, [graphNodes, analysisResult]);
 

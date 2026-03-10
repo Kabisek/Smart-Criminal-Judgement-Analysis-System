@@ -25,6 +25,10 @@ export function CaseIngestion({
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
     const [loading, setLoading] = useState(false);
     const [statusMsg, setStatusMsg] = useState('');
+    const [preparedUri, setPreparedUri] = useState<string | null>(null);
+    const [preparedFile, setPreparedFile] = useState<any | null>(null);
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -32,7 +36,23 @@ export function CaseIngestion({
                 await Audio.requestPermissionsAsync();
             }
         })();
-    }, []);
+        return () => {
+            if (sound) {
+                sound.unloadAsync();
+            }
+        };
+    }, [sound]);
+
+    useEffect(() => {
+        // Clear prepared state when mode changes
+        setPreparedUri(null);
+        setPreparedFile(null);
+        if (sound) {
+            sound.unloadAsync();
+            setSound(null);
+        }
+        setIsPlaying(false);
+    }, [mode]);
 
     const startRecording = async () => {
         try {
@@ -54,13 +74,19 @@ export function CaseIngestion({
         await recording.stopAndUnloadAsync();
         const uri = recording.getURI();
         setRecording(null);
-        if (uri) handleVoiceUpload(uri);
+        if (uri) {
+            setPreparedUri(uri);
+            setStatusMsg('');
+        }
     };
 
     const handlePickAudio = async () => {
         try {
             const result = await DocumentPicker.getDocumentAsync({ type: 'audio/*', copyToCacheDirectory: true });
-            if (!result.canceled && result.assets?.[0]) handleVoiceUpload(result.assets[0].uri);
+            if (!result.canceled && result.assets?.[0]) {
+                setPreparedUri(result.assets[0].uri);
+                setPreparedFile(result.assets[0]);
+            }
         } catch (err) {
             Alert.alert('Error', 'Could not pick audio file.');
         }
@@ -73,30 +99,67 @@ export function CaseIngestion({
                 copyToCacheDirectory: true
             });
             if (!result.canceled && result.assets?.[0]) {
-                const asset = result.assets[0];
-                setLoading(true);
-                setStatusMsg('Analyzing document...');
-                try {
-                    // Try to send it to the analyze endpoint if it exists
-                    const res = await analyzeDocument(asset.uri, asset.name);
-                    onAnalysisComplete(res);
-                } catch (err) {
-                    console.warn('Dedicated /analyze endpoint failed or not found, falling back to /extract with text simulation');
-                    // Fallback for simple backends: treat as text entry if it's a txt file
-                    if (asset.name.endsWith('.txt')) {
-                        // Note: For real PDF extraction on frontend, a lib like react-native-pdf-lite or similar would be needed.
-                        // Assuming the user's research backend handles the file upload.
-                        Alert.alert('Processing', 'Document sent for extraction.');
-                    } else {
-                        Alert.alert('Error', 'This backend version requires specialized endpoints for PDF/JSON. Please use Text Entry for now.');
-                    }
-                } finally {
-                    setLoading(false);
-                    setStatusMsg('');
-                }
+                setPreparedFile(result.assets[0]);
+                setPreparedUri(null);
             }
         } catch (err) {
             Alert.alert('Error', 'Could not pick document.');
+        }
+    };
+
+    const handleConfirmProcess = async () => {
+        if (mode === 'voice' && preparedUri) {
+            handleVoiceUpload(preparedUri);
+        } else if (mode === 'document' && preparedFile) {
+            const asset = preparedFile;
+            setLoading(true);
+            setStatusMsg('Analyzing document...');
+            try {
+                const res = await analyzeDocument(asset.uri, asset.name);
+                onAnalysisComplete(res);
+                setPreparedFile(null);
+            } catch (err) {
+                console.warn('Dedicated /analyze endpoint failed or not found, falling back to /extract with text simulation');
+                if (asset.name.endsWith('.txt')) {
+                    Alert.alert('Processing', 'Document sent for extraction.');
+                } else {
+                    Alert.alert('Error', 'This backend version requires specialized endpoints for PDF/JSON. Please use Text Entry for now.');
+                }
+            } finally {
+                setLoading(false);
+                setStatusMsg('');
+            }
+        }
+    };
+
+    const togglePlayback = async () => {
+        if (!preparedUri) return;
+        try {
+            if (sound) {
+                if (isPlaying) {
+                    await sound.pauseAsync();
+                    setIsPlaying(false);
+                } else {
+                    await sound.playAsync();
+                    setIsPlaying(true);
+                }
+            } else {
+                const { sound: newSound } = await Audio.Sound.createAsync(
+                    { uri: preparedUri },
+                    { shouldPlay: true }
+                );
+                setSound(newSound);
+                setIsPlaying(true);
+                newSound.setOnPlaybackStatusUpdate((status) => {
+                    if (status.isLoaded && status.didJustFinish) {
+                        setIsPlaying(false);
+                        newSound.setPositionAsync(0);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Playback failed', err);
+            Alert.alert('Error', 'Could not play audio.');
         }
     };
 
@@ -112,6 +175,8 @@ export function CaseIngestion({
                 detected_lang: detected_lang || 'en'
             });
             onAnalysisComplete(analysis);
+            setPreparedUri(null);
+            setPreparedFile(null);
         } catch (err) {
             Alert.alert('Error', 'Voice processing failed.');
         } finally {
@@ -158,7 +223,7 @@ export function CaseIngestion({
                         <Text style={styles.recordIcon}>{isRecording ? '⏹' : '🎤'}</Text>
                         <Text style={styles.recordText}>{isRecording ? 'Stop Recording' : 'Start Recording'}</Text>
                     </Pressable>
-                    {!isRecording && !loading && (
+                    {!isRecording && !loading && !preparedUri && (
                         <View style={styles.secondaryActions}>
                             <View style={styles.dividerRow}><View style={styles.divider} /><Text style={styles.dividerText}>OR</Text><View style={styles.divider} /></View>
                             <Pressable onPress={handlePickAudio} style={styles.uploadBtn}>
@@ -166,15 +231,46 @@ export function CaseIngestion({
                             </Pressable>
                         </View>
                     )}
+                    {preparedUri && !isRecording && (
+                        <View style={styles.previewContainer}>
+                            <View style={styles.audioPreview}>
+                                <Pressable onPress={togglePlayback} style={styles.playBtn}>
+                                    <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶️'}</Text>
+                                    <Text style={styles.playText}>{isPlaying ? 'Pause Preview' : 'Play Preview'}</Text>
+                                </Pressable>
+                                <Pressable onPress={() => { setPreparedUri(null); setPreparedFile(null); if (sound) sound.unloadAsync(); setSound(null); }} style={styles.clearBtn}>
+                                    <Text style={styles.clearIcon}>✕</Text>
+                                </Pressable>
+                            </View>
+                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn}>
+                                Confirm & Start Processing
+                            </Button>
+                        </View>
+                    )}
                 </View>
             )}
 
             {mode === 'document' && (
                 <View style={styles.contentWrap}>
-                    <Pressable onPress={handlePickDocument} style={styles.docBtn}>
-                        <Text style={styles.recordIcon}>📄</Text>
-                        <Text style={styles.recordText}>Upload PDF / JSON / Text</Text>
-                    </Pressable>
+                    {!preparedFile ? (
+                        <Pressable onPress={handlePickDocument} style={styles.docBtn}>
+                            <Text style={styles.recordIcon}>📄</Text>
+                            <Text style={styles.recordText}>Upload PDF / JSON / Text</Text>
+                        </Pressable>
+                    ) : (
+                        <View style={styles.previewContainer}>
+                            <View style={styles.fileInfo}>
+                                <Text style={styles.recordIcon}>📄</Text>
+                                <Text style={styles.fileName}>{preparedFile.name}</Text>
+                                <Pressable onPress={() => setPreparedFile(null)} style={styles.clearBtn}>
+                                    <Text style={styles.clearIcon}>✕</Text>
+                                </Pressable>
+                            </View>
+                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn}>
+                                Confirm & Start Processing
+                            </Button>
+                        </View>
+                    )}
                 </View>
             )}
 
@@ -220,4 +316,14 @@ const styles = StyleSheet.create({
     textArea: { backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, padding: spacing.md, minHeight: 150, fontSize: 16, color: colors.textPrimary, textAlignVertical: 'top' },
     loadingOverlay: { marginTop: spacing.md, alignItems: 'center', gap: 8 },
     loadingText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+    previewContainer: { width: '100%', alignItems: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
+    audioPreview: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.accent + '30', width: '100%', justifyContent: 'space-between' },
+    playBtn: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    playIcon: { fontSize: 24, color: colors.accent },
+    playText: { fontSize: 14, fontWeight: '700', color: colors.primary },
+    clearBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+    clearIcon: { fontSize: 14, color: '#64748B', fontWeight: 'bold' },
+    confirmBtn: { width: '100%', backgroundColor: colors.accent, height: 48 },
+    fileInfo: { alignItems: 'center', gap: 8, marginBottom: 8 },
+    fileName: { fontSize: 14, fontWeight: '600', color: colors.primary, textAlign: 'center' },
 });
