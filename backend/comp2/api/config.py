@@ -1,5 +1,6 @@
 """
 Configuration for the FastAPI backend
+ChromaDB-only retrieval (no feature_vectors.pkl, no cleaned_cases.csv at runtime)
 """
 import os
 from pathlib import Path
@@ -8,7 +9,6 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.parent.parent  # comp2/api/config.py → comp2/api/ → comp2/ → backend/
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = DATA_DIR / "models"
-FEATURES_DIR = DATA_DIR / "features"
 PROCESSED_DIR = DATA_DIR / "processed"
 UPLOADS_DIR = BASE_DIR / "uploads"
 RESULTS_DIR = BASE_DIR / "results"
@@ -29,10 +29,12 @@ CORS_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-# Model paths
-FEATURE_VECTORS_PATH = FEATURES_DIR / "feature_vectors.pkl"
+# ChromaDB Vector Store - Component 2 (populated from backend2 Notebook 03)
+CHROMA_PERSIST_DIR = DATA_DIR / "chroma_db_comp2"
+CHROMA_COLLECTION_NAME = "legal_cases"
+
+# Model paths (KNN and K-Means from backend2 Notebooks 04, 06)
 NEAREST_NEIGHBORS_MODEL_PATH = MODELS_DIR / "final_nearest_neighbors_model.pkl"
-CLEANED_CASES_CSV_PATH = PROCESSED_DIR / "cleaned_cases.csv"
 
 # Embedding Model Configuration
 # Option 1: Use pre-trained Legal-BERT (recommended for legal domain)

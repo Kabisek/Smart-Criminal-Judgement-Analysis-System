@@ -1,4 +1,4 @@
-﻿"""
+"""
 Enhanced Legal Agent for AI Strategy Generation
 Generates comprehensive case analysis and argument reports
 """
@@ -384,7 +384,7 @@ class EnhancedLegalAgent:
             )
         }
     
-    def generate_arguments_report(self, case_text: str, similar_cases: List[Dict], case_ids: List[str], distances: List[float] = None, case_dict: Dict = None) -> Dict:
+    def generate_arguments_report(self, case_text: str, similar_cases: List[Dict], case_ids: List[str], distances: List[float] = None, case_dict: Dict = None, cluster_id: int = None) -> Dict:
         """
         Generate Output File 2: Arguments report with adversarial simulation
         
@@ -392,6 +392,7 @@ class EnhancedLegalAgent:
             case_text: Text content of the case
             similar_cases: List of similar case dictionaries
             case_ids: List of case IDs corresponding to similar cases
+            cluster_id: K-Means predicted cluster (0 to n_clusters-1), or None for fallback
             
         Returns:
             Dict: Structured arguments report
@@ -499,7 +500,7 @@ class EnhancedLegalAgent:
         report = {
             "case_id": f"case_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "file_type": "unknown",
-            "cluster_id": 1,
+            "cluster_id": cluster_id if cluster_id is not None else 0,
             "similar_cases": similar_cases_list,
             "arguments": arguments,
             "adversarial_results": adversarial_results if adversarial_results else {}
