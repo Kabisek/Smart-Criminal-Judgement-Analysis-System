@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Modal, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader } from '../components/ui';
@@ -31,7 +31,7 @@ const HUB_ANGLES: Record<string, number> = {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface GNode {
   id: string; label: string;
-  type: 'root' | 'hub' | 'resource';
+  type: 'root' | 'hub' | 'resource' | 'attribute';
   category?: string;
   baseX: number; baseY: number;       // initial position
   color: string; item?: any;
@@ -83,6 +83,74 @@ function buildGraph(
         color, item,
       });
       edges.push({ src: cat, tgt: nid, hubEdge: false, color });
+
+      // Landmark Sub-branches (Judges, Court, KEY POINTS -> Principles)
+      if (cat === 'binding_precedents') {
+        const metadataR = 70;
+        const keyPointsHubR = 110;
+        const principlesR = 180;
+
+        // Basic metadata
+        const metadataEntries = [
+          { key: 'judges', label: 'Judges', val: item.judges || item.judge },
+          { key: 'place', label: 'Court', val: item.place },
+        ].filter(s => s.val && s.val !== 'Not Documented' && s.val !== 'N/A');
+
+        // 1. Add Metadata Nodes
+        metadataEntries.forEach((sub, si) => {
+          const sspan = 40;
+          const soff = metadataEntries.length > 1 ? (si / (metadataEntries.length - 1) - 0.5) * sspan : 0;
+          const srad = rrad + (soff * Math.PI) / 180;
+          const sid = `${nid}-${sub.key}`;
+          nodes.push({
+            id: sid,
+            label: `${sub.label}: ${sub.val.toString().substring(0, 15)}`,
+            type: 'attribute', category: cat,
+            baseX: hx + stagger_R * Math.cos(rrad) + metadataR * Math.cos(srad),
+            baseY: hy - stagger_R * Math.sin(rrad) - metadataR * Math.sin(srad),
+            color: '#64748B',
+            item: { ...item, _attr: sub, _parentId: nid },
+          });
+          edges.push({ src: nid, tgt: sid, hubEdge: false, color: '#CBD5E1' });
+        });
+
+        // 2. Add "KEY POINTS" Hub Node
+        const kpid = `${nid}-keypoints-hub`;
+        nodes.push({
+          id: kpid,
+          label: 'KEY POINTS',
+          type: 'attribute', category: cat,
+          baseX: hx + stagger_R * Math.cos(rrad) + keyPointsHubR * Math.cos(rrad),
+          baseY: hy - stagger_R * Math.sin(rrad) - keyPointsHubR * Math.sin(rrad),
+          color: '#D97706',
+          item: { ...item, _parentId: nid, _isKeyPointsHub: true },
+        });
+        edges.push({ src: nid, tgt: kpid, hubEdge: false, color: '#FCD34D' });
+
+        // 3. Add Principles under "KEY POINTS"
+        const hns = Array.isArray(item.headnotes) ? item.headnotes :
+          (typeof item.hn_str === 'string' ? item.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
+
+        const principles = hns.slice(0, 3);
+        principles.forEach((hn: string, hi: number) => {
+          const pspan = 60;
+          const poff = principles.length > 1 ? (hi / (principles.length - 1) - 0.5) * pspan : 0;
+          const prad = rrad + (poff * Math.PI) / 180;
+          const pid = `${kpid}-hn-${hi}`;
+          const label = hn.length > 40 ? hn.substring(0, 37) + '...' : hn;
+
+          nodes.push({
+            id: pid,
+            label,
+            type: 'attribute', category: cat,
+            baseX: hx + stagger_R * Math.cos(rrad) + principlesR * Math.cos(prad),
+            baseY: hy - stagger_R * Math.sin(rrad) - principlesR * Math.sin(prad),
+            color: '#D97706',
+            item: { ...item, _parentId: kpid },
+          });
+          edges.push({ src: kpid, tgt: pid, hubEdge: false, color: '#FEF3C7' });
+        });
+      }
     }
   });
   return { nodes, edges };
@@ -124,8 +192,9 @@ function GraphNode({ node, px, py, isSelCat, isSelRes, isExpanded, onWebMouseDow
   const isRoot = node.type === 'root';
   const isHub = node.type === 'hub';
   const isRes = node.type === 'resource';
-  const nW = isRoot ? 118 : isHub ? 134 : 154;
-  const nH = isRoot ? 40 : isHub ? 36 : 28;
+  const isAttr = node.type === 'attribute';
+  const nW = isRoot ? 118 : isHub ? 134 : isAttr ? 100 : 154;
+  const nH = isRoot ? 40 : isHub ? 36 : isAttr ? 22 : 28;
 
   return (
     <View
@@ -162,15 +231,21 @@ function GraphNode({ node, px, py, isSelCat, isSelRes, isExpanded, onWebMouseDow
           borderWidth: isSelRes ? 2 : 1.5,
           borderColor: isSelRes ? node.color : node.color + '80',
         },
+        isAttr && {
+          backgroundColor: '#F8FAFC',
+          borderWidth: 1,
+          borderColor: '#CBD5E1',
+          borderStyle: 'dashed' as any,
+        },
         Platform.OS === 'web' && !isRoot && { cursor: 'grab' } as any,
       ]}
     >
       <Text
         numberOfLines={1}
         style={{
-          color: isRoot || isHub ? '#FFF' : node.color,
-          fontSize: isRoot ? 13 : isHub ? 11 : 10,
-          fontWeight: isRoot ? '900' : isHub ? '800' : '600',
+          color: (isRoot || isHub) ? '#FFF' : isAttr ? '#64748B' : node.color,
+          fontSize: isRoot ? 13 : isHub ? 11 : isAttr ? 8.5 : 10,
+          fontWeight: isRoot ? '900' : isHub ? '800' : isAttr ? '500' : '600',
           textAlign: 'center',
         }}
       >
@@ -189,6 +264,7 @@ export default function Component1Screen() {
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [history, setHistory] = useState<HistorySummary[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showHierarchyMap, setShowHierarchyMap] = useState(false);
 
   // ── Graph state ────────────────────────────────────────────────────────────
   const [expandedHubs, setExpandedHubs] = useState<string[]>([]);
@@ -229,11 +305,11 @@ export default function Component1Screen() {
 
   // ── Category helpers ──────────────────────────────────────────────────────
   const getCategoryColor = (cat: string) => {
-    if (cat.includes('prosecution')) return '#DC2626';
-    if (cat.includes('defense')) return '#059669';
-    if (cat.includes('procedure')) return '#2563EB';
-    if (cat.includes('precedent') || cat.includes('landmark')) return '#D97706';
-    if (cat.includes('recent')) return '#7C3AED';
+    if (cat.includes('prosecution')) return '#EF4444'; // Bright Red
+    if (cat.includes('defense')) return '#10B981';    // Bright Emerald
+    if (cat.includes('procedure')) return '#3B82F6';  // Bright Blue
+    if (cat.includes('precedent') || cat.includes('landmark')) return '#F59E0B'; // Bright Amber
+    if (cat.includes('recent')) return '#8B5CF6';     // Bright Violet
     return '#6366F1';
   };
   const getCategoryIcon = (cat: string) => ({
@@ -246,20 +322,21 @@ export default function Component1Screen() {
     if (cat === 'binding_precedents') return 'Landmark Cases';
     return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
-  const getBadge = (type: string) => {
+  const getBadge = (type: string, isRecommended?: boolean) => {
+    if (isRecommended) return { label: '🌟 TOP RECOMMENDATION', color: '#D97706', bg: '#FFFBEB' };
     const m: any = {
       penal_code: { label: 'Penal Code', color: '#DC2626', bg: '#FEF2F2' },
       criminal_procedure: { label: 'Procedure', color: '#2563EB', bg: '#EFF6FF' },
-      landmark_precedent: { label: 'Landmark', color: '#D97706', bg: '#FFFBEB' },
       recent_judgement: { label: 'Judgment', color: '#7C3AED', bg: '#F5F3FF' },
       landmark_case: { label: 'Landmark', color: '#D97706', bg: '#FFFBEB' },
     };
     return type ? (m[type] || { label: type.replace(/_/g, ' '), color: '#6366F1', bg: '#EEF2FF' }) : null;
   };
 
+
   const categories = useMemo(() =>
     analysisResult?.data?.structured_data
-      ? ['prosecution_resources', 'defense_resources', 'procedural_resources', 'binding_precedents', 'recent_judgments', 'statutory_provisions']
+      ? ['prosecution_resources', 'defense_resources', 'procedural_resources', 'binding_precedents', 'statutory_provisions']
         .filter(k => (analysisResult.data!.structured_data as any)[k]?.length)
       : [], [analysisResult]);
 
@@ -293,13 +370,20 @@ export default function Component1Screen() {
   // Keep ref current so global handlers can access latest node list
   nodesRef.current = graphNodes;
 
-  // Initialise positions whenever graph data changes
+  // Initialise positions and auto-expand whenever graph data changes
   useEffect(() => {
     const pos: Record<string, { x: number; y: number }> = {};
     graphNodes.forEach(n => { pos[n.id] = { x: n.baseX, y: n.baseY }; });
     setNodePositions(pos);
-    setExpandedHubs([]);
-  }, [graphNodes]);
+
+    // Auto-expand all hubs that contain resources
+    if (analysisResult?.data?.structured_data) {
+      const hubsWithData = Object.entries(HUB_ANGLES)
+        .filter(([cat]) => (analysisResult.data!.structured_data as any)[cat]?.length > 0)
+        .map(([cat]) => cat);
+      setExpandedHubs(hubsWithData);
+    }
+  }, [graphNodes, analysisResult]);
 
   // ── Node tap handler (stable via ref) ─────────────────────────────────────
   const handleNodeTap = useCallback((node: GNode) => {
@@ -311,11 +395,17 @@ export default function Component1Screen() {
           : [...prev, node.id]
       );
       setSelectedCategory(node.category!);
+      setSelectedResourceId(null); // Clear selected resource when tapping a hub
       return;
     }
     if (node.type === 'resource') {
       setSelectedCategory(node.category!);
       setSelectedResourceId(node.id);
+      setTimeout(() => scrollToId('comp1-detail-panel'), 150);
+    }
+    if (node.type === 'attribute') {
+      setSelectedCategory(node.category!);
+      setSelectedResourceId(node.item?._parentId); // Select the parent resource
       setTimeout(() => scrollToId('comp1-detail-panel'), 150);
     }
   }, [scrollToId]);
@@ -370,14 +460,34 @@ export default function Component1Screen() {
 
   // ── Filter visible nodes for expand/collapse ──────────────────────────────
   const visibleNodes = useMemo(() =>
-    graphNodes.filter(n => n.type !== 'resource' || expandedHubs.includes(n.category!)),
-    [graphNodes, expandedHubs]);
+    graphNodes.filter(n => {
+      if (n.type === 'resource') return expandedHubs.includes(n.category!);
+      if (n.type === 'attribute') return n.item?._parentId === selectedResourceId;
+      return true;
+    }),
+    [graphNodes, expandedHubs, selectedResourceId]);
 
   const visibleEdges = useMemo(() =>
     graphEdges.filter(e => {
-      const tgt = graphNodes.find(n => n.id === e.tgt);
-      return !tgt || tgt.type !== 'resource' || expandedHubs.includes(tgt.category!);
-    }), [graphEdges, graphNodes, expandedHubs]);
+      const srcNode = graphNodes.find(n => n.id === e.src);
+      const tgtNode = graphNodes.find(n => n.id === e.tgt);
+      if (!srcNode || !tgtNode) return false;
+
+      // If target is resource, source must be hub and hub must be expanded
+      if (tgtNode.type === 'resource') {
+        return srcNode.type === 'hub' && expandedHubs.includes(srcNode.id);
+      }
+
+      // If target is attribute, its parent resource must be selected
+      if (tgtNode.type === 'attribute') {
+        return tgtNode.item?._parentId === selectedResourceId;
+      }
+
+      // Hub edges (root to hub) are always visible
+      if (tgtNode.type === 'hub') return true;
+
+      return true;
+    }), [graphEdges, graphNodes, expandedHubs, selectedResourceId]);
 
   // ── Analysis complete ─────────────────────────────────────────────────────
   const onAnalysisComplete = async (data: NormalizedAnalysisResponse) => {
@@ -407,7 +517,7 @@ export default function Component1Screen() {
   return (
     <Layout>
       <Container>
-        <PageHeader title="Legal Resource Extractor" breadcrumb="Analytical Tools → Resource Extraction" />
+        <PageHeader title="Resource Retrieval & Analysis" breadcrumb="Analytical Tools → Knowledge Graph" />
 
         <View style={styles.row}>
           <View style={styles.mainCol}>
@@ -506,7 +616,6 @@ export default function Component1Screen() {
 
                   <ScrollView horizontal showsHorizontalScrollIndicator style={{ marginHorizontal: -4 }}>
                     <View style={styles.canvas}>
-
                       {/* ── Edges ── */}
                       {visibleEdges.map((edge, i) => {
                         const sp = nodePositions[edge.src] || graphNodes.find(n => n.id === edge.src) || { x: 0, y: 0 };
@@ -549,6 +658,16 @@ export default function Component1Screen() {
                       </View>
                     </View>
                   </ScrollView>
+
+                  <View style={{ borderTopWidth: 1, borderTopColor: '#F1F5F9', marginTop: 12, paddingTop: 12, alignItems: 'center' }}>
+                    <View onStartShouldSetResponder={() => true} onResponderRelease={() => setShowHierarchyMap(true)}
+                      {...(Platform.OS === 'web' ? { onClick: () => setShowHierarchyMap(true) } : {})}
+                      style={{ backgroundColor: '#1E3A5F', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 30, flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 4 }}>
+                      <Text style={{ fontSize: 18 }}>🗺️</Text>
+                      <Text style={{ color: '#FFF', fontWeight: '900', fontSize: 13, letterSpacing: 0.5 }}>VIEW FULL ANALYTICAL ROADMAP</Text>
+                    </View>
+                    <Text style={{ fontSize: 10, color: '#94A3B8', marginTop: 8 }}>Explore granular sub-branches, judicial outputs, and binding precedents in detail</Text>
+                  </View>
 
                   {/* ── Detail Panel ── */}
                   {selectedCategory && (
@@ -594,20 +713,107 @@ export default function Component1Screen() {
                           (analysisResult!.data!.structured_data as any)[selectedCategory].map((item: any, idx: number) => {
                             const iid = item.id || `${selectedCategory}-${idx}`;
                             const sel = selectedResourceId === iid;
-                            const bdg = getBadge(item.type);
+                            const bdg = getBadge(item.type, item.recommended);
                             return (
                               <View key={iid}
                                 onStartShouldSetResponder={() => true}
                                 onResponderRelease={() => setSelectedResourceId(sel ? null : iid)}
                                 {...(Platform.OS === 'web' ? { onClick: () => setSelectedResourceId(sel ? null : iid) } : {})}
-                                style={[styles.resItem, sel && styles.resItemSel]}>
+                                style={[styles.resItem, sel && styles.resItemSel, item.recommended && { borderColor: '#D97706', borderWidth: 1, backgroundColor: '#FFFDF5' }]}>
                                 <View style={[styles.resBullet, { backgroundColor: getCategoryColor(selectedCategory) }]} />
                                 <View style={{ flex: 1, gap: 4 }}>
                                   <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                                     <Text style={[styles.resTitle, { flex: 1 }]}>{item.title || item.name || 'Legal Resource'}</Text>
-                                    {bdg && <View style={[styles.bdg, { backgroundColor: bdg.bg, borderColor: bdg.color + '40' }]}><Text style={[styles.bdgTxt, { color: bdg.color }]}>{bdg.label}</Text></View>}
+                                    {bdg && <View style={[styles.bdg, { backgroundColor: bdg.bg, borderColor: bdg.color + '40' }]}><Text style={[styles.bdgTxt, { color: bdg.color, fontWeight: item.recommended ? 'bold' : 'normal' }]}>{bdg.label}</Text></View>}
                                   </View>
-                                  <Text style={styles.resText} numberOfLines={sel ? undefined : 3}>{item.excerpt || item.summary || ''}</Text>
+                                  <Text style={styles.resText} numberOfLines={sel ? undefined : 3}>
+                                    {typeof item.excerpt === 'string' && item.excerpt.startsWith('[{"point_number"')
+                                      ? "Summary of findings and headnotes..."
+                                      : (item.excerpt || item.summary || '')}
+                                  </Text>
+
+                                  {/* Landmark Specific Components */}
+                                  {sel && selectedCategory === 'binding_precedents' && (
+                                    <View style={styles.landmarkContainer}>
+                                      <View style={styles.landmarkHeader}>
+                                        <Text style={styles.landmarkHeaderTxt}>Judicial Summary</Text>
+                                      </View>
+
+                                      <View style={styles.landmarkMetaGrid}>
+                                        {(item.judges || item.judge) && (
+                                          <View style={styles.metaBox}>
+                                            <Text style={styles.metaBoxLbl}>Judges</Text>
+                                            <Text style={styles.metaBoxVal}>{item.judges || item.judge}</Text>
+                                          </View>
+                                        )}
+                                        {item.place && (
+                                          <View style={styles.metaBox}>
+                                            <Text style={styles.metaBoxLbl}>Court</Text>
+                                            <Text style={styles.metaBoxVal}>{item.place}</Text>
+                                          </View>
+                                        )}
+                                      </View>
+
+
+                                      {(() => {
+                                        const hns = Array.isArray(item.headnotes) ? item.headnotes :
+                                          (typeof item.hn_str === 'string' ? item.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
+                                        return hns.length > 0 && (
+                                          <View style={styles.headnoteSection}>
+                                            <Text style={styles.headnoteTitle}>Key Legal Principles</Text>
+                                            {hns.map((hn: string, hi: number) => (
+                                              <View key={hi} style={styles.hnItem}>
+                                                <View style={styles.hnBullet} />
+                                                <Text style={styles.hnTxt}>{hn}</Text>
+                                              </View>
+                                            ))}
+                                          </View>
+                                        );
+                                      })()}
+
+                                      {/* Cases Referred */}
+                                      <View style={styles.headnoteSection}>
+                                        <Text style={styles.headnoteTitle}>Cases Referred</Text>
+                                        {item.refs_str && item.refs_str !== 'N/A' && item.refs_str !== '' ? (
+                                          item.refs_str.split('|').map((ref: string, ri: number) => (
+                                            <View key={ri} style={styles.hnItem}>
+                                              <View style={[styles.hnBullet, { backgroundColor: '#475569' }]} />
+                                              <Text style={[styles.hnTxt, { color: '#475569', fontStyle: 'italic' }]}>{ref.trim()}</Text>
+                                            </View>
+                                          ))
+                                        ) : (
+                                          <Text style={styles.muted}>No external citations documented for this case.</Text>
+                                        )}
+                                      </View>
+
+                                      {/* Full Judgment Text */}
+                                      <View style={{ padding: 12, borderTopWidth: 1, borderTopColor: '#FEF3C7' }}>
+                                        <Text style={styles.headnoteTitle}>Full Judgment Record</Text>
+                                        {item.judg_json && item.judg_json !== '[]' && item.judg_json !== '' ? (
+                                          (() => {
+                                            try {
+                                              const sections = JSON.parse(item.judg_json);
+                                              return sections.map((section: any, si: number) => (
+                                                <View key={si} style={{ marginBottom: 12 }}>
+                                                  <Text style={{ fontSize: 13, fontWeight: '800', color: '#92400E', marginBottom: 4 }}>
+                                                    {section.section_title}
+                                                  </Text>
+                                                  <Text style={{ fontSize: 12, color: '#451A03', lineHeight: 18 }}>
+                                                    {section.content}
+                                                  </Text>
+                                                </View>
+                                              ));
+                                            } catch (e) {
+                                              return <Text style={{ fontSize: 12, color: '#92400E' }}>Detailed judgment text available via source PDF.</Text>;
+                                            }
+                                          })()
+                                        ) : (
+                                          <Text style={styles.muted}>Judgment text is summarized in the Key Legal Principles above.</Text>
+                                        )}
+                                      </View>
+
+                                    </View>
+                                  )}
                                   <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
                                     {item.section && <Text style={styles.resMeta}>§ {item.section}</Text>}
                                     {item.similarity != null && (
@@ -685,10 +891,173 @@ export default function Component1Screen() {
             <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 15 }}>← Back to Analytical Dashboard</Text>
           </View>
         </View>
+
+        {/* Global Hierarchy Map Modal */}
+        <Modal visible={showHierarchyMap} animationType="slide" transparent={false}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#0F172A' }}>
+            <View style={{ padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#1E293B' }}>
+              <View>
+                <Text style={{ color: '#F1F5F9', fontSize: 20, fontWeight: '800' }}>Legal Knowledge Map</Text>
+                <Text style={{ color: '#94A3B8', fontSize: 13 }}>Hierarchical Case Flow Analysis</Text>
+              </View>
+              <View onStartShouldSetResponder={() => true} onResponderRelease={() => setShowHierarchyMap(false)}
+                {...(Platform.OS === 'web' ? { onClick: () => setShowHierarchyMap(false) } : {})}
+                style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#1E293B', borderRadius: 12 }}>
+                <Text style={{ color: '#F8FAFC', fontWeight: '800', fontSize: 13 }}>✕ Close Map</Text>
+              </View>
+            </View>
+
+            <ScrollView contentContainerStyle={{ paddingVertical: 60, paddingHorizontal: 20, alignItems: 'center' }}>
+
+              {/* ROOT: Case Objective / Penal Code */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={[mapStyles.rootNode, { backgroundColor: '#1E3A5F' }]}>
+                  <Text style={mapStyles.nodeTitle}>Primary Case Framework</Text>
+                  <Text style={mapStyles.nodeSubTitle}>Penal Code & Case Facts</Text>
+                </View>
+                <View style={mapStyles.connectorV} />
+              </View>
+
+              {/* LEVEL 1: Strategic Axes (Siblings in a Row) */}
+              <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start', justifyContent: 'center' }}>
+                {['Prosecution', 'Defense', 'Procedure', 'Landmarks'].map((axis) => {
+                  const catMap: any = {
+                    Prosecution: 'prosecution_resources',
+                    Defense: 'defense_resources',
+                    Procedure: 'procedural_resources',
+                    Landmarks: 'binding_precedents'
+                  };
+                  const axisColor: any = {
+                    Prosecution: '#EF4444',
+                    Defense: '#10B981',
+                    Procedure: '#3B82F6',
+                    Landmarks: '#F59E0B'
+                  };
+                  const resources = (analysisResult?.data?.structured_data as any)?.[catMap[axis]] || [];
+
+                  return (
+                    <View key={axis} style={{ alignItems: 'center', width: 240 }}>
+                      <View style={[mapStyles.hubNode, { borderColor: axisColor[axis] }]}>
+                        <Text style={[mapStyles.nodeTitle, { color: axisColor[axis] }]}>{axis}</Text>
+                      </View>
+
+                      {resources.length > 0 && (
+                        <>
+                          <View style={mapStyles.connectorV} />
+                          <View style={{ gap: 24, width: '100%' }}>
+                            {resources.map((res: any, ri: number) => (
+                              <View key={ri} style={{ alignItems: 'center' }}>
+                                {/* RESOURCE / SECTION NODE */}
+                                <View style={[mapStyles.leafNode, { borderColor: axisColor[axis] + '40', borderTopColor: axisColor[axis], borderLeftWidth: 0, borderTopWidth: 4 }]}>
+                                  <Text style={mapStyles.leafTitle}>{res.title}</Text>
+                                  <Text style={mapStyles.leafText}>{res.section}</Text>
+                                </View>
+
+                                {/* TRAIT BRANCHES (Vertical under resource) */}
+                                {(axis === 'Landmarks' || axis === 'Prosecution' || axis === 'Defense' || axis === 'Procedure') && (
+                                  <>
+                                    <View style={[mapStyles.connectorV, { height: 16 }]} />
+                                    <View style={{ gap: 8, width: '90%' }}>
+                                      {/* Specific Rule / Text */}
+                                      {res.excerpt && axis !== 'Landmarks' && (
+                                        <View style={mapStyles.traitNode}>
+                                          <Text style={[mapStyles.traitLabel, { color: axisColor[axis] }]}>
+                                            {axis === 'Prosecution' ? 'PROSECUTION PENAL CODE' : axis === 'Defense' ? 'DEFENSE PENAL CODE' : 'PROCEDURE'}
+                                          </Text>
+                                          <Text style={mapStyles.traitValue} numberOfLines={4}>{res.excerpt.trim()}</Text>
+                                        </View>
+                                      )}
+
+                                      {/* Case Specifics (Landmarks ONLY) */}
+                                      {axis === 'Landmarks' && (
+                                        <>
+                                          {/* Judges */}
+                                          {res.judges && res.judges !== 'N/A' && (
+                                            <View style={[mapStyles.traitNode, { borderLeftColor: '#6366F1' }]}>
+                                              <Text style={mapStyles.traitLabel}>JUDGES</Text>
+                                              <Text style={mapStyles.traitValue} numberOfLines={1}>{res.judges}</Text>
+                                            </View>
+                                          )}
+
+                                          {/* Court */}
+                                          {res.place && res.place !== 'N/A' && (
+                                            <View style={[mapStyles.traitNode, { borderLeftColor: '#F59E0B' }]}>
+                                              <Text style={[mapStyles.traitLabel, { color: '#F59E0B' }]}>COURT</Text>
+                                              <Text style={mapStyles.traitValue} numberOfLines={1}>{res.place}</Text>
+                                            </View>
+                                          )}
+
+                                          {/* Year */}
+                                          {res.year && (
+                                            <View style={[mapStyles.traitNode, { borderLeftColor: '#10B981' }]}>
+                                              <Text style={[mapStyles.traitLabel, { color: '#10B981' }]}>YEAR</Text>
+                                              <Text style={mapStyles.traitValue}>{res.year}</Text>
+                                            </View>
+                                          )}
+
+                                          {/* Citations */}
+                                          {res.refs_str && res.refs_str !== 'N/A' && (
+                                            <View style={[mapStyles.traitNode, { borderLeftColor: '#475569' }]}>
+                                              <Text style={[mapStyles.traitLabel, { color: '#475569' }]}>CITATIONS</Text>
+                                              <Text style={mapStyles.traitValue} numberOfLines={1}>{res.refs_str.split('|')[0]}</Text>
+                                            </View>
+                                          )}
+
+                                          {/* KEY POINTS (Grouped Headnotes) */}
+                                          {(() => {
+                                            const hns = Array.isArray(res.headnotes) ? res.headnotes :
+                                              (typeof res.hn_str === 'string' ? res.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
+                                            if (hns.length === 0) return null;
+
+                                            return (
+                                              <View style={{ marginTop: 8, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: '#D97706' }}>
+                                                <Text style={[mapStyles.traitLabel, { color: '#D97706', marginBottom: 4 }]}>KEY POINTS</Text>
+                                                {hns.slice(0, 3).map((hn: string, hi: number) => (
+                                                  <View key={hi} style={{ marginBottom: 6 }}>
+                                                    <Text style={[mapStyles.traitValue, { fontSize: 10, color: '#FEF3C7' }]}>• {hn}</Text>
+                                                  </View>
+                                                ))}
+                                              </View>
+                                            );
+                                          })()}
+                                        </>
+                                      )}
+                                    </View>
+                                  </>
+                                )}
+                                {ri < resources.length - 1 && <View style={mapStyles.connectorV} />}
+                              </View>
+                            ))}
+                          </View>
+                        </>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
       </Container>
     </Layout>
   );
 }
+
+const mapStyles = StyleSheet.create({
+  rootNode: { padding: 24, backgroundColor: '#1E3A5F', borderRadius: 16, width: 220, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10 },
+  hubNode: { padding: 16, backgroundColor: '#1E293B', borderRadius: 12, width: 180, alignItems: 'center', borderWidth: 2 },
+  leafNode: { padding: 16, backgroundColor: '#1E293B', borderRadius: 10, width: 220, borderTopWidth: 6, borderWidth: 1, borderColor: '#1E293B' },
+  traitNode: { padding: 10, backgroundColor: '#0F172A', borderRadius: 6, width: 200, borderLeftWidth: 3, borderLeftColor: '#6366F1', borderWidth: 1, borderColor: '#1E293B' },
+  nodeTitle: { color: '#F8FAFC', fontSize: 13, fontWeight: '900', textTransform: 'uppercase', textAlign: 'center' },
+  nodeSubTitle: { color: '#94A3B8', fontSize: 10, marginTop: 4 },
+  leafTitle: { color: '#F1F5F9', fontSize: 12, fontWeight: '800' },
+  leafText: { color: '#64748B', fontSize: 10, marginTop: 4 },
+  traitLabel: { color: '#94A3B8', fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
+  traitValue: { color: '#F1F5F9', fontSize: 11, marginTop: 4, fontWeight: '700', lineHeight: 15 },
+  connectorV: { width: 2, height: 40, backgroundColor: '#334155' },
+  connectorH: { height: 2, width: 40, backgroundColor: '#334155' },
+});
+
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -768,9 +1137,81 @@ const styles = StyleSheet.create({
   simRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, height: 18, position: 'relative' },
   simFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 4, opacity: 0.15 },
   simTxt: { fontSize: 12, fontWeight: '700', zIndex: 1 },
-  expandHint: { fontSize: 11, fontWeight: '600', marginTop: 2 },
 
-  backBtn: { alignItems: 'center', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', cursor: 'pointer' } as any,
+  // Landmark Enhanced Styles
+  landmarkContainer: {
+    marginTop: 12,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+    overflow: 'hidden',
+  },
+  landmarkHeader: {
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  landmarkHeaderTxt: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#92400E',
+    textTransform: 'uppercase',
+  },
+  landmarkMetaGrid: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FEF3C7',
+  },
+  metaBox: {
+    flex: 1,
+    padding: 10,
+    borderRightWidth: 1,
+    borderRightColor: '#FEF3C7',
+  },
+  metaBoxLbl: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#D97706',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  metaBoxVal: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '600',
+  },
+  headnoteSection: {
+    padding: 12,
+    gap: 8,
+  },
+  headnoteTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  hnItem: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  hnBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D97706',
+    marginTop: 6,
+  },
+  hnTxt: {
+    flex: 1,
+    fontSize: 12,
+    color: '#92400E',
+    lineHeight: 18,
+  },
+
+  expandHint: { fontSize: 11, fontWeight: '700', marginTop: 8, textAlign: 'right' },
+  backBtn: { marginTop: 16, padding: 14, backgroundColor: '#F1F5F9', borderRadius: 10, alignItems: 'center' } as any,
   backBtnTxt: { color: colors.accent, fontSize: 13, fontWeight: '700' },
 
   histItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: spacing.md, backgroundColor: '#F8FAFC', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', borderLeftWidth: 4, borderLeftColor: colors.accent, cursor: 'pointer' } as any,

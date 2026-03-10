@@ -365,7 +365,7 @@ def transcribe_with_gemini(audio_path):
         {
             "original_transcript": "...",
             "english_transcript": "...",
-            "detected_lang": "..."
+            "detected_lang": "...(SINHALA/TAMIL/ENGLISH)"
         }
         """
         

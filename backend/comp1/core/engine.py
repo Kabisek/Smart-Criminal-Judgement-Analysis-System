@@ -253,18 +253,29 @@
 # # #                         uid = res['ids'][0][i]
 # # #                         if uid not in unique_results:
 # # #                             meta = res['metadatas'][0][i]
-# # #                             # Get full text (prefer metadata storage, fallback to doc)
 # # #                             full_text = meta.get('full_text', res['documents'][0][i])
                             
+# # #                             # Clean up headnotes if they are raw JSON strings in the data
+# # #                             excerpt = full_text
+# # #                             try:
+# # #                                 if excerpt.startswith("[{'point_number'"):
+# # #                                     # It's an ugly stringified list, let's just use the title or a snippet
+# # #                                     excerpt = excerpt.split("}]", 1)[-1].strip()
+# # #                             except: pass
+
 # # #                             unique_results[uid] = {
 # # #                                 "id": uid,
-# # #                                 "title": meta.get('title', 'Unknown'),
-# # #                                 "section": meta.get('section', 'N/A'),
+# # #                                 "title": self.clean_title(meta.get('title', 'Unknown')),
+# # #                                 "section": self.clean_title(meta.get('section', 'N/A')),
 # # #                                 "type": meta.get('type', 'Unknown'),
-# # #                                 "excerpt": full_text,
-# # #                                 "distance": res['distances'][0][i]
+# # #                                 "excerpt": excerpt,
+# # #                                 "distance": res['distances'][0][i],
+# # #                                 # Carry over metadata fields
+# # #                                 "judge": meta.get("judges", "Not Documented"),
+# # #                                 "place": meta.get("court", "Supreme Court"),
+# # #                                 "outcome": meta.get("outcome", "See Ratio"),
+# # #                                 "hn_str": meta.get("hn_str", "")
 # # #                             }
-
 # # #         all_matches = list(unique_results.values())
         
 # # #         if not all_matches: return {"error": "No matches found."}
@@ -984,7 +995,7 @@ class LegalResourceExtractor:
         self.collection = self.client.get_collection(name="legal_knowledge_base", embedding_function=self.emb_fn)
         
         # Only use Gemini for the final summary or complex query generation (Minimal usage)
-        self.llm = genai.GenerativeModel(model_name="gemini-1.5-flash")
+        self.llm = genai.GenerativeModel(model_name="gemini-2.5-flash-lite")
         
         # --- PRE-COMPUTE ANCHOR VECTORS (The Research Part) ---
         print("   [Core] Pre-computing Semantic Axes...")
@@ -1049,6 +1060,51 @@ class LegalResourceExtractor:
         best_category = max(scores, key=scores.get)
         return best_category
 
+    def normalize_landmark_case(self, title, text, existing_details=None):
+        """
+        Extracts Judge, Place, and Outcome (Sentence) from a landmark case summary.
+        Also extracts key headnote points.
+        Prioritizes existing details from metadata.
+        """
+        if existing_details and existing_details.get("judges") != "Not Documented":
+            # If we already have metadata from the DB, just parse the headnotes if missing
+            if not existing_details.get("headnotes") and existing_details.get("hn_str"):
+                existing_details["headnotes"] = [p.strip() for p in existing_details["hn_str"].split("|")[:5]]
+            return existing_details
+
+        # Truncate text to avoid context limit but keep enough for extraction
+        sample_text = text[:3000]
+        prompt = f"""
+        Analyze this Sri Lankan Landmark Case:
+        TITLE: {title}
+        TEXT: {sample_text}
+
+        TASK: Extract the following into a valid JSON object:
+        1. "judges": The name(s) of the presiding judge(s).
+        2. "place": The court or city where the judgment was delivered.
+        3. "outcome": The final ruling or sentence (one sentence).
+        4. "headnotes": A list of the 3-5 most important legal principles established (max 15 words per point).
+
+        RETURN ONLY JSON:
+        {{
+            "judges": "...",
+            "place": "...",
+            "outcome": "...",
+            "headnotes": ["Point 1", "Point 2", "Point 3"]
+        }}
+        """
+        try:
+            res = self.llm.generate_content(prompt, generation_config={"response_mime_type": "application/json"})
+            return json.loads(res.text)
+        except Exception as e:
+            print(f"   ⚠️ Landmark Normalization Error: {e}")
+            return {
+                "judges": "Not Documented",
+                "place": "Supreme Court",
+                "outcome": "See Ratio",
+                "headnotes": []
+            }
+
     def clean_title(self, title):
         return title.replace(".pdf", "").replace("_", " ").replace(".json", "").title()
 
@@ -1063,8 +1119,7 @@ class LegalResourceExtractor:
         categories = [
             {"type": "penal_code", "count": 5}, 
             {"type": "criminal_procedure", "count": 5},
-            {"type": "landmark_precedent", "count": 3},
-            {"type": "recent_judgement", "count": 3}
+            {"type": "landmark_precedent", "count": 2}
         ]
 
         unique_results = {} 
@@ -1087,13 +1142,44 @@ class LegalResourceExtractor:
                             clean_t = self.clean_title(meta.get('title', 'Unknown'))
                             clean_s = self.clean_title(meta.get('section', 'N/A'))
                             
+                            # Robustly clean raw JSON headnotes from the excerpt
+                            excerpt = full_text
+                            try:
+                                import re
+                                # Pattern to find stringified list of dicts at the start or middle
+                                json_pattern = r'\[\s*{\s*[\'"]point_number[\'"]\s*:.*?\s*}\s*(?:,\s*{\s*[\'"]point_number[\'"]\s*:.*?\s*}\s*)*\]'
+                                
+                                # If it's there, we might want to extract the points before stripping
+                                hn_match = re.search(json_pattern, excerpt)
+                                if hn_match:
+                                    raw_hn = hn_match.group(0)
+                                    excerpt = excerpt.replace(raw_hn, "").strip()
+                                    
+                                    # If hn_str is missing, try to reconstruct it from this raw JSON
+                                    if not meta.get("hn_str"):
+                                        try:
+                                            import ast
+                                            parsed_hn = ast.literal_eval(raw_hn)
+                                            meta["hn_str"] = " | ".join([p.get("summary", "") for p in parsed_hn if isinstance(p, dict)])
+                                        except: pass
+                            except Exception as e:
+                                print(f"   ⚠️ Excerpt cleaning error: {e}")
+
                             unique_results[uid] = {
                                 "id": uid,
                                 "title": clean_t,
                                 "section": clean_s,
                                 "type": meta.get('type', 'Unknown'),
-                                "excerpt": full_text,
-                                "distance": res['distances'][0][i]
+                                "excerpt": excerpt,
+                                "distance": res['distances'][0][i],
+                                # Carry over metadata fields
+                                "judges": meta.get("judges", "Not Documented"),
+                                "place": meta.get("place", "Supreme Court"), # Try 'place' key first
+                                "court": meta.get("court", "Supreme Court"), # Fallback to 'court'
+                                "outcome": meta.get("outcome", "See Ratio"),
+                                "hn_str": meta.get("hn_str", ""),
+                                "refs_str": meta.get("refs_str", ""),
+                                "judg_json": meta.get("judg_json", "[]")
                             }
 
         all_matches = list(unique_results.values())
@@ -1116,7 +1202,6 @@ class LegalResourceExtractor:
         G.add_node("Defense",             label="Defense Resources",         type="branch_hub")
         G.add_node("Procedure",           label="Criminal Procedure",        type="branch_hub")
         G.add_node("Binding_Precedents",  label="Binding Precedents",        type="branch_hub")
-        G.add_node("Persuasive_Authority",label="Persuasive Authority",      type="branch_hub")
 
         # Case → Penal_Code → Prosecution / Defense
         G.add_edge("Case",        "Penal_Code",           relation="governed_by")
@@ -1125,16 +1210,14 @@ class LegalResourceExtractor:
         # Case directly → Procedure and Case Law
         G.add_edge("Case",        "Procedure",            relation="requires")
         G.add_edge("Case",        "Binding_Precedents",   relation="precedent_from")
-        G.add_edge("Case",        "Persuasive_Authority", relation="informed_by")
 
-        hubs = ["Penal_Code", "Prosecution", "Defense", "Procedure", "Binding_Precedents", "Persuasive_Authority"]
+        hubs = ["Penal_Code", "Prosecution", "Defense", "Procedure", "Binding_Precedents"]
 
         grouped_resources = {
             "prosecution_resources": [],
             "defense_resources": [],
             "procedural_resources": [],
-            "binding_precedents": [],
-            "recent_judgments": []
+            "binding_precedents": []
         }
 
         for match in all_matches:
@@ -1147,7 +1230,8 @@ class LegalResourceExtractor:
             elif side == "Defense":          target_bucket = "defense_resources"
             elif side == "Procedure":        target_bucket = "procedural_resources"
             elif side == "Binding Precedents": target_bucket = "binding_precedents"
-            elif side == "Persuasive Authority": target_bucket = "recent_judgments"
+            # Hiding Persuasive Authority from UI as requested
+            elif side == "Persuasive Authority": continue
             
             # Add document node
             G.add_node(match['id'], label=match['title'], section=match['section'], type=match['type'])
@@ -1162,10 +1246,33 @@ class LegalResourceExtractor:
                 match['side'] = side
                 match['similarity'] = round(1 - match['distance'], 4)
                 del match['distance']
+                
+                # --- LANDMARK ENHANCEMENT ---
+                if match['type'] == 'landmark_precedent':
+                    print(f"   [Core] Refining Landmark: {match['title']}...")
+                    # Pass existing metadata to normalize_landmark_case
+                    details = self.normalize_landmark_case(match['title'], match['excerpt'], existing_details=match.copy())
+                    match.update(details)
+                    
+                    # Add Graph Branches (Judges, Place, Outcome)
+                    for attr_type, attr_val in [("Judges", match.get("judges")), ("Place", match.get("place")), ("Outcome", match.get("outcome"))]:
+                        if attr_val and attr_val not in ["Not Documented", "N/A"]:
+                            attr_id = f"{match['id']}_{attr_type}"
+                            G.add_node(attr_id, label=f"{attr_type}: {str(attr_val)[:20]}", type="attribute")
+                            G.add_edge(match['id'], attr_id, relation="detail")
+                
                 grouped_resources[target_bucket].append(match)
 
+        # --- FINAL PASS: HIGHLIGHT RECOMMENDATIONS ---
+        # Sort landmark cases by similarity and pick the best one to recommend
+        if grouped_resources["binding_precedents"]:
+            # Strictly limit to top 2
+            grouped_resources["binding_precedents"] = grouped_resources["binding_precedents"][:2]
+            # Already sorted by distance (ascending), so first is best
+            grouped_resources["binding_precedents"][0]["recommended"] = True
+
         return {
-            "summary": f"Extracted {len(all_matches)} resources via Semantic Axis Classification.",
+            "summary": f"Extracted {len(all_matches)} resources. Priority given to Landmark Precedents.",
             "structured_data": grouped_resources,
             "graph_data": nx.cytoscape_data(G)
         }

@@ -314,12 +314,44 @@ def build_db():
                 if isinstance(j, dict): judg_text += j.get("content", "") + " "
                 else: judg_text += str(j) + " "
             
+            # Extract structured bits for metadata
+            judges = ", ".join(meta.get("judges", []))
+            court = meta.get("court", "N/A")
+            # Improved outcome extraction
+            outcome = meta.get("outcome") or meta.get("verdict")
+            if not outcome:
+                # Try to find 'dismissed' or 'allowed' or 'guilty' in the last section of judgment
+                last_sections = case_obj.get("judgment_text", [])[-2:]
+                combined_last = " ".join([s.get("content", "") if isinstance(s, dict) else str(s) for s in last_sections]).lower()
+                if "dismissed" in combined_last: outcome = "Appeal Dismissed"
+                elif "allowed" in combined_last: outcome = "Appeal Allowed"
+                elif "convicted" in combined_last: outcome = "Conviction Upheld"
+                elif "quashed" in combined_last: outcome = "Conviction Quashed"
+                else: outcome = meta.get("dates", {}).get("decision", "Binding Precedent")
+            
+            # Extract headnotes as a single string for display fallback
+            hn_list = [h.get("summary", "") for h in case_obj.get("headnotes", [])]
+            hn_str = " | ".join(hn_list)
+
+            # --- NEW: DEEP EXTRACTION FOR LANDMARKS ---
+            cases_ref = case_obj.get("cases_referred", [])
+            refs_str = " | ".join(cases_ref) if isinstance(cases_ref, list) else str(cases_ref)
+            
+            # Store full judgment structure as a JSON string for the UI
+            judg_json = json.dumps(case_obj.get("judgment_text", []), ensure_ascii=False)
+            
             return {
                 "title": meta.get("case_name", "Unknown Case"),
                 "section": meta.get("citation", "N/A"),
-                "text": f"{case_obj.get('headnotes', '')} {judg_text[:8000]}",
+                "text": judg_text[:8000], # Strictly judgment text, no raw headnotes JSON
                 "type": doc_type,
-                "source": filename
+                "source": filename,
+                "judges": judges,
+                "court": court,
+                "outcome": outcome,
+                "hn_str": hn_str,
+                "refs_str": refs_str,
+                "judg_json": judg_json
             }
 
         # Logic: List (OCR) vs Dict (Landmark/Codes)
@@ -360,10 +392,28 @@ def build_db():
                 docs, metas, ids = [], [], []
                 for i, item in enumerate(items):
                     docs.append(f"{item['title']}. {item['text']}")
-                    metas.append({
-                        "title": item['title'], "section": str(item['section']), 
-                        "type": item['type'], "source": item['source'], "full_text": item['text']
-                    })
+                    
+                    # Core metadata
+                    m = {
+                        "title": item['title'], 
+                        "section": str(item['section']), 
+                        "type": item['type'], 
+                        "source": item['source'], 
+                        "full_text": item['text']
+                    }
+                    
+                    # Add Landmark specific fields if they exist
+                    if item['type'] == 'landmark_precedent':
+                        m.update({
+                            "judges": item.get("judges", "N/A"),
+                            "court": item.get("court", "N/A"),
+                            "outcome": item.get("outcome", "N/A"),
+                            "hn_str": item.get("hn_str", ""),
+                            "refs_str": item.get("refs_str", ""),
+                            "judg_json": item.get("judg_json", "[]")
+                        })
+                        
+                    metas.append(m)
                     ids.append(f"{item['type']}_{filename}_{i}")
                 
                 batch_size = 100
