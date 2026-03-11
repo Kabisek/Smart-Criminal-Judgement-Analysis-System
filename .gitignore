@@ -58,6 +58,9 @@ backend/comp1/models/sri_lanka_legal_bert/old/*.safetensors
 backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 
 # ignore large model files under comp4 (>100MB)
-backend/comp4/model_Component_ 4/**/model.safetensors
+/backend/comp4/model_Component_ 4/**/model.safetensors
 /backend/comp1/data/structured
-"backend/data/chroma_db/chroma.sqlite3" 
+/backend/data/chroma_db/chroma.sqlite3
+/backend/data/chroma_db/
+/backend/data/chroma_db_comp2/
+/backend/data/chroma_db_comp2/chroma.sqlite3
