@@ -242,8 +242,8 @@ export function CaseIngestion({
                                     <Text style={styles.clearIcon}>✕</Text>
                                 </Pressable>
                             </View>
-                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn}>
-                                Confirm & Start Processing
+                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn} textStyle={styles.confirmBtnText}>
+                                Generate
                             </Button>
                         </View>
                     )}
@@ -266,8 +266,8 @@ export function CaseIngestion({
                                     <Text style={styles.clearIcon}>✕</Text>
                                 </Pressable>
                             </View>
-                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn}>
-                                Confirm & Start Processing
+                            <Button onPress={handleConfirmProcess} style={styles.confirmBtn} textStyle={styles.confirmBtnText}>
+                                Generate
                             </Button>
                         </View>
                     )}
@@ -323,7 +323,25 @@ const styles = StyleSheet.create({
     playText: { fontSize: 14, fontWeight: '700', color: colors.primary },
     clearBtn: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
     clearIcon: { fontSize: 14, color: '#64748B', fontWeight: 'bold' },
-    confirmBtn: { width: '100%', backgroundColor: colors.accent, height: 48 },
+    confirmBtn: { 
+        backgroundColor: colors.accent, 
+        paddingVertical: 10, 
+        paddingHorizontal: 28, 
+        borderRadius: 25, 
+        alignSelf: 'center', 
+        minWidth: 120,
+        height: 'auto',
+        marginTop: 16,
+        ...(Platform.OS === 'web' && {
+            boxShadow: '0 4px 12px rgba(184, 134, 11, 0.25)', // Using the accent color for shadow
+        })
+    },
+    confirmBtnText: {
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
+    },
     fileInfo: { alignItems: 'center', gap: 8, marginBottom: 8 },
     fileName: { fontSize: 14, fontWeight: '600', color: colors.primary, textAlign: 'center' },
 });

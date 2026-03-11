@@ -660,7 +660,7 @@ export default function Component1Screen() {
                           { l: 'Defense', c: '#059669' },
                           { l: 'Procedure', c: '#2563EB' },
                           { l: 'Landmark', c: '#D97706' },
-                          { l: 'Persuasive', c: '#7C3AED' },
+                          // { l: 'Persuasive', c: '#7C3AED' },
                         ].map(({ l, c }) => (
                           <View key={l} style={styles.legendItem}>
                             <View style={[styles.legendDot, { backgroundColor: c }]} />
