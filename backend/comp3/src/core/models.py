@@ -118,13 +118,400 @@ class AppealPredictor:
             
             # Load training labels
             self.y_train = np.load(self.y_train_path)
+
+            # After loading cases, generate aggregated context statistics for
+            # offence, location and year.
+            self.context_stats = self._generate_context_stats(self.df_cases)
+
+            # Generate aggregated statistics for grounds and evidence types.
+            try:
+                self.ground_stats, self.evidence_stats = self._generate_ground_evidence_stats(self.df_cases)
+            except Exception as ge:
+                logger.error(f"Error generating ground/evidence statistics: {ge}")
+                self.ground_stats, self.evidence_stats = {}, {}
             
             logger.info("Data loaded successfully")
             
         except Exception as e:
             logger.error(f"Error loading data: {e}")
             raise
-    
+
+    def _generate_ground_evidence_stats(self, df: pd.DataFrame) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Dict[str, Any]]]:
+        """
+        Compute aggregated appeal outcome statistics for each ground of appeal and
+        each evidence flag.
+        """
+        if 'result_category' not in df.columns:
+            def simplify_outcome(val: str) -> str:
+                if isinstance(val, str):
+                    lower = val.lower()
+                    if lower.startswith('dismissed'):
+                        return 'Appeal_Dismissed'
+                    elif lower.startswith('allowed'):
+                        return 'Appeal_Allowed'
+                    elif lower.startswith('partly'):
+                        return 'Partly_Allowed'
+                return 'Unknown'
+            df = df.copy()
+            df['result_category'] = df['combined_outcome'].apply(simplify_outcome)
+
+        ground_stats: Dict[str, Dict[str, Any]] = {}
+        evidence_stats: Dict[str, Dict[str, Any]] = {}
+
+        ground_cols = [col for col in df.columns if col.startswith('gnd_')]
+        evidence_cols = []
+        for col in df.columns:
+            if col.endswith('_present') and not col.startswith('gnd_'):
+                evidence_cols.append(col)
+        if 'confession_present' in df.columns and 'confession_present' not in evidence_cols:
+            evidence_cols.append('confession_present')
+
+        for col in ground_cols:
+            subset = df[df[col].astype(str).str.lower() == 'yes']
+            total = len(subset)
+            if total == 0:
+                continue
+            counts = subset['result_category'].value_counts().to_dict()
+            ground_stats[col] = {
+                'count': total,
+                'allowed_rate': round(counts.get('Appeal_Allowed', 0) / total, 3),
+                'partly_rate': round(counts.get('Partly_Allowed', 0) / total, 3),
+                'dismissed_rate': round(counts.get('Appeal_Dismissed', 0) / total, 3)
+            }
+
+        for col in evidence_cols:
+            subset = df[(df[col].fillna(0) != 0) & (df[col].astype(str).str.lower() != 'no')]
+            total = len(subset)
+            if total == 0:
+                continue
+            counts = subset['result_category'].value_counts().to_dict()
+            evidence_stats[col] = {
+                'count': total,
+                'allowed_rate': round(counts.get('Appeal_Allowed', 0) / total, 3),
+                'partly_rate': round(counts.get('Partly_Allowed', 0) / total, 3),
+                'dismissed_rate': round(counts.get('Appeal_Dismissed', 0) / total, 3)
+            }
+
+        return ground_stats, evidence_stats
+
+    def compute_ground_analysis(self, detected_features: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Given the detected grounds from a case description, return success
+        statistics for each ground.
+        """
+        analysis: Dict[str, Any] = {}
+        grounds = detected_features.get('grounds', [])
+        for ground_name in grounds:
+            base = ground_name.lower().replace(' ', '_')
+            candidate_cols = [f'gnd_{base}']
+            keywords = base.split('_')
+            for col in self.ground_stats.keys():
+                if all(kw in col for kw in keywords):
+                    candidate_cols.append(col)
+            for col in candidate_cols:
+                if col in self.ground_stats:
+                    analysis[ground_name] = self.ground_stats[col]
+                    break
+        return analysis
+
+    def compute_evidence_analysis(self, detected_features: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Given the detected evidence flags from a case description, return
+        success statistics for each evidence type.
+        """
+        analysis: Dict[str, Any] = {}
+        evidence_list = detected_features.get('evidence', [])
+        for evidence_name in evidence_list:
+            base = ''.join(ch for ch in evidence_name if ch.isalnum() or ch == ' ').lower().replace(' ', '_')
+            candidate_cols = [f'{base}_present']
+            if not base.endswith('present'):
+                candidate_cols.append(f'{base}_evidence_present')
+            keywords = base.split('_')
+            for col in self.evidence_stats.keys():
+                if all(kw in col for kw in keywords):
+                    candidate_cols.append(col)
+            for col in candidate_cols:
+                if col in self.evidence_stats:
+                    analysis[evidence_name] = self.evidence_stats[col]
+                    break
+        return analysis
+
+    def _generate_context_stats(self, df: pd.DataFrame) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """
+        Generate aggregated statistics for offence groups, high court locations
+        and appeal years.
+        """
+        df = df.copy()
+        def simplify_outcome(val: str) -> str:
+            if isinstance(val, str):
+                lower = val.lower()
+                if lower.startswith('dismissed'):
+                    return 'Appeal_Dismissed'
+                elif lower.startswith('allowed'):
+                    return 'Appeal_Allowed'
+                elif lower.startswith('partly'):
+                    return 'Partly_Allowed'
+            return 'Unknown'
+
+        df['result_category'] = df['combined_outcome'].apply(simplify_outcome)
+        try:
+            self.df_cases['result_category'] = df['result_category']
+        except Exception:
+            pass
+
+        def map_offence_group(offence: str) -> str:
+            if not isinstance(offence, str):
+                return 'Other'
+            off = offence.lower()
+            if any(word in off for word in ['murder', 'homicide']):
+                return 'Murder_Related'
+            if any(word in off for word in ['rape', 'sexual']):
+                return 'Sexual_Offenses'
+            if any(word in off for word in ['drug', 'heroin', 'narcotic']):
+                return 'Drug_Related'
+            if any(word in off for word in ['robbery', 'theft', 'burglary']):
+                return 'Robbery_Theft'
+            if any(word in off for word in ['fraud', 'corruption', 'bribery']):
+                return 'Fraud_Corruption'
+            return 'Other'
+
+        df['offence_group'] = df['offence_category'].apply(map_offence_group)
+
+        stats: Dict[str, Dict[str, Dict[str, Any]]] = {
+            'offence': {},
+            'location': {},
+            'year': {}
+        }
+
+        offence_groups = df['offence_group'].unique()
+        for group in offence_groups:
+            subset = df[df['offence_group'] == group]
+            counts = subset['result_category'].value_counts().to_dict()
+            total = len(subset)
+            if total > 0:
+                stats['offence'][group] = {
+                    'count': total,
+                    'allowed_rate': round(counts.get('Appeal_Allowed', 0) / total, 3),
+                    'partly_rate': round(counts.get('Partly_Allowed', 0) / total, 3),
+                    'dismissed_rate': round(counts.get('Appeal_Dismissed', 0) / total, 3)
+                }
+
+        locations = df['high_court_location'].dropna().unique()
+        for loc in locations:
+            subset = df[df['high_court_location'] == loc]
+            counts = subset['result_category'].value_counts().to_dict()
+            total = len(subset)
+            if total > 0:
+                stats['location'][loc] = {
+                    'count': total,
+                    'allowed_rate': round(counts.get('Appeal_Allowed', 0) / total, 3),
+                    'partly_rate': round(counts.get('Partly_Allowed', 0) / total, 3),
+                    'dismissed_rate': round(counts.get('Appeal_Dismissed', 0) / total, 3)
+                }
+
+        years = df['coa_year'].dropna().unique()
+        for year in years:
+            subset = df[df['coa_year'] == year]
+            counts = subset['result_category'].value_counts().to_dict()
+            total = len(subset)
+            if total > 0:
+                stats['year'][int(year)] = {
+                    'count': total,
+                    'allowed_rate': round(counts.get('Appeal_Allowed', 0) / total, 3),
+                    'partly_rate': round(counts.get('Partly_Allowed', 0) / total, 3),
+                    'dismissed_rate': round(counts.get('Appeal_Dismissed', 0) / total, 3)
+                }
+
+        return stats
+
+    def compute_context_analysis(self, detected_features: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compute context-specific analytics for a case given its detected features.
+        """
+        context_stats = {}
+        national_total = len(self.df_cases)
+        national_counts = self.df_cases['result_category'].value_counts().to_dict()
+        national_avg = {
+            'count': national_total,
+            'allowed_rate': round(national_counts.get('Appeal_Allowed', 0) / national_total, 3) if national_total else 0.0,
+            'partly_rate': round(national_counts.get('Partly_Allowed', 0) / national_total, 3) if national_total else 0.0,
+            'dismissed_rate': round(national_counts.get('Appeal_Dismissed', 0) / national_total, 3) if national_total else 0.0
+        }
+
+        offence_key = None
+        offence_list = detected_features.get('offence', [])
+        if offence_list:
+            first = offence_list[0]
+            key = first.replace(' ', '_')
+            offence_key = key
+        if offence_key and offence_key in self.context_stats['offence']:
+            context_stats['offence'] = self.context_stats['offence'][offence_key]
+        else:
+            context_stats['offence'] = national_avg
+
+        location = None
+        if 'context' in detected_features and isinstance(detected_features['context'], dict):
+            location = detected_features['context'].get('location')
+        if location and location in self.context_stats['location']:
+            context_stats['location'] = self.context_stats['location'][location]
+        else:
+            context_stats['location'] = national_avg
+
+        year_val = None
+        if 'context' in detected_features and isinstance(detected_features['context'], dict):
+            year_val = detected_features['context'].get('year')
+        if year_val and year_val in self.context_stats['year']:
+            context_stats['year'] = self.context_stats['year'][year_val]
+        else:
+            context_stats['year'] = national_avg
+
+        return context_stats
+
+    def _build_feature_dataframe(self, case_description: str) -> pd.DataFrame:
+        """
+        Build the full feature DataFrame for a case description.
+        Used internally by both predict_appeal and find_similar_cases.
+
+        Args:
+            case_description: Detailed case description text
+
+        Returns:
+            DataFrame with shape (1, n_train_features) ready for model input
+        """
+        # Generate TF-IDF features
+        tfidf_dict = {}
+        if self.tfidf_vectorizer is not None:
+            tfidf_matrix = self.tfidf_vectorizer.transform([case_description])
+            tfidf_array = tfidf_matrix.toarray()[0]
+            tfidf_feature_names = [f'tfidf_{feature}' for feature in self.tfidf_vectorizer.get_feature_names_out()]
+            tfidf_dict = dict(zip(tfidf_feature_names, tfidf_array))
+
+        # Generate BERT embedding
+        bert_features = self.bert_processor.get_embedding(case_description)
+        bert_dict = {f'bert_{i}': val for i, val in enumerate(bert_features)}
+
+        # Extract traditional features
+        traditional_dict = {}
+        traditional_cols = [col for col in self.X_train_full.columns
+                            if not col.startswith('bert_') and not col.startswith('tfidf_')]
+        text = case_description.lower()
+
+        for col in traditional_cols:
+            if col == 'brief_facts_summary_length':
+                traditional_dict[col] = len(text)
+            elif col == 'brief_facts_summary_word_count':
+                traditional_dict[col] = len(text.split())
+            elif col == 'grounds_of_appeal_raw_text_summary_length':
+                traditional_dict[col] = len(text) * 0.4
+            elif col == 'grounds_of_appeal_raw_text_summary_word_count':
+                traditional_dict[col] = len(text.split()) * 0.4
+            elif col == 'court_of_appeal_analysis_summary_length':
+                traditional_dict[col] = len(text) * 0.3
+            elif col == 'court_of_appeal_analysis_summary_word_count':
+                traditional_dict[col] = len(text.split()) * 0.3
+            elif col.startswith('gnd_'):
+                if 'contradictions' in col and any(kw in text for kw in ['contradiction', 'inconsistent', 'conflicting']):
+                    traditional_dict[col] = 1.0
+                elif 'chain_of_custody' in col and any(kw in text for kw in ['chain of custody', 'custody', 'preservation']):
+                    traditional_dict[col] = 1.0
+                elif 'illegal_search' in col and any(kw in text for kw in ['illegal search', 'unlawful search', 'search raid']):
+                    traditional_dict[col] = 1.0
+                elif 'wrong_identification' in col and any(kw in text for kw in ['identification', 'identify', 'mistaken identity']):
+                    traditional_dict[col] = 1.0
+                elif 'dying_declaration' in col and any(kw in text for kw in ['dying declaration', 'deathbed statement']):
+                    traditional_dict[col] = 1.0
+                elif 'circumstantial' in col and any(kw in text for kw in ['circumstantial', 'indirect evidence']):
+                    traditional_dict[col] = 1.0
+                elif 'medical_inconsistency' in col and any(kw in text for kw in ['medical', 'jmo', 'post-mortem']):
+                    traditional_dict[col] = 1.0
+                elif 'misdirection' in col and any(kw in text for kw in ['misdirection', 'wrong direction', 'legal error']):
+                    traditional_dict[col] = 1.0
+                elif 'procedural_error' in col and any(kw in text for kw in ['procedural', 'procedure', 'process error']):
+                    traditional_dict[col] = 1.0
+                elif 'new_evidence' in col and any(kw in text for kw in ['new evidence', 'fresh evidence']):
+                    traditional_dict[col] = 1.0
+                elif 'excessive_sentence' in col and any(kw in text for kw in ['excessive', 'harsh', 'inadequate sentence']):
+                    traditional_dict[col] = 1.0
+                elif 'delay_prejudice' in col and any(kw in text for kw in ['delay', 'prejudice', 'lapse of time']):
+                    traditional_dict[col] = 1.0
+                elif 'judicial_bias' in col and any(kw in text for kw in ['bias', 'unfair', 'prejudiced judge']):
+                    traditional_dict[col] = 1.0
+                else:
+                    traditional_dict[col] = 0.0
+            elif col.startswith('eyewitness_') or 'eyewitness_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['eyewitness', 'witness', 'testimony']))
+            elif col.startswith('child_witness_') or 'child_witness_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['child witness', 'minor witness']))
+            elif col.startswith('expert_evidence_') or 'expert_evidence_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['expert', 'jmo', 'analyst', 'specialist']))
+            elif col.startswith('forensic_evidence_') or 'forensic_evidence_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['forensic', 'dna', 'fingerprint', 'ballistic']))
+            elif col.startswith('dying_declaration_present'):
+                traditional_dict[col] = float(any(kw in text for kw in ['dying declaration']))
+            elif col.startswith('confession_') or 'confession_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['confession', 'admitted', 'dock statement']))
+            elif col.startswith('procedural_defects_') or 'procedural_defects_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['procedural defect', 'process error', 'procedural']))
+            elif col.startswith('digital_evidence_') or 'digital_evidence_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['cctv', 'phone', 'digital', 'video', 'recording']))
+            elif col.startswith('hospital_treatment_') or 'hospital_treatment_details_present' in col:
+                traditional_dict[col] = float(any(kw in text for kw in ['hospital', 'medical treatment', 'admitted to hospital']))
+            elif col == 'medical_evidence_score':
+                medical_terms = ['medical', 'jmo', 'post-mortem', 'autopsy', 'pathologist', 'medical evidence']
+                traditional_dict[col] = float(sum(1 for term in medical_terms if term in text))
+            elif col.startswith('offence_category_'):
+                if 'Murder_Related' in col and any(kw in text for kw in ['murder', '296', 'homicide', 'culpable homicide']):
+                    traditional_dict[col] = 1.0
+                elif 'Sexual_Offenses' in col and any(kw in text for kw in ['rape', 'sexual', '363', '365', 'abuse']):
+                    traditional_dict[col] = 1.0
+                elif 'Drug_Related' in col and any(kw in text for kw in ['drug', 'narcotic', 'poisons', 'opium act', 'heroin']):
+                    traditional_dict[col] = 1.0
+                elif 'Robbery_Theft' in col and any(kw in text for kw in ['robbery', 'theft', 'burglary', '380', '394']):
+                    traditional_dict[col] = 1.0
+                elif 'Fraud_Corruption' in col and any(kw in text for kw in ['fraud', 'corruption', 'bribery', 'cheating']):
+                    traditional_dict[col] = 1.0
+                elif 'Firearms_Weapons' in col and any(kw in text for kw in ['firearm', 'weapon', 'explosives']):
+                    traditional_dict[col] = 1.0
+                elif 'Traffic_Vehicle' in col and any(kw in text for kw in ['traffic', 'vehicle', 'rash driving']):
+                    traditional_dict[col] = 1.0
+                elif 'Environmental' in col and any(kw in text for kw in ['environment', 'wildlife', 'forest']):
+                    traditional_dict[col] = 1.0
+                elif 'Customs' in col and any(kw in text for kw in ['customs', 'import', 'export']):
+                    traditional_dict[col] = 1.0
+                else:
+                    traditional_dict[col] = 0.0
+            elif col.startswith('appeal_type_'):
+                if 'Conviction_Only' in col and any(kw in text for kw in ['conviction', 'acquittal']):
+                    traditional_dict[col] = 1.0
+                elif 'Sentence_Only' in col and any(kw in text for kw in ['sentence', 'penalty', 'punishment']):
+                    traditional_dict[col] = 1.0
+                elif 'Revision' in col and any(kw in text for kw in ['revision', 'review']):
+                    traditional_dict[col] = 1.0
+                elif 'Writ' in col and any(kw in text for kw in ['writ', 'certiorari', 'mandamus']):
+                    traditional_dict[col] = 1.0
+                else:
+                    traditional_dict[col] = 0.0
+            elif col == 'coa_year':
+                traditional_dict[col] = 2024.0
+            elif col == 'appeal_duration_days':
+                traditional_dict[col] = 730.0
+            elif col == 'evidence_count':
+                evidence_cols = [c for c in traditional_cols if 'present' in c]
+                traditional_dict[col] = sum(traditional_dict.get(c, 0) for c in evidence_cols)
+            else:
+                traditional_dict[col] = 0.0
+
+        # Combine all features
+        all_features = {**traditional_dict, **tfidf_dict, **bert_dict}
+
+        # Create DataFrame aligned to training columns
+        df_features = pd.DataFrame(0, index=[0], columns=self.X_train_full.columns)
+        for feature, value in all_features.items():
+            if feature in df_features.columns:
+                df_features[feature] = value
+
+        return df_features
+
     def predict_appeal(self, case_description: str) -> Dict[str, Any]:
         """
         Predict appeal outcome for a given case description
@@ -136,153 +523,14 @@ class AppealPredictor:
             Dictionary with prediction results
         """
         try:
-            # Step 1: Generate TF-IDF features
-            tfidf_dict = {}
-            if self.tfidf_vectorizer is not None:
-                tfidf_matrix = self.tfidf_vectorizer.transform([case_description])
-                tfidf_array = tfidf_matrix.toarray()[0]
-                tfidf_feature_names = [f'tfidf_{feature}' for feature in self.tfidf_vectorizer.get_feature_names_out()]
-                tfidf_dict = dict(zip(tfidf_feature_names, tfidf_array))
-                logger.info(f"TF-IDF dictionary created with {len(tfidf_dict)} features")
-            
-            # Step 2: Generate BERT embedding
-            bert_features = self.bert_processor.get_embedding(case_description)
-            bert_dict = {f'bert_{i}': val for i, val in enumerate(bert_features)}
-            logger.info(f"BERT dictionary created with {len(bert_dict)} features")
-            
-            # Step 3: Extract traditional features
-            traditional_dict = {}
-            traditional_cols = [col for col in self.X_train_full.columns 
-                             if not col.startswith('bert_') and not col.startswith('tfidf_')]
-            
-            text = case_description.lower()
-            
-            # Extract traditional features using the same logic as demo
-            for col in traditional_cols:
-                if col == 'brief_facts_summary_length':
-                    traditional_dict[col] = len(text)
-                elif col == 'brief_facts_summary_word_count':
-                    traditional_dict[col] = len(text.split())
-                elif col == 'grounds_of_appeal_raw_text_summary_length':
-                    traditional_dict[col] = len(text) * 0.4
-                elif col == 'grounds_of_appeal_raw_text_summary_word_count':
-                    traditional_dict[col] = len(text.split()) * 0.4
-                elif col == 'court_of_appeal_analysis_summary_length':
-                    traditional_dict[col] = len(text) * 0.3
-                elif col == 'court_of_appeal_analysis_summary_word_count':
-                    traditional_dict[col] = len(text.split()) * 0.3
-                elif col.startswith('gnd_'):
-                    # Handle grounds features
-                    if 'contradictions' in col and any(kw in text for kw in ['contradiction', 'inconsistent', 'conflicting']):
-                        traditional_dict[col] = 1.0
-                    elif 'chain_of_custody' in col and any(kw in text for kw in ['chain of custody', 'custody', 'preservation']):
-                        traditional_dict[col] = 1.0
-                    elif 'illegal_search' in col and any(kw in text for kw in ['illegal search', 'unlawful search', 'search raid']):
-                        traditional_dict[col] = 1.0
-                    elif 'wrong_identification' in col and any(kw in text for kw in ['identification', 'identify', 'mistaken identity']):
-                        traditional_dict[col] = 1.0
-                    elif 'dying_declaration' in col and any(kw in text for kw in ['dying declaration', 'deathbed statement']):
-                        traditional_dict[col] = 1.0
-                    elif 'circumstantial' in col and any(kw in text for kw in ['circumstantial', 'indirect evidence']):
-                        traditional_dict[col] = 1.0
-                    elif 'medical_inconsistency' in col and any(kw in text for kw in ['medical', 'jmo', 'post-mortem']):
-                        traditional_dict[col] = 1.0
-                    elif 'misdirection' in col and any(kw in text for kw in ['misdirection', 'wrong direction', 'legal error']):
-                        traditional_dict[col] = 1.0
-                    elif 'procedural_error' in col and any(kw in text for kw in ['procedural', 'procedure', 'process error']):
-                        traditional_dict[col] = 1.0
-                    elif 'new_evidence' in col and any(kw in text for kw in ['new evidence', 'fresh evidence']):
-                        traditional_dict[col] = 1.0
-                    elif 'excessive_sentence' in col and any(kw in text for kw in ['excessive', 'harsh', 'inadequate sentence']):
-                        traditional_dict[col] = 1.0
-                    elif 'delay_prejudice' in col and any(kw in text for kw in ['delay', 'prejudice', 'lapse of time']):
-                        traditional_dict[col] = 1.0
-                    elif 'judicial_bias' in col and any(kw in text for kw in ['bias', 'unfair', 'prejudiced judge']):
-                        traditional_dict[col] = 1.0
-                    else:
-                        traditional_dict[col] = 0.0
-                elif col.startswith('eyewitness_') or 'eyewitness_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['eyewitness', 'witness', 'testimony']))
-                elif col.startswith('child_witness_') or 'child_witness_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['child witness', 'minor witness']))
-                elif col.startswith('expert_evidence_') or 'expert_evidence_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['expert', 'jmo', 'analyst', 'specialist']))
-                elif col.startswith('forensic_evidence_') or 'forensic_evidence_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['forensic', 'dna', 'fingerprint', 'ballistic']))
-                elif col.startswith('dying_declaration_present'):
-                    traditional_dict[col] = float(any(kw in text for kw in ['dying declaration']))
-                elif col.startswith('confession_') or 'confession_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['confession', 'admitted', 'dock statement']))
-                elif col.startswith('procedural_defects_') or 'procedural_defects_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['procedural defect', 'process error', 'procedural']))
-                elif col.startswith('digital_evidence_') or 'digital_evidence_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['cctv', 'phone', 'digital', 'video', 'recording']))
-                elif col.startswith('hospital_treatment_') or 'hospital_treatment_details_present' in col:
-                    traditional_dict[col] = float(any(kw in text for kw in ['hospital', 'medical treatment', 'admitted to hospital']))
-                elif col == 'medical_evidence_score':
-                    medical_terms = ['medical', 'jmo', 'post-mortem', 'autopsy', 'pathologist', 'medical evidence']
-                    traditional_dict[col] = float(sum(1 for term in medical_terms if term in text))
-                elif col.startswith('offence_category_'):
-                    # Handle offence categories
-                    if 'Murder_Related' in col and any(kw in text for kw in ['murder', '296', 'homicide', 'culpable homicide']):
-                        traditional_dict[col] = 1.0
-                    elif 'Sexual_Offenses' in col and any(kw in text for kw in ['rape', 'sexual', '363', '365', 'abuse']):
-                        traditional_dict[col] = 1.0
-                    elif 'Drug_Related' in col and any(kw in text for kw in ['drug', 'narcotic', 'poisons', 'opium act', 'heroin']):
-                        traditional_dict[col] = 1.0
-                    elif 'Robbery_Theft' in col and any(kw in text for kw in ['robbery', 'theft', 'burglary', '380', '394']):
-                        traditional_dict[col] = 1.0
-                    elif 'Fraud_Corruption' in col and any(kw in text for kw in ['fraud', 'corruption', 'bribery', 'cheating']):
-                        traditional_dict[col] = 1.0
-                    elif 'Firearms_Weapons' in col and any(kw in text for kw in ['firearm', 'weapon', 'explosives']):
-                        traditional_dict[col] = 1.0
-                    elif 'Traffic_Vehicle' in col and any(kw in text for kw in ['traffic', 'vehicle', 'rash driving']):
-                        traditional_dict[col] = 1.0
-                    elif 'Environmental' in col and any(kw in text for kw in ['environment', 'wildlife', 'forest']):
-                        traditional_dict[col] = 1.0
-                    elif 'Customs' in col and any(kw in text for kw in ['customs', 'import', 'export']):
-                        traditional_dict[col] = 1.0
-                    else:
-                        traditional_dict[col] = 0.0
-                elif col.startswith('appeal_type_'):
-                    # Handle appeal types
-                    if 'Conviction_Only' in col and any(kw in text for kw in ['conviction', 'acquittal']):
-                        traditional_dict[col] = 1.0
-                    elif 'Sentence_Only' in col and any(kw in text for kw in ['sentence', 'penalty', 'punishment']):
-                        traditional_dict[col] = 1.0
-                    elif 'Revision' in col and any(kw in text for kw in ['revision', 'review']):
-                        traditional_dict[col] = 1.0
-                    elif 'Writ' in col and any(kw in text for kw in ['writ', 'certiorari', 'mandamus']):
-                        traditional_dict[col] = 1.0
-                    else:
-                        traditional_dict[col] = 0.0
-                elif col == 'coa_year':
-                    traditional_dict[col] = 2024.0
-                elif col == 'appeal_duration_days':
-                    traditional_dict[col] = 730.0
-                elif col == 'evidence_count':
-                    evidence_cols = [c for c in traditional_cols if 'present' in c]
-                    traditional_dict[col] = sum(traditional_dict.get(c, 0) for c in evidence_cols)
-                else:
-                    traditional_dict[col] = 0.0
-            
-            logger.info(f"Traditional dictionary created with {len(traditional_dict)} features")
-            
-            # Step 4: Combine all features
-            all_features = {**traditional_dict, **tfidf_dict, **bert_dict}
-            logger.info(f"Combined all features: {len(all_features)} total")
-            
-            # Step 5: Create DataFrame with ONLY selected features (199 columns)
-            df_features = pd.DataFrame(0, index=[0], columns=self.X_train_full.columns)
-            
-            # Fill with actual values
-            for feature, value in all_features.items():
-                if feature in df_features.columns:
-                    df_features[feature] = value
-            
+            # Step 1-4: Build full feature DataFrame (shared helper)
+            df_features = self._build_feature_dataframe(case_description)
             logger.info(f"DataFrame created with shape: {df_features.shape}")
-            
-            # Step 6: Apply scaling (no feature selection needed - already selected)
+
+            # Step 5: Re-extract BERT embedding for similarity search
+            bert_features = self.bert_processor.get_embedding(case_description)
+
+            # Step 6: Apply scaling
             if self.scaler is not None:
                 selected_features = self.scaler.transform(df_features)
                 logger.info(f"Scaled features shape: {selected_features.shape}")
@@ -297,8 +545,28 @@ class AppealPredictor:
             
             # Step 8: Detect features for display
             detected_features = self._detect_features_improved(case_description)
-            
-            # Create result dictionary
+
+            # Step 9: Compute context analysis using aggregated statistics
+            try:
+                context_analysis = self.compute_context_analysis(detected_features)
+            except Exception as context_e:
+                logger.error(f"Error computing context analysis: {context_e}")
+                context_analysis = {}
+
+            # Step 10: Compute additional analytics for grounds and evidence
+            try:
+                grounds_analysis = self.compute_ground_analysis(detected_features)
+            except Exception as ge:
+                logger.error(f"Error computing grounds analysis: {ge}")
+                grounds_analysis = {}
+
+            try:
+                evidence_analysis = self.compute_evidence_analysis(detected_features)
+            except Exception as ee:
+                logger.error(f"Error computing evidence analysis: {ee}")
+                evidence_analysis = {}
+
+            # Create result dictionary with analytics
             result = {
                 'probabilities': {
                     'Appeal_Allowed': float(probabilities[0] * 100),
@@ -308,242 +576,268 @@ class AppealPredictor:
                 'prediction': predicted_class,
                 'confidence': float(max(probabilities) * 100),
                 'bert_embedding': bert_features,
-                'detected_features': detected_features
+                'detected_features': detected_features,
+                'context_analysis': context_analysis,
+                'grounds_analysis': grounds_analysis,
+                'evidence_analysis': evidence_analysis
             }
-            
+
+            # Step 11: Find similar cases using enhanced similarity
+            try:
+                similar_cases = self.find_similar_cases(case_description, bert_features)
+                result['similar_cases'] = similar_cases
+            except Exception as sc_e:
+                logger.error(f"Error finding similar cases: {sc_e}")
+                result['similar_cases'] = []
+
             return result
             
         except Exception as e:
             logger.error(f"Error in prediction: {e}")
             raise
-    
-    def find_similar_cases(self, bert_embedding: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
+        
+    def find_similar_cases(self, case_description: str, bert_embedding: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
         """
-        Find similar historical cases based on BERT embedding similarity
+        Enhanced similar cases search using 4 features + prediction outcome
         
         Args:
-            bert_embedding: BERT embedding of the current case
+            case_description: Full case description text
+            bert_embedding: BERT embedding of current case
             top_k: Number of similar cases to return
             
         Returns:
-            List of similar cases with details
+            List of similar cases with enhanced similarity scores
         """
         try:
-            # Calculate similarities
-            similarities = cosine_similarity(
+            # 1. Extract user features
+            user_features = self._detect_features_improved(case_description)
+
+            # FIX: Use _build_feature_dataframe instead of the missing
+            # _extract_traditional_features_improved method
+            df_user = self._build_feature_dataframe(case_description)
+            if self.scaler is not None:
+                scaled_user = self.scaler.transform(df_user)
+            else:
+                scaled_user = df_user.values
+
+            user_prediction_numeric = self.model.predict(scaled_user)[0]
+            user_prediction = self.label_encoder.inverse_transform([user_prediction_numeric])[0]
+
+            # 2. Calculate BERT similarity
+            bert_similarities = cosine_similarity(
                 bert_embedding.reshape(1, -1),
                 self.train_embeddings
             )[0]
+                     
+            # 3. Calculate enhanced similarities for each training case
+            enhanced_similarities = []
             
-            # Get top k most similar cases
-            top_indices = np.argsort(similarities)[-top_k:][::-1]
+            for idx in range(len(self.train_embeddings)):
+                train_case_text = self.df_cases.iloc[idx].get('brief_facts_summary', '')
+                train_features = self._detect_features_improved(str(train_case_text))
+                train_prediction = self.label_encoder.inverse_transform([self.y_train[idx]])[0]
+                
+                bert_sim = bert_similarities[idx]
+                
+                grounds_sim = self._jaccard_similarity(
+                    set(user_features.get('grounds', [])),
+                    set(train_features.get('grounds', []))
+                )
+                
+                evidence_sim = self._jaccard_similarity(
+                    set(user_features.get('evidence', [])),
+                    set(train_features.get('evidence', []))
+                )
+                
+                offence_sim = self._jaccard_similarity(
+                    set(user_features.get('offence', [])),
+                    set(train_features.get('offence', []))
+                )
+                
+                prediction_match = 1.0 if user_prediction == train_prediction else 0.0
+                
+                # Weighted combination
+                final_score = (
+                    0.2 * bert_sim +
+                    0.2 * grounds_sim +
+                    0.2 * evidence_sim +
+                    0.2 * offence_sim +
+                    0.2 * prediction_match
+                )
+                
+                enhanced_similarities.append((idx, final_score))
             
+            # 4. Get top k most similar cases
+            enhanced_similarities.sort(key=lambda x: x[1], reverse=True)
+            top_indices = [idx for idx, score in enhanced_similarities[:top_k]]
+            
+            # 5. Build similar cases list
+            # 5. Build similar cases list
             similar_cases = []
             for idx in top_indices:
                 case = self.df_cases.iloc[idx]
                 outcome = self.label_encoder.inverse_transform([self.y_train[idx]])[0]
+                similarity_score = enhanced_similarities[top_indices.index(idx)][1] * 100
                 
-                # Extract case details with proper handling of missing values
-                case_facts = str(case.get('brief_facts_summary', 'Details not available'))
-                conviction_status = str(case.get('coa_conviction_status', 'Not specified'))
-                case_number = str(case.get('ca_number', f"Case_{idx}"))
-                offence = str(case.get('offence_category', 'Not specified'))
-                high_court = str(case.get('high_court_location', 'Not specified'))
-                grounds = str(case.get('grounds_of_appeal_summary', 'Not specified'))
+                # Extract all case data with proper error handling
+                try:
+                    case_facts = str(case['brief_facts_summary']) if pd.notna(case['brief_facts_summary']) else 'Details not available'
+                except:
+                    case_facts = 'Details not available'
+                    
+                try:
+                    conviction_status = str(case['coa_conviction_status']) if pd.notna(case['coa_conviction_status']) else 'Not specified'
+                except:
+                    conviction_status = 'Not specified'
+                    
+                try:
+                    case_number = str(case['court_of_appeal_case_no']) if pd.notna(case['court_of_appeal_case_no']) else f"Case_{idx}"
+                except:
+                    case_number = f"Case_{idx}"
+                    
+                try:
+                    offence = str(case['offence_category']) if pd.notna(case['offence_category']) else 'Not specified'
+                except:
+                    offence = 'Not specified'
+                    
+                try:
+                    high_court = str(case['high_court_location']) if pd.notna(case['high_court_location']) else 'Not specified'
+                except:
+                    high_court = 'Not specified'
+                    
+                try:
+                    grounds = str(case['grounds_of_appeal_raw_text_summary']) if pd.notna(case['grounds_of_appeal_raw_text_summary']) else 'Not specified'
+                except:
+                    grounds = 'Not specified'
                 
-                # Clean up 'nan' values
-                for field_name, field_value in [
-                    ('conviction_status', conviction_status),
-                    ('case_number', case_number),
-                    ('offence', offence),
-                    ('high_court', high_court),
-                    ('grounds', grounds)
-                ]:
-                    if field_value in ['nan', 'None', '']:
-                        if field_name == 'case_number':
-                            field_value = f"Case_{idx}"
-                        else:
-                            field_value = 'Not specified'
+                # NEW FIELDS - DECISION DATE
+                try:
+                    judgment_date = str(case['judgment_date_coa']) if pd.notna(case['judgment_date_coa']) else None
+                    # Format as YYYY-MM-DD if it's a date string
+                    if judgment_date and judgment_date != 'NaT':
+                        decision_date = judgment_date.split(' ')[0] if ' ' in judgment_date else judgment_date
+                    else:
+                        decision_date = None
+                except:
+                    decision_date = None
                 
-                # Truncate grounds if too long
-                if grounds != 'Not specified' and len(grounds) > 300:
-                    grounds = grounds[:300] + "..."
+                # NEW FIELDS - VERDICT REASONING (Court of Appeal Analysis)
+                try:
+                    verdict_reasoning = str(case['court_of_appeal_analysis_summary']) if pd.notna(case['court_of_appeal_analysis_summary']) else None
+                    if verdict_reasoning == 'nan':
+                        verdict_reasoning = None
+                except:
+                    verdict_reasoning = None
+                
+                # NEW FIELDS - JUDGE'S COMMENTARY (High Court Analysis)
+                try:
+                    judge_commentary = str(case['hc_analysis_summary']) if pd.notna(case['hc_analysis_summary']) else None
+                    if judge_commentary == 'nan':
+                        judge_commentary = None
+                except:
+                    judge_commentary = None
+                
+                # NEW FIELDS - APPEAL GROUNDS LIST (Parse from structured notes)
+                try:
+                    appeal_grounds_list = []
+                    if pd.notna(case['grounds_of_appeal_structured_notes']) and case['grounds_of_appeal_structured_notes'] != 'nan':
+                        structured = str(case['grounds_of_appeal_structured_notes'])
+                        # Split by common delimiters
+                        appeal_grounds_list = [g.strip() for g in structured.split(',') if g.strip()]
+                    
+                    if not appeal_grounds_list:  # Fallback to extracted features
+                        appeal_grounds_list = train_features.get('grounds', [])
+                except:
+                    appeal_grounds_list = train_features.get('grounds', [])
+                
+                # NEW FIELDS - EVIDENCE TYPES LIST
+                try:
+                    evidence_types = []
+                    evidence_primary = str(case['evidence_type_primary']) if pd.notna(case['evidence_type_primary']) else ''
+                    evidence_secondary = str(case['evidence_type_secondary']) if pd.notna(case['evidence_type_secondary']) else ''
+                    
+                    if evidence_primary and evidence_primary != 'nan':
+                        evidence_types.extend([e.strip() for e in evidence_primary.split(',') if e.strip()])
+                    if evidence_secondary and evidence_secondary != 'nan':
+                        evidence_types.extend([e.strip() for e in evidence_secondary.split(',') if e.strip()])
+                    
+                    # Remove duplicates while preserving order
+                    evidence_types = list(dict.fromkeys(evidence_types))
+                    
+                    if not evidence_types:
+                        evidence_types = train_features.get('evidence', [])
+                except:
+                    evidence_types = train_features.get('evidence', [])
+                
+                # NEW FIELDS - APPEAL SUCCESS RATE (from statistics)
+                try:
+                    appeal_success_rate = None
+                    # Look up ground success rate from ground_stats
+                    if appeal_grounds_list and self.ground_stats:
+                        ground_col = f"gnd_{appeal_grounds_list[0].lower().replace(' ', '_')}"
+                        if ground_col in self.ground_stats:
+                            appeal_success_rate = self.ground_stats[ground_col].get('allowed_rate', None)
+                except:
+                    appeal_success_rate = None
+                
+                # NEW FIELDS - PRECEDENT VALUE
+                try:
+                    precedent_value = None
+                    precedents_cited = str(case['precedents_cited_list']) if pd.notna(case['precedents_cited_list']) else None
+                    if precedents_cited and precedents_cited != 'nan' and len(precedents_cited) > 5:
+                        precedent_value = "High - Multiple precedents cited"
+                    else:
+                        precedent_value = "Standard - Reference precedent"
+                except:
+                    precedent_value = None
+                
+                # NEW FIELDS - EXTRACT YEAR FROM DECISION DATE
+                try:
+                    year = None
+                    if decision_date:
+                        year = int(decision_date.split('-')[0])
+                    elif 'coa_year' in case.index:
+                        year = int(case['coa_year']) if pd.notna(case['coa_year']) else None
+                except:
+                    year = None
                 
                 similar_cases.append({
                     'case_id': case_number,
-                    'similarity': float(similarities[idx] * 100),
+                    'similarity': similarity_score,
                     'outcome': outcome,
                     'conviction_status': conviction_status,
                     'facts': case_facts,
                     'offence': offence,
                     'high_court': high_court,
-                    'grounds': grounds
+                    'grounds': grounds,
+                    # NEW FIELDS
+                    'decision_date': decision_date,
+                    'verdict_reasoning': verdict_reasoning,
+                    'judge_commentary': judge_commentary,
+                    'appeal_grounds_list': appeal_grounds_list,
+                    'evidence_types': evidence_types,
+                    'appeal_success_rate': appeal_success_rate,
+                    'precedent_value': precedent_value,
+                    'year': year,
+                    'citation': case_number  # Use case_number as citation
                 })
-            
+
             return similar_cases
             
         except Exception as e:
-            logger.error(f"Error finding similar cases: {e}")
+            logger.error(f"Error in enhanced similarity search: {e}")
             raise
-    
-    def _extract_traditional_features_improved(self, case_description: str) -> np.ndarray:
-        """
-        Extract traditional features matching improved model structure (49 features)
-        
-        Args:
-            case_description: Text description of case
-            
-        Returns:
-            Array of 49 traditional features in exact order from training data
-        """
-        # Get the exact column order from training data (non-BERT, non-TF-IDF)
-        traditional_cols = [col for col in self.X_train_full.columns 
-                         if not col.startswith('bert_') and not col.startswith('tfidf_')]
-        
-        # Initialize features with zeros
-        features = pd.Series(0.0, index=traditional_cols)
-        
-        text = case_description.lower()
-        
-        # Text statistics
-        if 'brief_facts_summary_length' in features.index:
-            features['brief_facts_summary_length'] = len(text)
-        if 'brief_facts_summary_word_count' in features.index:
-            features['brief_facts_summary_word_count'] = len(text.split())
-        if 'grounds_of_appeal_raw_text_summary_length' in features.index:
-            features['grounds_of_appeal_raw_text_summary_length'] = len(text) * 0.4
-        if 'grounds_of_appeal_raw_text_summary_word_count' in features.index:
-            features['grounds_of_appeal_raw_text_summary_word_count'] = len(text.split()) * 0.4
-        if 'court_of_appeal_analysis_summary_length' in features.index:
-            features['court_of_appeal_analysis_summary_length'] = len(text) * 0.3
-        if 'court_of_appeal_analysis_summary_word_count' in features.index:
-            features['court_of_appeal_analysis_summary_word_count'] = len(text.split()) * 0.3
-        
-        # Grounds of appeal
-        ground_keywords = {
-            'gnd_contradictions': ['contradiction', 'inconsistent', 'conflicting'],
-            'gnd_chain_of_custody': ['chain of custody', 'custody', 'preservation'],
-            'gnd_illegal_search': ['illegal search', 'unlawful search', 'search raid'],
-            'gnd_wrong_identification': ['identification', 'identify', 'mistaken identity'],
-            'gnd_dying_declaration': ['dying declaration', 'deathbed statement'],
-            'gnd_circumstantial': ['circumstantial', 'indirect evidence'],
-            'gnd_medical_inconsistency': ['medical', 'jmo', 'post-mortem'],
-            'gnd_misdirection': ['misdirection', 'wrong direction', 'legal error'],
-            'gnd_procedural_error': ['procedural', 'procedure', 'process error'],
-            'gnd_new_evidence': ['new evidence', 'fresh evidence'],
-            'gnd_excessive_sentence': ['excessive', 'harsh', 'inadequate sentence'],
-            'gnd_delay_prejudice': ['delay', 'prejudice', 'lapse of time'],
-            'gnd_judicial_bias': ['bias', 'unfair', 'prejudiced judge']
-        }
-        
-        for feature, keywords in ground_keywords.items():
-            if feature in features.index:
-                features[feature] = float(any(kw in text for kw in keywords))
-        
-        # Evidence presence
-        evidence_keywords = {
-            'eyewitness_present': ['eyewitness', 'witness', 'testimony'],
-            'child_witness_present': ['child witness', 'minor witness'],
-            'expert_evidence_present': ['expert', 'jmo', 'analyst', 'specialist'],
-            'forensic_evidence_present': ['forensic', 'dna', 'fingerprint', 'ballistic'],
-            'dying_declaration_present': ['dying declaration'],
-            'confession_present': ['confession', 'admitted', 'dock statement'],
-            'procedural_defects_present': ['procedural defect', 'process error', 'procedural'],
-            'digital_evidence_present': ['cctv', 'phone', 'digital', 'video', 'recording'],
-            'hospital_treatment_details_present': ['hospital', 'medical treatment', 'admitted to hospital']
-        }
-        
-        for feature, keywords in evidence_keywords.items():
-            if feature in features.index:
-                features[feature] = float(any(kw in text for kw in keywords))
-        
-        # Medical evidence score
-        if 'medical_evidence_score' in features.index:
-            medical_terms = ['medical', 'jmo', 'post-mortem', 'autopsy', 'pathologist', 'medical evidence']
-            features['medical_evidence_score'] = float(sum(1 for term in medical_terms if term in text))
-        
-        # Offence category (one-hot) - check exact column names
-        offence_categories = [
-            'offence_category_Assault_Violence',
-            'offence_category_Customs', 
-            'offence_category_Drug_Related',
-            'offence_category_Environmental',
-            'offence_category_Firearms_Weapons',
-            'offence_category_Fraud_Corruption',
-            'offence_category_Murder_Related',
-            'offence_category_Other',
-            'offence_category_Robbery_Theft',
-            'offence_category_Sexual_Offenses',
-            'offence_category_Traffic_Vehicle'
-        ]
-        
-        offence_map = {
-            'offence_category_Assault_Violence': ['assault', 'violence', 'harm'],
-            'offence_category_Customs': ['customs', 'import', 'export'],
-            'offence_category_Drug_Related': ['drug', 'narcotic', 'poisons', 'opium act', 'heroin'],
-            'offence_category_Environmental': ['environment', 'wildlife', 'forest'],
-            'offence_category_Firearms_Weapons': ['firearm', 'weapon', 'explosives'],
-            'offence_category_Fraud_Corruption': ['fraud', 'corruption', 'bribery', 'cheating'],
-            'offence_category_Murder_Related': ['murder', '296', 'homicide', 'culpable homicide'],
-            'offence_category_Other': [],
-            'offence_category_Robbery_Theft': ['robbery', 'theft', 'burglary', '380', '394'],
-            'offence_category_Sexual_Offenses': ['rape', 'sexual', '363', '365', 'abuse'],
-            'offence_category_Traffic_Vehicle': ['traffic', 'vehicle', 'rash driving']
-        }
-        
-        # Initialize all offence categories to 0
-        for category in offence_categories:
-            if category in features.index:
-                features[category] = 0.0
-        
-        # Set matching categories
-        for category, keywords in offence_map.items():
-            if category in features.index and keywords and any(kw in text for kw in keywords):
-                features[category] = 1.0
-        
-        # Appeal type (one-hot) - check exact column names
-        appeal_types = [
-            'appeal_type_Both',
-            'appeal_type_Conviction_Only',
-            'appeal_type_Other',
-            'appeal_type_Revision',
-            'appeal_type_Sentence_Only',
-            'appeal_type_Writ'
-        ]
-        
-        appeal_map = {
-            'appeal_type_Both': ['both', 'multiple'],
-            'appeal_type_Conviction_Only': ['conviction', 'acquittal'],
-            'appeal_type_Other': [],
-            'appeal_type_Revision': ['revision', 'review'],
-            'appeal_type_Sentence_Only': ['sentence', 'penalty', 'punishment'],
-            'appeal_type_Writ': ['writ', 'certiorari', 'mandamus']
-        }
-        
-        # Initialize all appeal types to 0
-        for appeal_type in appeal_types:
-            if appeal_type in features.index:
-                features[appeal_type] = 0.0
-        
-        # Set matching types
-        for appeal_type, keywords in appeal_map.items():
-            if appeal_type in features.index and keywords and any(kw in text for kw in keywords):
-                features[appeal_type] = 1.0
-        
-        # Temporal features
-        if 'coa_year' in features.index:
-            features['coa_year'] = 2024.0
-        if 'appeal_duration_days' in features.index:
-            features['appeal_duration_days'] = 730.0
-        
-        # Evidence count
-        if 'evidence_count' in features.index:
-            evidence_cols = [col for col in features.index if col.endswith('_present')]
-            features['evidence_count'] = sum(features[col] for col in evidence_cols)
-        
-        # Convert to numpy array in correct order (should be 49 features)
-        return features[traditional_cols].values.astype(float)
-    
+
+    def _jaccard_similarity(self, set1: set, set2: set) -> float:
+        """Calculate Jaccard similarity between two sets"""
+        if not set1 and not set2:
+            return 1.0
+        if not set1 or not set2:
+            return 0.0
+        intersection = len(set1.intersection(set2))
+        union = len(set1.union(set2))
+        return intersection / union if union > 0 else 0.0
+
     def _detect_features_improved(self, case_description: str) -> Dict[str, List[str]]:
         """
         Detect and categorize active features for user display (improved version)
@@ -563,7 +857,6 @@ class AppealPredictor:
             'other': []
         }
         
-        # Detect grounds
         ground_mapping = {
             'contradictions': ['contradiction', 'inconsistent', 'conflicting'],
             'chain of custody issues': ['chain of custody', 'custody', 'preservation'],
@@ -583,7 +876,6 @@ class AppealPredictor:
             if any(kw in text for kw in keywords):
                 detected['grounds'].append(ground.title())
         
-        # Detect evidence
         evidence_mapping = {
             'eyewitness testimony': ['eyewitness', 'witness', 'testimony'],
             'expert evidence': ['expert', 'jmo', 'analyst', 'specialist'],
@@ -597,7 +889,6 @@ class AppealPredictor:
             if any(kw in text for kw in keywords):
                 detected['evidence'].append(evidence.title())
         
-        # Detect offence
         offence_mapping = {
             'Murder': ['murder', '296', 'homicide', 'culpable homicide'],
             'Sexual Offenses': ['rape', 'sexual', '363', '365', 'abuse'],
@@ -610,7 +901,6 @@ class AppealPredictor:
             if any(kw in text for kw in keywords):
                 detected['offence'].append(offence)
         
-        # Detect other features
         if 'appeal' in text and 'allowed' in text:
             detected['other'].append('Appeal Allowed')
         if 'appeal' in text and 'dismissed' in text:
@@ -619,6 +909,7 @@ class AppealPredictor:
             detected['other'].append('Partially Allowed')
         
         return detected
+
 
     def get_model_metadata(self) -> Dict[str, Any]:
         """

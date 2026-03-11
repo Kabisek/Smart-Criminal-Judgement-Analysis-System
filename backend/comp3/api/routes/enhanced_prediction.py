@@ -68,24 +68,43 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
         # Find similar cases if requested
         similar_cases = []
         if request.include_precedents:
-            # Use the same similar cases from basic result to avoid duplicate async calls
             similar_cases_data = basic_result.get('similar_cases', [])
             
-            # Convert to SimilarCase objects
+            # Convert to SimilarCase objects with all new fields
             for case in similar_cases_data:
-                # Convert similarity from percentage to score
                 similarity_score = case['similarity'] / 100.0
                 
-                # Lower threshold to 0.5 (50%) instead of 0.7 (70%)
                 if similarity_score >= 0.5:
                     similar_cases.append(SimilarCase(
+                        # Core
                         case_id=case['case_id'],
                         similarity_score=similarity_score,
-                        case_summary=case.get('facts', ''),
+                        citation=case.get('citation', case['case_id']),
+                        
+                        # Dates and summary
+                        year=case.get('year', None),
+                        decision_date=case.get('decision_date', None),
+                        case_summary=case['facts'][:300] + "..." if len(case['facts']) > 300 else case['facts'],
                         outcome=case['outcome'],
+                        
+                        # Legal information
                         key_legal_points=[case.get('grounds', '')],
-                        citation=None,  # Not available in current data
-                        year=None     # Not available in current data
+                        offence=case.get('offence', 'Not specified'),
+                        grounds=case.get('grounds', 'Not specified'),
+                        appeal_grounds_list=case.get('appeal_grounds_list', []),
+                        
+                        # Reasoning and commentary (NEW - MAIN ADD)
+                        verdict_reasoning=case.get('verdict_reasoning', None),
+                        judge_commentary=case.get('judge_commentary', None),
+                        
+                        # Metadata
+                        high_court=case.get('high_court', 'Not specified'),
+                        conviction_status=case.get('conviction_status', 'Not specified'),
+                        evidence_types=case.get('evidence_types', []),
+                        
+                        # Analytics
+                        appeal_success_rate=case.get('appeal_success_rate', None),
+                        precedent_value=case.get('precedent_value', None)
                     ))
         
         # Create response
@@ -116,6 +135,13 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
             model_version="Improved Ensemble v2.0",
             feature_importance=enhanced_analysis['feature_importance']
         )
+        # Attach analytics (context, grounds and evidence) to the response (if available)
+        try:
+            response.context_analysis = basic_result.get('context_analysis', {})  # type: ignore
+            response.grounds_analysis = basic_result.get('grounds_analysis', {})  # type: ignore
+            response.evidence_analysis = basic_result.get('evidence_analysis', {})  # type: ignore
+        except Exception:
+            pass
         
         logger.info(f"Detailed prediction completed: {response.prediction} with {response.confidence:.1f}% confidence")
         return response
@@ -543,13 +569,14 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
         
         # Find similar cases using service
         similar_cases_data = prediction_service.predictor.find_similar_cases(
+            case_description,
             basic_result['bert_embedding'], 
             top_k=max_results
         )
         
         logger.info(f"Found {len(similar_cases_data)} similar cases from service")
         
-        # Convert to SimilarCase objects
+        # Convert to SimilarCase objects with ALL NEW FIELDS
         similar_cases = []
         for case in similar_cases_data:
             # Convert similarity from percentage to score
@@ -557,16 +584,40 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
             
             logger.info(f"Processing case {case['case_id']} with similarity {similarity_score:.3f} (threshold: {threshold})")
             
-            # Lower threshold to 0.5 (50%) instead of 0.7 (70%)
+            # Filter by threshold
             if similarity_score >= threshold:
                 similar_cases.append(SimilarCase(
+                    # Core fields
                     case_id=case['case_id'],
                     similarity_score=similarity_score,
-                    case_summary=case['facts'][:200] + "..." if len(case['facts']) > 200 else case['facts'],
+                    citation=case.get('citation', case['case_id']),
+                    
+                    # Summary and facts
+                    case_summary=case['facts'][:300] + "..." if len(case['facts']) > 300 else case['facts'],
                     outcome=case['outcome'],
+                    
+                    # Temporal
+                    year=case.get('year', None),
+                    decision_date=case.get('decision_date', None),
+                    
+                    # Legal details
                     key_legal_points=[case['grounds'][:100] + "..." if len(case['grounds']) > 100 else case['grounds']],
-                    citation=None,  # Not available in current data
-                    year=None     # Not available in current data
+                    offence=case.get('offence', 'Not specified'),
+                    grounds=case.get('grounds', 'Not specified'),
+                    appeal_grounds_list=case.get('appeal_grounds_list', []),
+                    
+                    # Verdict information (NEW)
+                    verdict_reasoning=case.get('verdict_reasoning', None),
+                    judge_commentary=case.get('judge_commentary', None),
+                    
+                    # Metadata
+                    high_court=case.get('high_court', 'Not specified'),
+                    conviction_status=case.get('conviction_status', 'Not specified'),
+                    evidence_types=case.get('evidence_types', []),
+                    
+                    # Analytics
+                    appeal_success_rate=case.get('appeal_success_rate', None),
+                    precedent_value=case.get('precedent_value', None)
                 ))
         
         logger.info(f"Returning {len(similar_cases)} similar cases after filtering")
@@ -574,7 +625,6 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
         
     except Exception as e:
         logger.error(f"Error finding similar cases: {e}")
-        # Fallback to empty list
         return []
 
 async def _generate_educational_content(case_description: str, basic_result: Dict, learning_mode: str, difficulty_level: str) -> Dict[str, Any]:
