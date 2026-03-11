@@ -1002,20 +1002,24 @@ class LegalResourceExtractor:
         # --- PRE-COMPUTE ANCHOR VECTORS (Refined for Legal Precision) ---
         print("   [Core] Pre-computing Semantic Axes...")
         self.anchors = {
-            # Prosecution: Focus on the ACT + INTENT + RESULT (Actus Reus + Mens Rea)
-            "Prosecution": self.emb_fn([
-                "guilt conviction punishment offence committed accused liable death penalty imprisonment fine "
-                "culpable homicide murder grievous hurt injury weapon intention knowledge negligence rash act "
-                "theft extortion robbery property dishonest misappropriation breach of trust cheating forgery"
-            ])[0],
+    # Prosecution: Focused on 'Proving the Ingredients' and 'Liability'
+         "Prosecution": self.emb_fn([
+        "guilty of the offence of punishable with imprisonment fine "
+        "whoever commits shall be punished liability for the act "
+        "voluntarily causing hurt intention to cause death knowledge of likelihood "
+        "wrongful gain wrongful loss dishonest intention criminal misappropriation "
+        "abatement of offence common intention in furtherance of a criminal act"
+    ])[0],
 
-            # Defense: Focus on EXCEPTIONS + JUSTIFICATIONS (General Exceptions)
-            "Defense": self.emb_fn([
-                "innocence acquittal exception defense alibi doubt mitigation private defence provocation "
-                "sudden fight grave and sudden provocation self-defense insanity intoxication consent "
-                "good faith mistake of fact accident necessity duress"
-            ])[0],
-
+    # Defense: Focused on 'Statutory Exceptions' and 'General Defences' 
+    "Defense": self.emb_fn([
+        "nothing is an offence which general exceptions special exception "
+        "right of private defence of the body and property justified by law "
+        "act of a person of unsound mind intoxication against his will "
+        "good faith without any criminal intention mistake of fact "
+        "grave and sudden provocation sudden fight without premeditation "
+        "benefit of the doubt acquittal mitigation of sentence"
+    ])[0],
             # Procedure: Focus on the PROCESS (Investigation -> Trial)
             "Procedure": self.emb_fn([
                 "investigation inquiry arrest bail medical examination report magistrate police warrant "
