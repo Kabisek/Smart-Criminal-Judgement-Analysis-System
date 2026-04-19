@@ -1,0 +1,59 @@
+{
+  "status": "success",
+  "analyzed_case_file": {
+    "case_header": {
+      "file_number": "L-SYN-2024-0106",
+      "date_of_analysis": "January 06, 2026",
+      "subject": "Criminal Case: State vs. Chandi Malli (2024)"
+    },
+    "incident_timeline": {
+      "what_happened": "The incident occurred on January 12, 2024, around 11:45 PM. My husband, Sirisena, our son, Kamalu, and I were sleeping at home. Suddenly, five individuals broke through our front door and entered the house. I recognized three of them. The main suspect, named Chandi Malli, had a T56-type firearm in his hand. The others had iron rods and machetes. Chandi Malli shouted and stated, \"Today, we will not spare you. If you do not withdraw the land case, we will kill you.\" Having said that, he shot my husband in the chest. My husband fell to the ground.",
+      "where_it_happened": "home",
+      "key_dates": [
+        "January 12, 2024: Date of incident",
+        "January 12, 2024: Date of incident"
+      ]
+    },
+    "parties_and_roles": {
+      "accused": "Chandi Malli",
+      "complainant": "Sirisena and family",
+      "doubters_witnesses": [
+        {
+          "name": "Witness (Neighbor)",
+          "role": "Eyewitness claiming to see accused leaving scene",
+          "doubt_factor": "Visual identification occurred at night, may have limited reliability"
+        },
+        {
+          "name": "Medical Officer",
+          "role": "Medical examination and cause of death determination",
+          "doubt_factor": "Standard medical evidence"
+        }
+      ]
+    },
+    "argument_synthesis": {
+      "prosecution_logic": [
+        "The prosecution will argue that Chandi Malli and his accomplices committed several grave offenses, including murder, grievous hurt, robbery, and criminal intimidation",
+        "The incident clearly demonstrates a targeted home invasion with the express motive of intimidating the family to withdraw a land case, culminating in extreme violence and theft",
+        "Firstly, the elements of **Robbery (DOC_0)** are fully satisfied",
+        "The intruders broke into the home, caused the death of Sirisena, caused grievous hurt to Kamalu, and placed a knife to the narrator's neck, instilling fear of instant death or hurt",
+        "This violence was directly linked to the 'committing of the theft' of gold jewelry and two hundred thousand rupees",
+        "The initial threat, 'Today, we will not spare you"
+      ],
+      "defense_logic": [
+        "The defense for Chandi Malli will focus on establishing his alibi and challenging the reliability of the prosecution's identification evidence",
+        "The primary argument is that Chandi Malli was not present at the scene of the crime, but was instead 100 kilometers away at a wedding ceremony, for which a video clip serves as concrete evidence",
+        "Firstly, the defense will argue that the witness identification by the narrator is unreliable due to the circumstances of the incident: late night (11:45 PM), extreme duress, and the chaotic nature of the attack involving multiple assailants",
+        "The memory and perception under such stressful conditions can be significantly impaired",
+        "The defense may also question if the light conditions were sufficient for a clear identification",
+        "Secondly, while a dying declaration is strong evidence, the defense may challenge its specific wording or context if there's any ambiguity, or argue that the victim, in his final moments of severe pain and shock, might have been mistaken or influenced"
+      ],
+      "reasonable_doubt_factors": [
+        "Firstly, the defense will argue that the witness identification by the narrator is unreliable due to the circumstances of the incident: late night (11:45 PM), extreme duress, and the chaotic nature of the attack involving multiple assailants",
+        "The defense may also question if the light conditions were sufficient for a clear identification",
+        "Secondly, while a dying declaration is strong evidence, the defense may challenge its specific wording or context if there's any ambiguity, or argue that the victim, in his final moments of severe pain and shock, might have been mistaken or influenced",
+        "While **DOC_11** concerns letters from the deceased, its principles regarding expressions 'not directly related to the circumstances of the transaction' could be adapted to challenge the *specificity* or *unambiguity* of the dying declaration, if possible"
+      ]
+    },
+    "final_judicial_opinion": "The case presents strong prosecution evidence including direct witness identification, dying declaration, and recovery of weapon. However, the defense presents an alibi with video evidence and challenges witness reliability. The court will need to weigh the credibility of evidence and determine if reasonable doubt exists."
+  }
+}

@@ -57,15 +57,18 @@ class ChromaStore:
         return self.client
 
     def _get_collection(self, create: bool = True):
-        """Get or create collection (when create=True)."""
+        """Get or create collection"""
         client = self._get_client()
-        if create:
-            self.collection = client.get_or_create_collection(
-                name=self.collection_name,
-                metadata={"hnsw:space": "cosine"},
-            )
-        else:
+        try:
             self.collection = client.get_collection(name=self.collection_name)
+        except Exception:
+            if create:
+                self.collection = client.create_collection(
+                    name=self.collection_name,
+                    metadata={"hnsw:space": "cosine"},
+                )
+            else:
+                raise
         return self.collection
 
     def add_embeddings(

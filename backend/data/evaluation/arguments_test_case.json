@@ -1,0 +1,110 @@
+{
+  "case_id": "case_20260106_214523",
+  "file_type": "unknown",
+  "cluster_id": 1,
+  "similar_cases": [
+    {
+      "case_id": "2023_AppealCourt_October_criminal_judgment_1171",
+      "distance": 0.07359099388122559,
+      "year": 2023,
+      "judge_names": "J.  \n \nCounsel,the High Court of Kegalle for the possession and trafficking of,B. Sasi Mahendran,proceeding to the police station,the trial court,R. Coomaraswamy,J.  \nThe Accused Appellant,Menaka Wijesundera"
+    },
+    {
+      "case_id": "2023_AppealCourt_July_criminal_judgment_1158",
+      "distance": 0.07776755094528198,
+      "year": 2023,
+      "judge_names": "B. Sasi Mahendran,J.  \n\n\nPage,J.  \nThe,J.  \nJudge,her but we finally conclude \nthat the trial judge rightly concluded in saying that the prosecution had \nproved its case beyond,Menaka Wijesundera,the arrest of the appellant"
+    },
+    {
+      "case_id": "2023_AppealCourt_October_criminal_judgment_1162",
+      "distance": 0.07876831293106079,
+      "year": 2023,
+      "judge_names": "court,B. Sasi Mahendran,J. \n \nThe,Menaka Wijesundera,J. \nCounsel,the trial judge the information \npossessed by the prosecution witnesses regarding the deceased is that he had \nleft the relations house to visit the appellant"
+    },
+    {
+      "case_id": "2021_AppealCourt_November_criminal_judgment_1139",
+      "distance": 0.0792236328125,
+      "year": 2021,
+      "judge_names": "he left the \nplace of the incident,A. Sivarasa,A. The,N. Bandula Karunarathna,R. Gurusinghe,this court,Q. Witness,A. We,Q. When,Q. What,court PW,R.Gurusinghe"
+    },
+    {
+      "case_id": "2021_AppealCourt_May_criminal_judgment_1131",
+      "distance": 0.08022749423980713,
+      "year": 2021,
+      "judge_names": "which the appellant was convicted \nshould be set aside on the ground of,they had left prison and when they were checked at the Court \npremises,J.  \nThe,N. Bandula Karunarathna,R. Gurusinghe,K. Kugaraja,V. The Queen,G.Fernando"
+    }
+  ],
+  "arguments": [
+    {
+      "title": "Precedent Support - Prosecution",
+      "content": "The prosecution's position is supported by similar cases ['2023_AppealCourt_October_criminal_judgment_1171', '2023_AppealCourt_July_criminal_judgment_1158', '2023_AppealCourt_October_criminal_judgment_1162'].",
+      "perspective": "prosecution",
+      "strength_score": 0.8,
+      "supporting_cases": [
+        "2023_AppealCourt_October_criminal_judgment_1171",
+        "2023_AppealCourt_July_criminal_judgment_1158",
+        "2023_AppealCourt_October_criminal_judgment_1162"
+      ],
+      "legal_principles": [],
+      "penal_codes": []
+    },
+    {
+      "title": "Precedent Support - Defense",
+      "content": "The defense finds support in precedents ['2023_AppealCourt_October_criminal_judgment_1171', '2023_AppealCourt_July_criminal_judgment_1158', '2023_AppealCourt_October_criminal_judgment_1162'].",
+      "perspective": "defense",
+      "strength_score": 0.8,
+      "supporting_cases": [
+        "2023_AppealCourt_October_criminal_judgment_1171",
+        "2023_AppealCourt_July_criminal_judgment_1158",
+        "2023_AppealCourt_October_criminal_judgment_1162"
+      ],
+      "legal_principles": [],
+      "penal_codes": []
+    }
+  ],
+  "adversarial_results": {
+    "enhanced_arguments": [
+      {
+        "original": {
+          "title": "Precedent Support - Prosecution",
+          "content": "The prosecution's position is supported by similar cases ['2023_AppealCourt_October_criminal_judgment_1171', '2023_AppealCourt_July_criminal_judgment_1158', '2023_AppealCourt_October_criminal_judgment_1162'].",
+          "perspective": "prosecution",
+          "strength_score": 0.8,
+          "supporting_cases": [
+            "2023_AppealCourt_October_criminal_judgment_1171",
+            "2023_AppealCourt_July_criminal_judgment_1158",
+            "2023_AppealCourt_October_criminal_judgment_1162"
+          ],
+          "legal_principles": [],
+          "penal_codes": []
+        },
+        "counter_arguments": []
+      },
+      {
+        "original": {
+          "title": "Precedent Support - Defense",
+          "content": "The defense finds support in precedents ['2023_AppealCourt_October_criminal_judgment_1171', '2023_AppealCourt_July_criminal_judgment_1158', '2023_AppealCourt_October_criminal_judgment_1162'].",
+          "perspective": "defense",
+          "strength_score": 0.8,
+          "supporting_cases": [
+            "2023_AppealCourt_October_criminal_judgment_1171",
+            "2023_AppealCourt_July_criminal_judgment_1158",
+            "2023_AppealCourt_October_criminal_judgment_1162"
+          ],
+          "legal_principles": [],
+          "penal_codes": []
+        },
+        "counter_arguments": []
+      }
+    ],
+    "simulation_summary": {
+      "total_arguments_tested": 2,
+      "total_counter_arguments": 0,
+      "most_common_counter_strategy": "cite_precedent"
+    },
+    "strategic_recommendations": [
+      "Address common weak points: Precedent distinguishability, Binding authority, Material differences",
+      "Prepare additional evidence to counter anticipated challenges"
+    ]
+  }
+}

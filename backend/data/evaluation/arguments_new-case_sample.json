@@ -1,0 +1,414 @@
+{
+  "case_id": "case_20260106_123042",
+  "file_type": "unknown",
+  "cluster_id": 1,
+  "similar_cases": [
+    {
+      "case_id": "2024_AppealCourt_September_criminal_judgment_1151",
+      "distance": 0.4759296774864197,
+      "year": 2024,
+      "judge_names": "Sampath,P. Kumararatnam,the \ncommencement of the main trial,J. \nThe Accused,B. Abayakoon,this court,A.Jayasinghe"
+    },
+    {
+      "case_id": "2023_AppealCourt_March_criminal_judgment_1166",
+      "distance": 0.4839942455291748,
+      "year": 2023,
+      "judge_names": "R. Gurusinghe,N. Bandula Karunarathna,J. \n \n \n \n \n \n \n \n\n\nPage,this court the learned President,the learned Judge of the High Court of \nColombo"
+    },
+    {
+      "case_id": "2021_AppealCourt_March_criminal_judgment_1155",
+      "distance": 0.48652946949005127,
+      "year": 2021,
+      "judge_names": "this court seems to be \nthat there is,P.Kumararatnam,M. Saman \nManoj,M.Saman Manoj,the High Court Judge who delivered the impugned \njudgment to adopt the evidence and deliver the judgment,another High Court Judge to adopt the evidence and pronounce \nthe judgment and accordingly,the learned judge who pronounced the \nimpugned judgment,whom the trial was concluded,Devika Abeyratne,K. Padmathilake Alias Sergeant Elpitiya,I. \nOn,V. \nOn,V. Munaweewa,he decided to sustain the conviction of \nthe Accused Appellant,M. Saman Manoj"
+    },
+    {
+      "case_id": "2022_AppealCourt_April_criminal_judgment_1129",
+      "distance": 0.4918225407600403,
+      "year": 2022,
+      "judge_names": "A. Navavi,Menaka Wijesundera,the High Court and applied the relevant provisions of the \nBribery Act"
+    },
+    {
+      "case_id": "2023_AppealCourt_November_criminal_judgment_1157",
+      "distance": 0.49466830492019653,
+      "year": 2023,
+      "judge_names": "V.  \nAkmeemana Obata Mudalige Ananda \nWijesena,S. Fernando,V. \nDirector General,B. Sasi Mahendran,the Supreme Court in the case of \nKarunaratne,J. Gregory Perera,J.  \n          The Accused,the \nHigh Court of Colombo on the following four Counts under section,Menaka Wijesundera,J.  \n \nCounsel"
+    }
+  ],
+  "arguments": [
+    {
+      "title": "Precedent Support - Prosecution",
+      "content": "Argument supporting prosecution position citing similar cases ['2024_AppealCourt_September_criminal_judgment_1151', '2023_AppealCourt_March_criminal_judgment_1166', '2021_AppealCourt_March_criminal_judgment_1155']. Include specific judge statements from model patterns if available.",
+      "perspective": "prosecution",
+      "strength_score": 0.8,
+      "supporting_cases": [
+        "2024_AppealCourt_September_criminal_judgment_1151",
+        "2023_AppealCourt_March_criminal_judgment_1166",
+        "2021_AppealCourt_March_criminal_judgment_1155"
+      ],
+      "judge_names": [
+        "Sampath",
+        "P. Kumararatnam",
+        "J. Jayasinghe",
+        "R. Gurusinghe",
+        "N. Bandula Karunarathna"
+      ],
+      "judge_statements": [
+        "The court has consistently held that fraudulent activities will not be tolerated",
+        "The accused's actions demonstrate a clear intent to deceive and misappropriate funds"
+      ],
+      "legal_principles": [
+        "The principle of fraud and misappropriation of funds is strictly prohibited under the law",
+        "The court will not hesitate to impose severe penalties for such offenses"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "The accused's admission of guilt initially and subsequent retraction of the statement can be seen as an attempt to deceive the court",
+        "The presence of forged documents and CCTV footage corroborates the prosecution's case"
+      ]
+    },
+    {
+      "title": "Precedent Support - Defense",
+      "content": "Argument supporting defense position citing similar cases. Include specific judge statements from model patterns if available.",
+      "perspective": "defense",
+      "strength_score": 0.6,
+      "supporting_cases": [
+        "2022_AppealCourt_April_criminal_judgment_1129",
+        "2023_AppealCourt_November_criminal_judgment_1157"
+      ],
+      "judge_names": [
+        "A. Navavi",
+        "Menaka Wijesundera",
+        "V. Akmeemana Obata Mudalige Ananda Wijesena"
+      ],
+      "judge_statements": [
+        "The court must consider the possibility of false accusations and ensure the accused's rights are protected",
+        "The prosecution must provide conclusive evidence to prove the accused's guilt beyond a reasonable doubt"
+      ],
+      "legal_principles": [
+        "The principle of innocent until proven guilty must be upheld",
+        "The court must carefully evaluate the evidence presented to ensure a fair trial"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "The accused's change in statement can be attributed to coercion or misunderstanding",
+        "The lack of direct evidence linking the accused to the crime raises doubts about their guilt"
+      ]
+    },
+    {
+      "title": "Precedent Support - Mitigating",
+      "content": "Argument for mitigating factors citing similar cases. Include specific judge statements from model patterns if available.",
+      "perspective": "mitigating",
+      "strength_score": 0.7,
+      "supporting_cases": [
+        "2021_AppealCourt_March_criminal_judgment_1155",
+        "2023_AppealCourt_March_criminal_judgment_1166"
+      ],
+      "judge_names": [
+        "P. Kumararatnam",
+        "M. Saman Manoj",
+        "R. Gurusinghe"
+      ],
+      "judge_statements": [
+        "The court may consider mitigating factors such as the accused's cooperation and remorse",
+        "The severity of the sentence must be proportionate to the offense committed"
+      ],
+      "legal_principles": [
+        "The principle of proportionality in sentencing must be upheld",
+        "The court must consider the accused's character and potential for rehabilitation"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "The accused's initial admission of guilt and subsequent cooperation with the investigation can be seen as a mitigating factor",
+        "The absence of prior convictions and the accused's good character can support a more lenient sentence"
+      ]
+    },
+    {
+      "title": "Precedent Support - Aggressive",
+      "content": "Aggressive argument citing binding precedents. Include specific judge statements from model patterns if available.",
+      "perspective": "aggressive",
+      "strength_score": 0.9,
+      "supporting_cases": [
+        "2024_AppealCourt_September_criminal_judgment_1151",
+        "2023_AppealCourt_November_criminal_judgment_1157"
+      ],
+      "judge_names": [
+        "Sampath",
+        "P. Kumararatnam",
+        "V. Akmeemana Obata Mudalige Ananda Wijesena"
+      ],
+      "judge_statements": [
+        "The court has consistently held that severe penalties will be imposed for fraudulent activities",
+        "The accused's actions demonstrate a clear intent to deceive and misappropriate funds, warranting a harsh sentence"
+      ],
+      "legal_principles": [
+        "The principle of fraud and misappropriation of funds is strictly prohibited under the law and will be severely punished",
+        "The court will not hesitate to impose maximum penalties for such offenses"
+      ],
+      "penal_codes": [],
+      "model_extracted_points": [
+        "The accused's actions constitute a serious breach of trust and warrant a severe sentence",
+        "The presence of forged documents and CCTV footage provides conclusive evidence of the accused's guilt, supporting an aggressive prosecution"
+      ]
+    }
+  ],
+  "scored_arguments": [
+    {
+      "title": "Precedent Support - Prosecution",
+      "strategic_score": 0.64,
+      "success_probability": 0.288,
+      "risk_assessment": "very_high",
+      "priority_rank": 1
+    },
+    {
+      "title": "Precedent Support - Aggressive",
+      "strategic_score": 0.63,
+      "success_probability": 0.2835,
+      "risk_assessment": "very_high",
+      "priority_rank": 2
+    },
+    {
+      "title": "Precedent Support - Mitigating",
+      "strategic_score": 0.49,
+      "success_probability": 0.2205,
+      "risk_assessment": "very_high",
+      "priority_rank": 3
+    },
+    {
+      "title": "Precedent Support - Defense",
+      "strategic_score": 0.42,
+      "success_probability": 0.189,
+      "risk_assessment": "very_high",
+      "priority_rank": 4
+    }
+  ],
+  "strategic_report": {
+    "summary": {
+      "total_arguments": 4,
+      "average_strategic_score": 0.545,
+      "average_success_probability": 0.2452
+    },
+    "priority_breakdown": {
+      "high_priority": 3,
+      "medium_priority": 1,
+      "low_priority": 0
+    },
+    "risk_distribution": {
+      "very_high": 4
+    },
+    "success_probability_ranges": {
+      "high_success": 0,
+      "medium_success": 0,
+      "low_success": 4
+    },
+    "top_arguments": [
+      {
+        "title": "Precedent Support - Prosecution",
+        "strategic_score": 0.64,
+        "success_probability": 0.288,
+        "risk_assessment": "very_high",
+        "priority_rank": 1
+      },
+      {
+        "title": "Precedent Support - Aggressive",
+        "strategic_score": 0.63,
+        "success_probability": 0.2835,
+        "risk_assessment": "very_high",
+        "priority_rank": 2
+      },
+      {
+        "title": "Precedent Support - Mitigating",
+        "strategic_score": 0.49,
+        "success_probability": 0.2205,
+        "risk_assessment": "very_high",
+        "priority_rank": 3
+      },
+      {
+        "title": "Precedent Support - Defense",
+        "strategic_score": 0.42,
+        "success_probability": 0.189,
+        "risk_assessment": "very_high",
+        "priority_rank": 4
+      }
+    ],
+    "strategic_recommendations": [
+      "Focus primary effort on 3 top-priority arguments",
+      "Strengthen 4 high-risk arguments or develop contingency plans",
+      "Consider revising or replacing 4 low-probability arguments"
+    ]
+  },
+  "adversarial_results": {
+    "enhanced_arguments": [
+      {
+        "original": {
+          "title": "Precedent Support - Prosecution",
+          "content": "Argument supporting prosecution position citing similar cases ['2024_AppealCourt_September_criminal_judgment_1151', '2023_AppealCourt_March_criminal_judgment_1166', '2021_AppealCourt_March_criminal_judgment_1155']. Include specific judge statements from model patterns if available.",
+          "perspective": "prosecution",
+          "strength_score": 0.8,
+          "supporting_cases": [
+            "2024_AppealCourt_September_criminal_judgment_1151",
+            "2023_AppealCourt_March_criminal_judgment_1166",
+            "2021_AppealCourt_March_criminal_judgment_1155"
+          ],
+          "judge_names": [
+            "Sampath",
+            "P. Kumararatnam",
+            "J. Jayasinghe",
+            "R. Gurusinghe",
+            "N. Bandula Karunarathna"
+          ],
+          "judge_statements": [
+            "The court has consistently held that fraudulent activities will not be tolerated",
+            "The accused's actions demonstrate a clear intent to deceive and misappropriate funds"
+          ],
+          "legal_principles": [
+            "The principle of fraud and misappropriation of funds is strictly prohibited under the law",
+            "The court will not hesitate to impose severe penalties for such offenses"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "The accused's admission of guilt initially and subsequent retraction of the statement can be seen as an attempt to deceive the court",
+            "The presence of forged documents and CCTV footage corroborates the prosecution's case"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "strategy": "cite_precedent",
+        "counter_content": "The defense's reliance on precedent is misplaced, as the current case presents distinct factual differences that render prior rulings inapplicable.",
+        "rebuttal": "While the defense attempts to distinguish the current case, a closer examination reveals that the core issues are substantially similar, thus warranting the application of established precedent.",
+        "strength_score": 0.7,
+        "weak_points": [
+          "overreliance on distinguishable facts",
+          "failure to address underlying legal principles"
+        ],
+        "original": {
+          "title": "Precedent Support - Defense",
+          "content": "Argument supporting defense position citing similar cases. Include specific judge statements from model patterns if available.",
+          "perspective": "defense",
+          "strength_score": 0.6,
+          "supporting_cases": [
+            "2022_AppealCourt_April_criminal_judgment_1129",
+            "2023_AppealCourt_November_criminal_judgment_1157"
+          ],
+          "judge_names": [
+            "A. Navavi",
+            "Menaka Wijesundera",
+            "V. Akmeemana Obata Mudalige Ananda Wijesena"
+          ],
+          "judge_statements": [
+            "The court must consider the possibility of false accusations and ensure the accused's rights are protected",
+            "The prosecution must provide conclusive evidence to prove the accused's guilt beyond a reasonable doubt"
+          ],
+          "legal_principles": [
+            "The principle of innocent until proven guilty must be upheld",
+            "The court must carefully evaluate the evidence presented to ensure a fair trial"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "The accused's change in statement can be attributed to coercion or misunderstanding",
+            "The lack of direct evidence linking the accused to the crime raises doubts about their guilt"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "strategy": "cite_precedent",
+        "counter_content": "The mitigating factors cited are not directly applicable due to differences in case specifics, such as the severity of the offense and the defendant's prior record.",
+        "rebuttal": "While it's true that each case has its unique aspects, the core principles of mitigation can still be applied, focusing on the intent behind the actions and the potential for rehabilitation.",
+        "strength_score": 0.65,
+        "weak_points": [
+          "overemphasis on case specifics",
+          "lack of consideration for broader legal principles"
+        ],
+        "original": {
+          "title": "Precedent Support - Mitigating",
+          "content": "Argument for mitigating factors citing similar cases. Include specific judge statements from model patterns if available.",
+          "perspective": "mitigating",
+          "strength_score": 0.7,
+          "supporting_cases": [
+            "2021_AppealCourt_March_criminal_judgment_1155",
+            "2023_AppealCourt_March_criminal_judgment_1166"
+          ],
+          "judge_names": [
+            "P. Kumararatnam",
+            "M. Saman Manoj",
+            "R. Gurusinghe"
+          ],
+          "judge_statements": [
+            "The court may consider mitigating factors such as the accused's cooperation and remorse",
+            "The severity of the sentence must be proportionate to the offense committed"
+          ],
+          "legal_principles": [
+            "The principle of proportionality in sentencing must be upheld",
+            "The court must consider the accused's character and potential for rehabilitation"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "The accused's initial admission of guilt and subsequent cooperation with the investigation can be seen as a mitigating factor",
+            "The absence of prior convictions and the accused's good character can support a more lenient sentence"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      },
+      {
+        "strategy": "distinguish_precedent",
+        "counter_content": "The cited precedents are distinguishable from the current case due to differences in factual circumstances, and therefore, do not apply.",
+        "rebuttal": "While the precedents may have some distinguishing factors, the core legal principles they establish are still relevant and controlling in this matter.",
+        "strength_score": 0.7,
+        "weak_points": [
+          "lack of direct applicability",
+          "potential for distinguishing facts"
+        ],
+        "original": {
+          "title": "Precedent Support - Aggressive",
+          "content": "Aggressive argument citing binding precedents. Include specific judge statements from model patterns if available.",
+          "perspective": "aggressive",
+          "strength_score": 0.9,
+          "supporting_cases": [
+            "2024_AppealCourt_September_criminal_judgment_1151",
+            "2023_AppealCourt_November_criminal_judgment_1157"
+          ],
+          "judge_names": [
+            "Sampath",
+            "P. Kumararatnam",
+            "V. Akmeemana Obata Mudalige Ananda Wijesena"
+          ],
+          "judge_statements": [
+            "The court has consistently held that severe penalties will be imposed for fraudulent activities",
+            "The accused's actions demonstrate a clear intent to deceive and misappropriate funds, warranting a harsh sentence"
+          ],
+          "legal_principles": [
+            "The principle of fraud and misappropriation of funds is strictly prohibited under the law and will be severely punished",
+            "The court will not hesitate to impose maximum penalties for such offenses"
+          ],
+          "penal_codes": [],
+          "model_extracted_points": [
+            "The accused's actions constitute a serious breach of trust and warrant a severe sentence",
+            "The presence of forged documents and CCTV footage provides conclusive evidence of the accused's guilt, supporting an aggressive prosecution"
+          ]
+        },
+        "counter_arguments": [],
+        "overall_robustness": 0.5
+      }
+    ],
+    "simulation_summary": {
+      "total_arguments_tested": 4,
+      "total_counter_arguments": 0,
+      "average_robustness": 0.5,
+      "most_common_counter_strategy": "cite_precedent",
+      "strategy_distribution": {
+        "cite_precedent": 0,
+        "challenge_evidence": 0,
+        "procedural_challenge": 0
+      }
+    },
+    "strategic_recommendations": [
+      "Focus on strengthening 0 arguments with low robustness scores",
+      "Address common weak points: Precedent distinguishability, Binding authority, Material differences",
+      "Prepare additional evidence to counter anticipated challenges"
+    ]
+  }
+}

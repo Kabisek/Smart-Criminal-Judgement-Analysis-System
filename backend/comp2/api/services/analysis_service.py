@@ -105,17 +105,16 @@ class AnalysisService:
                     f"ChromaDB directory not found at {CHROMA_PERSIST_DIR}. "
                     "Run backend2 Notebook 03 to populate ChromaDB, then copy chroma_db to backend/data/chroma_db_comp2/"
                 )
-            store = ChromaStore(
+            self._chroma_store = ChromaStore(
                 persist_directory=str(CHROMA_PERSIST_DIR),
                 collection_name=CHROMA_COLLECTION_NAME,
             )
-            count = store.count()
+            count = self._chroma_store.count()
             if count == 0:
                 raise FileNotFoundError(
                     f"ChromaDB collection '{CHROMA_COLLECTION_NAME}' is empty. "
                     "Run backend2 Notebook 03 to populate ChromaDB, then copy chroma_db to backend/data/chroma_db_comp2/"
                 )
-            self._chroma_store = store
             logger.info(f"[OK] ChromaDB loaded ({count} vectors)")
         return self._chroma_store
 
