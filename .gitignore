@@ -35,7 +35,8 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # ==================== ChromaDB / Vector Stores ====================
-
+backend/comp1/data/chroma_db/
+backend/comp1/data/chroma_db/chroma.sqlite3
 
 # ==================== IDE & OS ====================
 .idea/
@@ -59,11 +60,16 @@ backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 
 # ignore large model files under comp4 (>100MB)
 /backend/comp4/model_Component_ 4/**/model.safetensors
+# SentenceTransformer embed (downloaded from Drive / runtime_artifacts or POST /comp4/download-embed-model)
+backend/comp4/model_Component_ 4/all-MiniLM-L6-v2/
 /backend/comp1/data/structured
 /backend/data/chroma_db/chroma.sqlite3
 /backend/data/chroma_db/
 /backend/data/chroma_db_comp2/
 /backend/data/chroma_db_comp2/chroma.sqlite3
+
+# Component 4 runtime cache (regenerated locally; optional to ignore)
+backend/comp4/data_component_4/cache.sqlite
 
 uploads/
 results/
