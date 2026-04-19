@@ -992,7 +992,9 @@ class LegalResourceExtractor:
             self.emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="nlpaueb/legal-bert-base-uncased")
 
         self.client = chromadb.PersistentClient(path=db_path)
-        self.collection = self.client.get_collection(name="legal_knowledge_base", embedding_function=self.emb_fn)
+        self.collection = self.client.get_or_create_collection(
+            name="legal_knowledge_base", embedding_function=self.emb_fn
+        )
         
         # Only use Gemini for the final summary or complex query generation (Minimal usage)
         self.llm = genai.GenerativeModel(model_name="gemini-2.5-flash-lite")

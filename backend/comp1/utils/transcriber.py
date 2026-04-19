@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 # --- CONFIGURATION ---
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-print(os.getenv("GOOGLE_API_KEY"))
 
 # Global variable for Lazy Loading
 WHISPER_MODEL = None
