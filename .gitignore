@@ -64,7 +64,6 @@ backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 /backend/data/chroma_db/
 /backend/data/chroma_db_comp2/
 /backend/data/chroma_db_comp2/chroma.sqlite3
-/backend/data/judgments/
 
 # others
 /backend/skeleton_extracted/
