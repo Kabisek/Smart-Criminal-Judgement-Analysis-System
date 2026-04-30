@@ -51,6 +51,7 @@ class AppealPredictor:
         # Initialize components
         self.bert_processor = None
         self.feature_extractor = FeatureExtractor()
+        self.shap_cache = {}
         
         # Load models and data
         self._load_models()
@@ -58,8 +59,22 @@ class AppealPredictor:
         
         # Initialize BERT processor
         self.bert_processor = BERTProcessor(bert_model_name)
+        self._load_shap_cache()
         
         logger.info("AppealPredictor initialized successfully")
+
+    def _load_shap_cache(self):
+        """Load precomputed SHAP-style explanations if available."""
+        try:
+            cache_path = self.model_path.parent / 'improved_shap_summary.json'
+            if cache_path.exists():
+                with open(cache_path, 'r', encoding='utf-8') as f:
+                    self.shap_cache = json.load(f)
+            else:
+                self.shap_cache = {}
+        except Exception as e:
+            logger.warning(f"Unable to load SHAP cache: {e}")
+            self.shap_cache = {}
     
     def _load_models(self):
         """Load ML models and encoders"""
@@ -512,6 +527,95 @@ class AppealPredictor:
 
         return df_features
 
+    def _assess_legal_domain_relevance(self, case_description: str, detected_features: Dict[str, List[str]]) -> Dict[str, Any]:
+        """
+        Check whether the input text is likely a criminal appeal case narrative.
+        Returns a conservative domain relevance score and boolean flag.
+        """
+        text = case_description.lower()
+
+        # Appeal/procedure-focused legal terms.
+        legal_core_terms = [
+            'appeal', 'appellant', 'respondent', 'high court', 'court of appeal',
+            'conviction', 'acquittal', 'sentence', 'trial', 'judgment', 'judge',
+            'prosecution', 'defence', 'evidence', 'witness', 'accused', 'indictment'
+        ]
+
+        # Sri Lanka criminal-law-oriented signals used in this project domain.
+        domain_terms = [
+            'penal code', 'section', 'murder', 'rape', 'robbery', 'theft',
+            'homicide', 'forensic', 'confession', 'identification', 'misdirection',
+            'procedural error', 'revision', 'writ'
+        ]
+
+        legal_hits = sum(1 for term in legal_core_terms if term in text)
+        domain_hits = sum(1 for term in domain_terms if term in text)
+        extracted_hits = (
+            len(detected_features.get('grounds', [])) +
+            len(detected_features.get('evidence', [])) +
+            len(detected_features.get('offence', []))
+        )
+
+        # Weighted conservative score: requires legal vocabulary + extracted legal patterns.
+        score = (legal_hits * 2) + domain_hits + (extracted_hits * 2)
+        is_relevant = score >= 8 and legal_hits >= 2
+
+        return {
+            'is_legal_relevant': is_relevant,
+            'domain_score': score,
+            'legal_hits': legal_hits,
+            'domain_hits': domain_hits,
+            'extracted_hits': extracted_hits
+        }
+
+    def _build_domain_mismatch_response(
+        self,
+        bert_features: np.ndarray,
+        domain_check: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Return a safe abstention payload when input is outside legal-appeal domain.
+        """
+        return {
+            'probabilities': {
+                'Appeal_Allowed': 0.0,
+                'Appeal_Dismissed': 0.0,
+                'Partly_Allowed': 0.0
+            },
+            'prediction': 'Insufficient_Legal_Context',
+            'confidence': 0.0,
+            'top_outcomes': [],
+            'reason_trace': [
+                'Input does not appear to describe a criminal appeal case.',
+                'Prediction is intentionally abstained to avoid misleading legal output.',
+                'Please provide case facts, charges, grounds of appeal, evidence, and court decision context.'
+            ],
+            'shap_summary': {
+                'status': 'not_applicable',
+                'message': 'SHAP explanation is unavailable because prediction was abstained for domain mismatch.',
+                'top_feature_contributions': []
+            },
+            'bert_embedding': bert_features,
+            'detected_features': {
+                'grounds': [],
+                'evidence': [],
+                'offence': [],
+                'other': []
+            },
+            'context_analysis': {},
+            'grounds_analysis': {},
+            'evidence_analysis': {},
+            'confidence_band': 'low',
+            'manual_review_required': True,
+            'reliability_note': (
+                f"Input/domain mismatch detected (score={domain_check.get('domain_score', 0)}). "
+                "System abstained; provide legal appeal-specific case details."
+            ),
+            'abstained': True,
+            'review_priority': 'high',
+            'similar_cases': []
+        }
+
     def predict_appeal(self, case_description: str) -> Dict[str, Any]:
         """
         Predict appeal outcome for a given case description
@@ -540,11 +644,17 @@ class AppealPredictor:
             
             # Step 7: Make prediction
             probabilities = self.model.predict_proba(selected_features)[0]
-            prediction = self.model.predict(selected_features)[0]
-            predicted_class = self.label_encoder.inverse_transform([prediction])[0]
+            prediction_idx = self._select_prediction_index(probabilities)
+            predicted_class = self.label_encoder.inverse_transform([prediction_idx])[0]
             
             # Step 8: Detect features for display
             detected_features = self._detect_features_improved(case_description)
+
+            # Step 8.1: Guardrail - reject non-legal/non-appeal inputs.
+            domain_check = self._assess_legal_domain_relevance(case_description, detected_features)
+            if not domain_check.get('is_legal_relevant', False):
+                logger.warning(f"Domain mismatch detected. Input score: {domain_check}")
+                return self._build_domain_mismatch_response(bert_features, domain_check)
 
             # Step 9: Compute context analysis using aggregated statistics
             try:
@@ -566,20 +676,40 @@ class AppealPredictor:
                 logger.error(f"Error computing evidence analysis: {ee}")
                 evidence_analysis = {}
 
+            # Create reliability guidance for safer decision-support usage.
+            confidence_band, manual_review_required, reliability_note, abstained, review_priority = self._assess_prediction_reliability(
+                float(max(probabilities) * 100),
+                probabilities
+            )
+
             # Create result dictionary with analytics
+            probabilities_pct = {
+                'Appeal_Allowed': float(probabilities[0] * 100),
+                'Appeal_Dismissed': float(probabilities[1] * 100),
+                'Partly_Allowed': float(probabilities[2] * 100)
+            }
+            top_outcomes = self._get_top_outcomes(probabilities_pct)
+            reason_trace = self._build_reason_trace(predicted_class, detected_features, top_outcomes)
+            shap_summary = self._get_shap_summary(selected_features)
+
             result = {
-                'probabilities': {
-                    'Appeal_Allowed': float(probabilities[0] * 100),
-                    'Appeal_Dismissed': float(probabilities[1] * 100),
-                    'Partly_Allowed': float(probabilities[2] * 100)
-                },
+                'probabilities': probabilities_pct,
                 'prediction': predicted_class,
                 'confidence': float(max(probabilities) * 100),
+                'top_outcomes': top_outcomes,
+                'reason_trace': reason_trace,
+                'shap_summary': shap_summary,
                 'bert_embedding': bert_features,
                 'detected_features': detected_features,
                 'context_analysis': context_analysis,
                 'grounds_analysis': grounds_analysis,
-                'evidence_analysis': evidence_analysis
+                'evidence_analysis': evidence_analysis,
+                'confidence_band': confidence_band,
+                'manual_review_required': manual_review_required,
+                'reliability_note': reliability_note
+                ,
+                'abstained': abstained,
+                'review_priority': review_priority
             }
 
             # Step 11: Find similar cases using enhanced similarity
@@ -595,6 +725,127 @@ class AppealPredictor:
         except Exception as e:
             logger.error(f"Error in prediction: {e}")
             raise
+
+    def _select_prediction_index(self, probabilities: np.ndarray) -> int:
+        """
+        Apply optional class-specific thresholding before final class selection.
+        """
+        probs = np.asarray(probabilities, dtype=float)
+        default_idx = int(np.argmax(probs))
+
+        try:
+            metadata = self.get_model_metadata()
+            partly_threshold = float(metadata.get('partly_allowed_threshold', 0.5))
+        except Exception:
+            partly_threshold = 0.5
+
+        try:
+            classes = list(self.label_encoder.classes_)
+            if 'Partly_Allowed' in classes:
+                partly_idx = classes.index('Partly_Allowed')
+                if probs[partly_idx] >= partly_threshold:
+                    return int(partly_idx)
+        except Exception:
+            pass
+
+        return default_idx
+
+    def _assess_prediction_reliability(self, confidence: float, probabilities: np.ndarray) -> Tuple[str, bool, str, bool, str]:
+        """
+        Convert model confidence into a conservative trust policy.
+        """
+        sorted_probs = sorted([float(p) for p in probabilities], reverse=True)
+        margin = (sorted_probs[0] - sorted_probs[1]) * 100 if len(sorted_probs) >= 2 else 0.0
+
+        # Abstain when model is both low-confidence and ambiguous.
+        if confidence < 55 or margin < 8:
+            return (
+                'low',
+                True,
+                'Outcome is uncertain. System abstains from confident recommendation; full manual review required.',
+                True,
+                'high'
+            )
+        if confidence >= 80:
+            return (
+                'high',
+                False,
+                'Higher confidence estimate, but still advisory only; confirm with legal review.',
+                False,
+                'low'
+            )
+        if confidence >= 65:
+            return (
+                'medium',
+                True,
+                'Moderate confidence. Manual legal review is recommended before relying on this outcome.',
+                False,
+                'medium'
+            )
+        return (
+            'low',
+            True,
+            'Low confidence. Treat as uncertain and require full manual legal analysis.',
+            False,
+            'high'
+        )
+
+    def _get_top_outcomes(self, probabilities_pct: Dict[str, float], top_n: int = 3) -> List[Dict[str, Any]]:
+        ranked = sorted(probabilities_pct.items(), key=lambda x: x[1], reverse=True)[:top_n]
+        return [
+            {'rank': i + 1, 'outcome': outcome, 'probability': float(round(prob, 2))}
+            for i, (outcome, prob) in enumerate(ranked)
+        ]
+
+    def _build_reason_trace(
+        self,
+        prediction: str,
+        detected_features: Dict[str, List[str]],
+        top_outcomes: List[Dict[str, Any]]
+    ) -> List[str]:
+        trace: List[str] = []
+        trace.append(f"Primary predicted outcome: {prediction}.")
+        if top_outcomes:
+            top_text = ", ".join([f"{r['outcome']} ({r['probability']:.1f}%)" for r in top_outcomes[:3]])
+            trace.append(f"Top probability ranking: {top_text}.")
+
+        grounds = detected_features.get('grounds', [])[:3]
+        evidence = detected_features.get('evidence', [])[:3]
+        if grounds:
+            trace.append("Key grounds detected: " + ", ".join(grounds) + ".")
+        if evidence:
+            trace.append("Key evidence detected: " + ", ".join(evidence) + ".")
+        if not grounds and not evidence:
+            trace.append("Limited grounds/evidence features detected from provided text.")
+        return trace
+
+    def _get_shap_summary(self, selected_features: np.ndarray) -> Dict[str, Any]:
+        """
+        SHAP-ready hook: returns status for current runtime model and
+        a placeholder payload to extend with full SHAP in future.
+        """
+        if self.shap_cache:
+            prediction_cache = self.shap_cache.get('prediction_summary', {})
+            global_cache = self.shap_cache.get('global_summary', {})
+            return {
+                'status': 'enabled_cached',
+                'message': 'Precomputed SHAP-style explanations loaded from offline cache.',
+                'top_feature_contributions': prediction_cache.get('top_feature_contributions', []),
+                'global_feature_importance': global_cache.get('top_global_features', [])
+            }
+
+        return {
+            'status': 'not_enabled_runtime',
+            'message': 'SHAP explanation cache not found. Run comp3/generate_shap_cache.py.',
+            'top_feature_contributions': []
+        }
+
+    def _similarity_badge(self, similarity_score: float) -> str:
+        if similarity_score >= 80:
+            return 'high'
+        if similarity_score >= 60:
+            return 'medium'
+        return 'low'
         
     def find_similar_cases(self, case_description: str, bert_embedding: np.ndarray, top_k: int = 5) -> List[Dict[str, Any]]:
         """
@@ -629,10 +880,13 @@ class AppealPredictor:
                 self.train_embeddings
             )[0]
                      
-            # 3. Calculate enhanced similarities for each training case
+            # 3. Calculate enhanced similarities for each training case.
+            # Keep loop bounds aligned across all backing arrays to avoid
+            # index errors when train labels are smaller than source dataset.
+            max_cases = min(len(self.train_embeddings), len(self.df_cases), len(self.y_train))
             enhanced_similarities = []
             
-            for idx in range(len(self.train_embeddings)):
+            for idx in range(max_cases):
                 train_case_text = self.df_cases.iloc[idx].get('brief_facts_summary', '')
                 train_features = self._detect_features_improved(str(train_case_text))
                 train_prediction = self.label_encoder.inverse_transform([self.y_train[idx]])[0]
@@ -669,15 +923,15 @@ class AppealPredictor:
             
             # 4. Get top k most similar cases
             enhanced_similarities.sort(key=lambda x: x[1], reverse=True)
-            top_indices = [idx for idx, score in enhanced_similarities[:top_k]]
+            top_ranked = enhanced_similarities[:top_k]
             
             # 5. Build similar cases list
             # 5. Build similar cases list
             similar_cases = []
-            for idx in top_indices:
+            for idx, score in top_ranked:
                 case = self.df_cases.iloc[idx]
                 outcome = self.label_encoder.inverse_transform([self.y_train[idx]])[0]
-                similarity_score = enhanced_similarities[top_indices.index(idx)][1] * 100
+                similarity_score = score * 100
                 
                 # Extract all case data with proper error handling
                 try:
@@ -804,6 +1058,7 @@ class AppealPredictor:
                 similar_cases.append({
                     'case_id': case_number,
                     'similarity': similarity_score,
+                    'relevance_badge': self._similarity_badge(similarity_score),
                     'outcome': outcome,
                     'conviction_status': conviction_status,
                     'facts': case_facts,
@@ -934,11 +1189,11 @@ class AppealPredictor:
                     if field not in metadata:
                         # Fallback to defaults if missing
                         defaults = {
-                            'accuracy': 0.7975,
-                            'model_name': 'Improved Calibrated Ensemble',
-                            'training_date': '2026-03-01',
-                            'training_samples': 1092,
-                            'num_features': 199
+                            'accuracy': 0.6299,
+                            'model_name': 'Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)',
+                            'training_date': '2026-04-30',
+                            'training_samples': 478,
+                            'num_features': 203
                         }
                         metadata[field] = defaults.get(field)
                 
@@ -946,19 +1201,19 @@ class AppealPredictor:
             else:
                 # Return improved model defaults
                 return {
-                    'accuracy': 0.7975,
-                    'model_name': 'Improved Calibrated Ensemble',
-                    'training_date': '2026-03-01',
-                    'training_samples': 1092,
-                    'num_features': 199
+                    'accuracy': 0.6299,
+                    'model_name': 'Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)',
+                    'training_date': '2026-04-30',
+                    'training_samples': 478,
+                    'num_features': 203
                 }
         except Exception as e:
             logger.error(f"Error loading metadata: {e}")
             # Return improved model defaults as fallback
             return {
-                'accuracy': 0.7975,
-                'model_name': 'Improved Calibrated Ensemble',
-                'training_date': '2026-03-01',
-                'training_samples': 1092,
-                'num_features': 199
+                'accuracy': 0.6299,
+                'model_name': 'Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)',
+                'training_date': '2026-04-30',
+                'training_samples': 478,
+                'num_features': 203
             }

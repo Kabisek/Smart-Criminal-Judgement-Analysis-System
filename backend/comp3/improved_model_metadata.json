@@ -1,25 +1,26 @@
 {
-    "model_type": "Calibrated Voting Ensemble",
-    "ensemble_models": [
-        "Gradient Boosting",
-        "Support Vector Machine",
-        "Logistic Regression"
-    ],
-    "cv_f1_score": 0.8570290041356685,
-    "test_accuracy": 0.7974683544303798,
-    "test_f1_score": 0.7991643914949945,
-    "test_precision": 0.801386140582895,
-    "test_recall": 0.7974683544303798,
-    "n_features": 199,
-    "n_train_samples": 1000,
-    "n_test_samples": 251,
-    "target_classes": [
-        "Appeal_Allowed",
-        "Appeal_Dismissed",
-        "Partly_Allowed"
-    ],
-    "training_date": "2026-03-01 16:40:46",
-    "overfitting_gap": 0.09802717563961239,
-    "smote_applied": true,
-    "feature_engineering": "improved_hybrid"
+  "model_type": "Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)",
+  "ensemble_models": [
+    "ExtraTrees",
+    "GradientBoosting",
+    "CatBoost",
+    "SVM"
+  ],
+  "selection_reason": "Best balanced composite over holdout metrics",
+  "test_accuracy": 0.6299376299376299,
+  "test_f1_score": 0.6308783379626558,
+  "test_macro_f1_score": 0.6007319505663204,
+  "test_balanced_accuracy": 0.6315874332043486,
+  "partly_allowed_recall": 0.625,
+  "partly_allowed_threshold": 0.25,
+  "composite_score": 0.6196226254899633,
+  "n_features": 203,
+  "n_train_samples": 478,
+  "n_test_samples": 481,
+  "overfitting_gap_proxy": 0.39141464629231826,
+  "accuracy": 0.6299376299376299,
+  "model_name": "Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)",
+  "training_date": "2026-04-30",
+  "training_samples": 478,
+  "num_features": 203
 }

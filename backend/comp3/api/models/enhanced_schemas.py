@@ -44,6 +44,7 @@ class SimilarCase(BaseModel):
     # Analytics
     appeal_success_rate: Optional[float] = Field(None, description="Success rate for similar cases with same grounds")
     precedent_value: Optional[str] = Field(None, description="Relevance/binding nature of this precedent")
+    relevance_badge: Optional[str] = Field("medium", description="Precedent relevance badge: high, medium, low")
 
 class LegalFactor(BaseModel):
     factor_name: str
@@ -61,6 +62,14 @@ class DetailedPredictionResponse(BaseModel):
     # Basic prediction
     prediction: str
     confidence: float
+    confidence_band: str = Field(default="low", description="Reliability band: low, medium, high")
+    manual_review_required: bool = Field(default=True, description="Whether manual legal review is mandatory")
+    reliability_note: str = Field(default="Manual legal review is recommended.", description="Safety guidance for interpreting prediction")
+    abstained: bool = Field(default=False, description="Whether model abstained due to low confidence/ambiguity")
+    review_priority: str = Field(default="medium", description="Recommended review priority: low, medium, high")
+    top_outcomes: List[Dict[str, Any]] = Field(default_factory=list, description="Top-N ranked outcome probabilities")
+    reason_trace: List[str] = Field(default_factory=list, description="Short explanation bullets for prediction reasoning")
+    shap_summary: Dict[str, Any] = Field(default_factory=dict, description="SHAP-style explanation payload/status")
     probabilities: Dict[str, float]
     detected_features: Dict[str, List[str]]  # Add this missing field
     

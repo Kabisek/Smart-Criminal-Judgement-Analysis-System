@@ -97,12 +97,19 @@ class PredictionService:
             # Get prediction
             prediction_result = self.predictor.predict_appeal(case_description)
             
-            # Find similar cases
-            similar_cases = self.predictor.find_similar_cases(
-                case_description,  # ✅ Add case_description as first argument
-                prediction_result['bert_embedding'],
-                top_k=SIMILAR_CASES_TOP_K
+            # Find similar cases only for valid in-domain predictions.
+            is_domain_mismatch = (
+                prediction_result.get('abstained', False)
+                and prediction_result.get('prediction') == 'Insufficient_Legal_Context'
             )
+            if is_domain_mismatch:
+                similar_cases = []
+            else:
+                similar_cases = self.predictor.find_similar_cases(
+                    case_description,
+                    prediction_result['bert_embedding'],
+                    top_k=SIMILAR_CASES_TOP_K
+                )
             
             # Get model metadata
             metadata = self.predictor.get_model_metadata()
@@ -118,6 +125,14 @@ class PredictionService:
                 'confidence': prediction_result['confidence'],
                 'probabilities': prediction_result['probabilities'],
                 'detected_features': prediction_result['detected_features'],
+                'confidence_band': prediction_result.get('confidence_band', 'low'),
+                'manual_review_required': prediction_result.get('manual_review_required', True),
+                'reliability_note': prediction_result.get('reliability_note', 'Manual legal review is recommended.'),
+                'abstained': prediction_result.get('abstained', False),
+                'review_priority': prediction_result.get('review_priority', 'medium'),
+                'top_outcomes': prediction_result.get('top_outcomes', []),
+                'reason_trace': prediction_result.get('reason_trace', []),
+                'shap_summary': prediction_result.get('shap_summary', {}),
                 'context_analysis': context_analysis,
                 'grounds_analysis': grounds_analysis,
                 'evidence_analysis': evidence_analysis,

@@ -14,6 +14,7 @@ import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader, Button } from '../components/ui';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import React, { useState, useEffect, useRef } from 'react';
+import { ExpandableText, AnimatedBar, SectionDivider, PillChip } from '../components/comp3/CommonWidgets';
 import {
   predictAppealOutcomeDetailed,
   saveComp3History,
@@ -71,10 +72,18 @@ const OUTCOME_THEME = {
     icon: '⚖️',
     label: 'Partly Allowed',
   },
+  Insufficient_Legal_Context: {
+    color: '#6B7280',
+    bg: '#F3F4F6',
+    text: '#374151',
+    light: '#F9FAFB',
+    icon: '⛔',
+    label: 'Abstained (Invalid Input)',
+  },
 };
 
 function getTheme(prediction: string) {
-  return OUTCOME_THEME[prediction as keyof typeof OUTCOME_THEME] ?? OUTCOME_THEME.Partly_Allowed;
+  return OUTCOME_THEME[prediction as keyof typeof OUTCOME_THEME] ?? OUTCOME_THEME.Insufficient_Legal_Context;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -101,56 +110,6 @@ function simBadgeStyle(pct: number): { bg: string; text: string } {
 }
 
 // ─── ExpandableText ───────────────────────────────────────────────────────────
-
-const TRUNCATE_LIMIT = 300;
-
-function ExpandableText({ text, style, limit = TRUNCATE_LIMIT }: { text: string; style?: any; limit?: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const needs = text.length > limit;
-  const display = needs && !expanded ? text.substring(0, limit) + '…' : text;
-  return (
-    <Text style={style}>
-      {display}
-      {needs && (
-        <Text onPress={() => setExpanded(p => !p)} style={styles.readMoreLink}>
-          {expanded ? '  Show Less ▲' : '  Read More ▼'}
-        </Text>
-      )}
-    </Text>
-  );
-}
-
-// ─── AnimatedBar ──────────────────────────────────────────────────────────────
-
-function AnimatedBar({ value, color, height = 8 }: { value: number; color: string; height?: number }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: value,
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [value]);
-  const width = anim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-  return (
-    <View style={[styles.barTrack, { height }]}>
-      <Animated.View style={[styles.barFill, { width, backgroundColor: color, height }]} />
-    </View>
-  );
-}
-
-// ─── SectionDivider ───────────────────────────────────────────────────────────
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <View style={styles.dividerRow}>
-      <View style={styles.dividerLine} />
-      <Text style={styles.dividerLabel}>{label}</Text>
-      <View style={styles.dividerLine} />
-    </View>
-  );
-}
 
 // ─── SkeletonCard ─────────────────────────────────────────────────────────────
 
@@ -236,16 +195,6 @@ function VerdictBanner({ prediction, confidence }: { prediction: string; confide
         <Text style={styles.verdictConfLabel}>confidence</Text>
       </View>
     </Animated.View>
-  );
-}
-
-// ─── PillChip ─────────────────────────────────────────────────────────────────
-
-function PillChip({ label, accentColor }: { label: string; accentColor: string }) {
-  return (
-    <View style={[styles.pillChip, { borderLeftColor: accentColor }]}>
-      <Text style={styles.pillChipText}>{label}</Text>
-    </View>
   );
 }
 
@@ -520,7 +469,7 @@ export default function Component3Screen() {
             </View>
 
             {caseDescription.length > 0 && caseDescription.length < 100 && (
-              <Text style={styles.warningText}>⚠️ At least 100 characters needed for accurate prediction</Text>
+              <Text style={styles.warningText}>⚠️ At least 50 characters needed for prediction</Text>
             )}
             {error && (
               <View style={styles.errorBox}>
@@ -549,6 +498,8 @@ export default function Component3Screen() {
           {/* ── Results ── */}
           {result && (() => {
             const theme = getTheme(result.prediction);
+            const isAbstained = Boolean((result as any).abstained);
+            const isDomainMismatch = result.prediction === 'Insufficient_Legal_Context';
             return (
               <>
                 {/* 1. Animated Verdict Banner */}
@@ -669,7 +620,7 @@ export default function Component3Screen() {
                 </Card>
 
                 {/* Enhanced Legal Analysis */}
-                {isDetailed(result) && (
+                {isDetailed(result) && !isAbstained && (
                   <Card style={styles.resultCard} title="⚖️ Legal Analysis">
                     <View style={styles.enhancedSection}>
                       <View style={styles.legalReasoningBox}>
@@ -719,11 +670,17 @@ export default function Component3Screen() {
                 {/* Why This Prediction */}
                 <Card style={styles.resultCard} title="💡 Why This Prediction?">
                   <View style={styles.reasoningSection}>
-                    <Text style={styles.reasoningText}>
-                      {'Based on '}
-                      <Text style={{ fontWeight: '700' }}>{flatFeatures(result.detected_features).join(', ')}</Text>
-                      {' and legal pattern analysis:'}
-                    </Text>
+                    {isAbstained ? (
+                      <Text style={styles.reasoningText}>
+                        {(result as any).reliability_note || 'Input does not match legal appeal domain. Prediction abstained.'}
+                      </Text>
+                    ) : (
+                      <Text style={styles.reasoningText}>
+                        {'Based on '}
+                        <Text style={{ fontWeight: '700' }}>{flatFeatures(result.detected_features).join(', ')}</Text>
+                        {' and legal pattern analysis:'}
+                      </Text>
+                    )}
                     {result.prediction === 'Appeal_Allowed' && result.confidence > 60 && (
                       <View style={[styles.reasoningBlock, { borderLeftColor: '#059669', backgroundColor: '#ECFDF5' }]}>
                         <Text style={[styles.reasoningTitle, { color: '#059669' }]}>🟢 Strong indicators for Appeal Allowed</Text>
@@ -740,7 +697,7 @@ export default function Component3Screen() {
                         </Text>
                       </View>
                     )}
-                    {result.confidence < 55 && (
+                    {!isAbstained && result.confidence < 55 && (
                       <View style={[styles.reasoningBlock, { borderLeftColor: '#D97706', backgroundColor: '#FFFBEB' }]}>
                         <Text style={[styles.reasoningTitle, { color: '#D97706' }]}>🟡 Mixed signals — borderline case</Text>
                         <Text style={styles.reasoningPoints}>
@@ -808,9 +765,10 @@ export default function Component3Screen() {
                   </View>
                 </Card>
 
-                <SectionDivider label="📚 SIMILAR PRECEDENTS" />
+                {!isDomainMismatch && <SectionDivider label="📚 SIMILAR PRECEDENTS" />}
 
                 {/* 5. Similar Cases with all improvements */}
+                {!isDomainMismatch && (
                 <Card style={styles.resultCard} title="📚 Similar Historical Cases">
                   <Text style={styles.sectionSubtitle}>AI-matched court case precedents</Text>
 
@@ -976,6 +934,7 @@ export default function Component3Screen() {
                     );
                   })}
                 </Card>
+                )}
               </>
             );
           })()}

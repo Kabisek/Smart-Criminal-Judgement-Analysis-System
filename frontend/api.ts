@@ -220,7 +220,6 @@ export interface DetectedFeatures {
   grounds: string[];
   evidence: string[];
   offence: string[];
-  appeal_type: string[];
   other: string[];
 }
 

@@ -1,0 +1,142 @@
+{
+  "version": "v1_offline_cached",
+  "method": "tree_importance_weighted_local_proxy",
+  "global_summary": {
+    "top_global_features": [
+      {
+        "feature": "tfidf_conviction",
+        "importance": 0.05855877986102184
+      },
+      {
+        "feature": "tfidf_sentence",
+        "importance": 0.04326157371104452
+      },
+      {
+        "feature": "tfidf_credible",
+        "importance": 0.04147979269415763
+      },
+      {
+        "feature": "tfidf_consistent",
+        "importance": 0.034106946530611026
+      },
+      {
+        "feature": "tfidf_compensation",
+        "importance": 0.03360106238567874
+      },
+      {
+        "feature": "offence_category_Sexual_Offenses",
+        "importance": 0.02362225636337326
+      },
+      {
+        "feature": "tfidf_imposed",
+        "importance": 0.022737140302265944
+      },
+      {
+        "feature": "tfidf_prosecution",
+        "importance": 0.0198580249144907
+      },
+      {
+        "feature": "appeal_type_Both",
+        "importance": 0.019448819663715193
+      },
+      {
+        "feature": "tfidf_fight",
+        "importance": 0.01897363333576998
+      },
+      {
+        "feature": "tfidf_years",
+        "importance": 0.017918850085845935
+      },
+      {
+        "feature": "appeal_type_Sentence_Only",
+        "importance": 0.01575608814272425
+      },
+      {
+        "feature": "tfidf_penal code",
+        "importance": 0.015579427844639254
+      },
+      {
+        "feature": "tfidf_counsel",
+        "importance": 0.015114755137515088
+      },
+      {
+        "feature": "appeal_duration_days",
+        "importance": 0.014550796543336984
+      },
+      {
+        "feature": "tfidf_code",
+        "importance": 0.011987363872272496
+      },
+      {
+        "feature": "tfidf_corroborated",
+        "importance": 0.011439844706772577
+      },
+      {
+        "feature": "bert_120",
+        "importance": 0.010405956518657203
+      },
+      {
+        "feature": "gnd_contradictions",
+        "importance": 0.010329525326819588
+      },
+      {
+        "feature": "bert_574",
+        "importance": 0.009961725153022604
+      }
+    ]
+  },
+  "prediction_summary": {
+    "top_feature_contributions": [
+      {
+        "feature": "tfidf_sentence",
+        "contribution": 0.10075599492487189,
+        "value": 2.328995140071598
+      },
+      {
+        "feature": "tfidf_imposed",
+        "contribution": 0.0718623084993037,
+        "value": 3.160569339150448
+      },
+      {
+        "feature": "appeal_type_Sentence_Only",
+        "contribution": 0.04942167659333929,
+        "value": 3.136671751621352
+      },
+      {
+        "feature": "tfidf_conviction",
+        "contribution": 0.032437733307327944,
+        "value": -0.5539345830687175
+      },
+      {
+        "feature": "tfidf_credible",
+        "contribution": 0.027959679346422996,
+        "value": -0.6740554262789524
+      },
+      {
+        "feature": "appeal_type_Both",
+        "contribution": 0.02432957553585704,
+        "value": -1.2509538345531404
+      },
+      {
+        "feature": "witness_evidence_analysis_summary_length",
+        "contribution": 0.01911557198377568,
+        "value": 3.01784995537482
+      },
+      {
+        "feature": "tfidf_prosecution",
+        "contribution": 0.018944872757050844,
+        "value": -0.954015962746954
+      },
+      {
+        "feature": "brief_facts_summary_word_count",
+        "contribution": 0.018089793318722062,
+        "value": 4.230561969161713
+      },
+      {
+        "feature": "hc_judgment_summary_length",
+        "contribution": 0.016858359876083494,
+        "value": 2.085687704576216
+      }
+    ]
+  }
+}
