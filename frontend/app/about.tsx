@@ -65,6 +65,7 @@ export default function AboutScreen() {
             </View>
           </Card>
         </Container>
+      </View>
     </Layout>
   );
 }
