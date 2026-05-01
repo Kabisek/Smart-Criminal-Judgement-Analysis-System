@@ -1,3 +1,11 @@
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
   Animated,
   Easing,
   useWindowDimensions,

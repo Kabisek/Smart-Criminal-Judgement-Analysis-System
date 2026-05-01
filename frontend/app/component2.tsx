@@ -1,3 +1,9 @@
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Platform,
   TextInput,
   Alert,
   useWindowDimensions,
