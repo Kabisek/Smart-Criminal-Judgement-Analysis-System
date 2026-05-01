@@ -202,6 +202,7 @@ export function Layout({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const router = useRouter();
+  const { isLoggedIn: isAuthLoggedIn } = useAuth();
 
   const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
@@ -229,8 +230,23 @@ export function Layout({
             <View style={styles.mobileDivider} />
             <Text style={styles.mobileMenuSub}>ANALYTICAL TOOLS</Text>
             {ANALYSIS_TOOLS.map(link => (
-              <Pressable key={link.href} onPress={() => handleNav(link.href)} style={styles.mobileNavItem}>
-                <Text style={styles.mobileNavText}>{link.label}</Text>
+              <Pressable 
+                key={link.href} 
+                onPress={() => {
+                  if (link.restricted && !isAuthLoggedIn) {
+                    handleNav('/login');
+                  } else {
+                    handleNav(link.href);
+                  }
+                }} 
+                style={styles.mobileNavItem}
+              >
+                <View style={styles.mobileNavItemInner}>
+                  <Text style={styles.mobileNavText}>{link.label}</Text>
+                  {link.restricted && !isAuthLoggedIn && (
+                    <Text style={styles.lockedIconMobile}>🔒</Text>
+                  )}
+                </View>
               </Pressable>
             ))}
           </View>
@@ -250,7 +266,12 @@ export function Layout({
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.bgBody },
+  page: { 
+    flex: 1, 
+    backgroundColor: colors.bgBody,
+    height: Platform.OS === 'web' ? '100vh' : '100%',
+    minHeight: Platform.OS === 'web' ? '100vh' : '100%',
+  },
   header: {
     backgroundColor: colors.bgHeader,
     paddingVertical: spacing.md,
@@ -384,7 +405,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     opacity: 0.7,
   },
-  scroll: { flex: 1 },
+  scroll: { 
+    flex: 1,
+    width: '100%',
+  },
   main: { flexGrow: 1 },
   mainPadding: { padding: spacing.lg },
   footer: {
@@ -469,6 +493,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '600',
+  },
+  mobileNavItemInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lockedIconMobile: {
+    fontSize: 20,
+    marginLeft: 10,
   },
   mobileDivider: {
     height: 1,

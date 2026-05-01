@@ -8,7 +8,7 @@ export default function AboutScreen() {
   const isNarrow = width < 768;
   return (
     <Layout noPadding>
-      <ScrollView style={styles.scroll}>
+      <View style={styles.scroll}>
         <View style={styles.hero}>
           <Container>
             <Text style={styles.heroTag}>OUR VISION</Text>
@@ -65,7 +65,6 @@ export default function AboutScreen() {
             </View>
           </Card>
         </Container>
-      </ScrollView>
     </Layout>
   );
 }

@@ -40,11 +40,11 @@ const FEATURES = [
 export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { role } = useAuth();
+  const { role, isLoggedIn } = useAuth();
   const isNarrow = width < 768;
 
   const handlePress = (href: string, restricted: boolean) => {
-    if (restricted && role !== 'lawyer') {
+    if (restricted && !isLoggedIn) {
       router.push('/login');
     } else {
       router.push(href as any);
@@ -83,7 +83,7 @@ export default function HomeScreen() {
               style={({ pressed }) => [
                 styles.featureCard,
                 pressed && styles.featureCardPressed,
-                c.restricted && role !== 'lawyer' && styles.restrictedCard
+                c.restricted && !isLoggedIn && styles.restrictedCard
               ]}
             >
               <View style={styles.featureIconWrap}>
@@ -91,9 +91,9 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.featureTitle}>{c.title}</Text>
               <Text style={styles.featureDesc}>{c.desc}</Text>
-              {c.restricted && role !== 'lawyer' ? (
+              {c.restricted && !isLoggedIn ? (
                 <View style={styles.featureBadgeLocked}>
-                  <Text style={styles.badgeTextLock}>🔒 Practitioner Only</Text>
+                  <Text style={styles.badgeTextLock}>🔒 Login to Access</Text>
                 </View>
               ) : (
                 <View style={styles.featureBadgeOpen}>
@@ -104,7 +104,7 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {role !== 'lawyer' && (
+        {!isLoggedIn && (
           <View style={[styles.ctaBanner, isNarrow && styles.ctaBannerNarrow]}>
             <View style={styles.ctaText}>
               <Text style={[styles.ctaTitle, isNarrow && { textAlign: 'center' }]}>Are you a Registered Lawyer?</Text>
