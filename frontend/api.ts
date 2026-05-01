@@ -367,6 +367,82 @@ export async function predictAppealOutcomeDetailed(request: DetailedPredictionRe
   }
 }
 
+export interface Comp3DashboardAnalytics {
+  filters: {
+    years: number[];
+    offences: string[];
+    courts: string[];
+    regions: string[];
+  };
+  applied_filters: {
+    year?: number | null;
+    offence?: string | null;
+    high_court?: string | null;
+    region?: string | null;
+  };
+  kpis: {
+    total_cases: number;
+    allowed_rate: number;
+    dismissed_rate: number;
+    partly_rate: number;
+  };
+  outcome_distribution: Array<{ outcome: string; count: number }>;
+  yearly_trend: Array<{ year: number; total: number; allowed: number; partly: number; dismissed: number }>;
+  offence_distribution: Array<{ offence: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  court_distribution: Array<{ court: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  region_distribution: Array<{ region: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  appeal_type_distribution?: Array<{
+    appeal_type: string;
+    total: number;
+    allowed: number;
+    partly: number;
+    dismissed: number;
+  }>;
+  table_rows: Array<{
+    case_id: string;
+    year?: number;
+    offence: string;
+    offence_raw?: string | null;
+    court: string;
+    court_raw?: string | null;
+    region?: string;
+    outcome: string;
+    summary: string;
+    summary_detail?: string;
+    judgment_file_summary?: string;
+    judgment_file_summary_detail?: string;
+    appeal_analysis_summary?: string;
+    appeal_analysis_summary_detail?: string;
+  }>;
+}
+
+export async function getComp3DashboardAnalytics(params?: {
+  year?: number;
+  offence?: string;
+  high_court?: string;
+  region?: string;
+}): Promise<Comp3DashboardAnalytics | null> {
+  try {
+    const qs = new URLSearchParams();
+    if (params?.year != null) qs.set('year', String(params.year));
+    if (params?.offence) qs.set('offence', params.offence);
+    if (params?.high_court) qs.set('high_court', params.high_court);
+    if (params?.region) qs.set('region', params.region);
+
+    const url = `${API_APPEAL_PREDICT_DETAILED.replace('/predict/detailed', '/dashboard/analytics')}${qs.toString() ? `?${qs.toString()}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error('getComp3DashboardAnalytics failed:', res.status, res.statusText);
+      return null;
+    }
+    const payload = await res.json();
+    return payload?.analytics ?? null;
+  } catch (err) {
+    console.error('getComp3DashboardAnalytics failed:', err);
+    return null;
+  }
+}
+
 export async function analyzeCaseForLearning(request: LearningRequest): Promise<EducationalResponse | null> {
   try {
     const res = await fetch(API_APPEAL_LEARN_ANALYZE, {

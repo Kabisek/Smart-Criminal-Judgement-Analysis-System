@@ -19,6 +19,34 @@ from comp3.api.services.prediction_service import get_prediction_service
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
+@router.get("/dashboard/analytics")
+async def get_dashboard_analytics(
+    year: int | None = None,
+    offence: str | None = None,
+    high_court: str | None = None,
+    region: str | None = None,
+):
+    """
+    Provide full-dataset analytics payload for interactive dashboard views.
+    """
+    try:
+        prediction_service = get_prediction_service()
+        analytics = await prediction_service.get_dashboard_analytics(
+            year=year,
+            offence=offence,
+            high_court=high_court,
+            region=region,
+        )
+        return {
+            "status": "success",
+            "analytics": analytics,
+            "generated_at": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error building dashboard analytics response: {e}")
+        raise HTTPException(status_code=500, detail=f"Dashboard analytics failed: {str(e)}")
+
 @router.post("/predict/detailed", response_model=DetailedPredictionResponse)
 async def predict_detailed_outcome(request: DetailedPredictionRequest):
     """
