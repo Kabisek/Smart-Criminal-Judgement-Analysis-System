@@ -22,7 +22,7 @@ export default function AboutScreen() {
             <View style={styles.textBlock}>
               <Text style={styles.sectionHeading}>The Mission</Text>
               <Text style={styles.para}>
-                The Smart Criminal Judgment Analysis System is a flagship research initiative dedicated to empowering legal practitioners in Sri Lanka.
+                Jureka is a flagship research initiative dedicated to empowering legal practitioners in Sri Lanka.
                 By digitizing and clustering decades of criminal judgments, we provide unprecedented access to the intricate logic of the courts.
               </Text>
             </View>

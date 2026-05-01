@@ -9,7 +9,9 @@ export default function RootLayout() {
   return (
     <>
       <Head>
+        <title>Jureka</title>
         <meta name="google-site-verification" content="Ekifbs6xR6C8D6fPNJihbrpOJYDMTioqzECaELXogEY" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <AuthProvider>
         <Comp2Provider>

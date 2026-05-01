@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import { colors, spacing, typography } from '../theme';
 import { useAuth } from './AuthContext';
@@ -47,13 +48,15 @@ export function Header({ onMenuPress }: { onMenuPress?: () => void }) {
           onPress={() => router.push('/')}
           style={({ pressed }) => [styles.logoWrap, pressed && styles.pressed]}
         >
-          {/* Professional SVG Logo Representation */}
           <View style={styles.logoIconContainer}>
-            <Text style={styles.logoIcon}>⚖</Text>
+            <Image 
+              source={require('../logo.png')} 
+              style={{ width: 32, height: 32, resizeMode: 'contain' }} 
+            />
           </View>
           <View>
-            <Text style={styles.logoText}>Smart Criminal Judgment</Text>
-            <Text style={styles.logoSubtext}>Analysis System</Text>
+            <Text style={styles.logoText}>Jureka</Text>
+            <Text style={styles.logoSubtext}>Intelligent Legal Layer</Text>
           </View>
         </Pressable>
         {isNarrow && onMenuPress ? (
@@ -156,9 +159,9 @@ export function Footer() {
       <View style={[styles.footerInner, Platform.OS === 'web' && styles.footerInnerWeb]}>
         <View style={styles.footerGrid}>
           <View style={styles.footerBlock}>
-            <Text style={styles.footerTitle}>Smart Criminal Judgment Analysis</Text>
+            <Text style={styles.footerTitle}>Jureka</Text>
             <Text style={styles.footerText}>
-              Research project for Sri Lankan Courts. Case analysis, argument generation, and decision support.
+              Advanced Intelligent Legal Intelligence Layer. Case analysis, argument generation, and decision support for Sri Lankan Courts.
             </Text>
           </View>
           <View style={styles.footerBlock}>
@@ -181,7 +184,7 @@ export function Footer() {
           </View>
         </View>
         <Text style={styles.footerBottom}>
-          © 2025–2026 Smart Criminal Judgment Analysis System. Research Project. SLIIT.
+          © 2025–2026 Jureka Legal Intelligence Layer. Research Project. SLIIT.
         </Text>
       </View>
     </View>
