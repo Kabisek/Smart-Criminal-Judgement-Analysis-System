@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Platform, Modal, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Modal, SafeAreaView, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader } from '../components/ui';
@@ -258,6 +258,8 @@ function GraphNode({ node, px, py, isSelCat, isSelRes, isExpanded, onWebMouseDow
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function Component1Screen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<NormalizedAnalysisResponse | null>(null);
   const [transcriptView, setTranscriptView] = useState<'original' | 'english'>('english');
@@ -531,14 +533,14 @@ export default function Component1Screen() {
       <Container>
         <PageHeader title="Resource Retrieval & Analysis" breadcrumb="Analytical Tools → Knowledge Graph" />
 
-        <View style={styles.row}>
-          <View style={styles.mainCol}>
+        <View style={[styles.row, isNarrow && styles.rowNarrow]}>
+          <View style={[styles.mainCol, isNarrow && styles.mainColNarrow]}>
 
             <CaseIngestion onAnalysisComplete={onAnalysisComplete} initialMode="voice" allowedModes={['voice', 'text']} />
 
             {/* ── Stats ── */}
             {analysisResult && (
-              <View style={styles.statsRow}>
+              <View style={[styles.statsRow, isNarrow && styles.statsRowNarrow]}>
                 <Card style={[styles.statCard, { flex: 1 }]} title="Summary Accuracy">
                   <View style={styles.ring}>
                     <Text style={styles.ringVal}>{overallAccuracy.toFixed(1)}%</Text>

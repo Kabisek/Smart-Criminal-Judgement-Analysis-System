@@ -1,11 +1,6 @@
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Platform,
   TextInput,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -18,6 +13,8 @@ import { fetchComp2List, fetchComp2Detail, HistorySummary } from '../api';
 
 export default function Component2Screen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const { file, setFile, setTextInput, setArgumentsResult, clear } = useComp2();
 
   const [fileName, setFileName] = useState<string | null>(null);
@@ -113,8 +110,8 @@ export default function Component2Screen() {
           breadcrumb="Analytical Tools → Logic Synthesis"
         />
 
-        <View style={styles.row}>
-          <View style={styles.mainCol}>
+        <View style={[styles.row, isNarrow && styles.rowNarrow]}>
+          <View style={[styles.mainCol, isNarrow && styles.mainColNarrow]}>
             {/* File Upload Card */}
             <Card title="Upload Case Document" description="Upload a PDF, JSON, or text file to begin analysis.">
               <View style={styles.inputToggle}>
@@ -178,7 +175,7 @@ export default function Component2Screen() {
                 Select one or both operations to perform on your document.
               </Text>
 
-              <View style={styles.actionRow}>
+              <View style={[styles.actionRow, isNarrow && styles.actionRowNarrow]}>
                 <Pressable
                   style={[styles.actionCard, !hasInput && styles.actionCardDisabled]}
                   onPress={hasInput ? goToAnalysis : undefined}
@@ -274,11 +271,15 @@ export default function Component2Screen() {
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'row',
     gap: spacing.lg,
     alignItems: 'flex-start',
   },
+  rowNarrow: {
+    flexDirection: 'column',
+  },
   mainCol: { flex: 2, minWidth: 0 },
+  mainColNarrow: { width: '100%' },
   sideCol: { flex: 1, minWidth: 260 },
   bullet: { color: colors.textSecondary, marginBottom: 8, lineHeight: 22 },
   backLink: { color: colors.primary, fontWeight: '500', marginTop: 8 },
@@ -382,8 +383,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   actionRow: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'row',
     gap: spacing.md,
+  },
+  actionRowNarrow: {
+    flexDirection: 'column',
   },
   actionCard: {
     flex: 1,

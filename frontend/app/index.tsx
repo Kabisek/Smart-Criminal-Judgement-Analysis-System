@@ -135,17 +135,17 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.statsStrip}>
+        <View style={[styles.statsStrip, isNarrow && styles.statsStripNarrow]}>
           <View style={styles.statLine}>
             <Text style={styles.statNum}>50K+</Text>
             <Text style={styles.statName}>JUDGMENTS</Text>
           </View>
-          <View style={styles.statDivider} />
+          {!isNarrow && <View style={styles.statDivider} />}
           <View style={styles.statLine}>
             <Text style={styles.statNum}>92%</Text>
             <Text style={styles.statName}>ACCURACY</Text>
           </View>
-          <View style={styles.statDivider} />
+          {!isNarrow && <View style={styles.statDivider} />}
           <View style={styles.statLine}>
             <Text style={styles.statNum}>24/7</Text>
             <Text style={styles.statName}>AVAILABILITY</Text>
@@ -314,6 +314,11 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
+  },
+  statsStripNarrow: {
+    flexDirection: 'column',
+    gap: spacing.xl,
+    paddingVertical: 40,
   },
   statLine: { alignItems: 'center' },
   statNum: { fontSize: 32, fontWeight: '900', color: colors.accent },

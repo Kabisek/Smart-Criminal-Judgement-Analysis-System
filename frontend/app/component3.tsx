@@ -1,13 +1,6 @@
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
   Animated,
   Easing,
+  useWindowDimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Layout } from '../components/Layout';
@@ -222,9 +215,10 @@ function VerdictBanner({ prediction, confidence }: { prediction: string; confide
       style={[
         styles.verdictBanner,
         { backgroundColor: theme.color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+        isNarrow && styles.verdictBannerNarrow,
       ]}
     >
-      <View style={styles.verdictBannerLeft}>
+      <View style={[styles.verdictBannerLeft, isNarrow && styles.verdictBannerLeftNarrow]}>
         <Text style={styles.verdictIcon}>{theme.icon}</Text>
         <View>
           <Text style={styles.verdictBannerLabel}>PREDICTED OUTCOME</Text>
@@ -286,9 +280,9 @@ function ProgressTracker({ step, text }: { step: number; text: string }) {
     <Card style={styles.progressCard} title="🔄 Processing Analysis">
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>{text}</Text>
-        <View style={styles.progressSteps}>
+        <View style={[styles.progressSteps, isNarrow && styles.progressStepsNarrow]}>
           {steps.map((label, idx) => (
-            <View key={idx} style={styles.progressStep}>
+            <View key={idx} style={[styles.progressStep, isNarrow && styles.progressStepNarrow]}>
               <View style={[styles.progressStepCircle, step >= idx && { backgroundColor: colors.accent }]}>
                 {step > idx
                   ? <Text style={styles.progressStepCheck}>✓</Text>
@@ -402,6 +396,8 @@ function GroundsOrEvidenceSection({ title, data }: { title: string; data: Record
 
 export default function Component3Screen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnyPredictionResult | null>(null);
   const [caseDescription, setCaseDescription] = useState('');
@@ -558,9 +554,9 @@ export default function Component3Screen() {
 
                 {/* 2. Confidence Ring + hero stats */}
                 <Card style={[styles.resultCard, { borderTopWidth: 4, borderTopColor: theme.color }]}>
-                  <View style={styles.heroRow}>
+                  <View style={[styles.heroRow, isNarrow && styles.heroRowNarrow]}>
                     <ConfidenceRing confidence={result.confidence} color={theme.color} />
-                    <View style={styles.heroStats}>
+                    <View style={[styles.heroStats, isNarrow && styles.heroStatsNarrow]}>
                       <View style={[styles.heroStatItem, { backgroundColor: theme.light }]}>
                         <Text style={[styles.heroStatNum, { color: theme.color }]}>
                           {theme.icon} {theme.label}
@@ -587,7 +583,7 @@ export default function Component3Screen() {
                         <Text style={styles.legalReasoningEyebrow}>AI Legal Reasoning</Text>
                         <Text style={styles.legalReasoning}>{result.legal_reasoning}</Text>
                       </View>
-                      <View style={styles.detectedFeaturesGrid}>
+                      <View style={[styles.detectedFeaturesGrid, isNarrow && styles.detectedFeaturesGridNarrow]}>
                         <View style={styles.featureCol}>
                           <Text style={styles.featureSectionTitle}>⚖️ Grounds</Text>
                           {(result.key_factors?.length ?? 0) > 0
@@ -605,7 +601,7 @@ export default function Component3Screen() {
                             : <Text style={styles.noFeaturesText}>None detected</Text>}
                         </View>
                       </View>
-                      <View style={styles.compactRow}>
+                      <View style={[styles.compactRow, isNarrow && styles.compactRowNarrow]}>
                         {result.risk_assessment && (
                           <View style={styles.compactItem}>
                             <Text style={styles.compactLabel}>⚠️ Risk Level</Text>
@@ -1041,7 +1037,9 @@ const styles = StyleSheet.create({
   progressContainer: { gap: spacing.md },
   progressText: { fontSize: 14, fontWeight: '500', color: colors.primary, textAlign: 'center' },
   progressSteps: { flexDirection: 'row', justifyContent: 'space-between' },
+  progressStepsNarrow: { flexDirection: 'column', gap: spacing.md, alignItems: 'center' },
   progressStep: { alignItems: 'center', flex: 1 },
+  progressStepNarrow: { width: '100%', flexDirection: 'row', gap: spacing.md, justifyContent: 'flex-start' },
   progressStepCircle: {
     width: 28, height: 28, borderRadius: 14, backgroundColor: colors.border,
     alignItems: 'center', justifyContent: 'center', marginBottom: 4,
@@ -1070,7 +1068,17 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18, shadowRadius: 8, elevation: 6,
   },
+  verdictBannerNarrow: {
+    flexDirection: 'column',
+    gap: spacing.md,
+    alignItems: 'center',
+  },
   verdictBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  verdictBannerLeftNarrow: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+  },
   verdictIcon: { fontSize: 32 },
   verdictBannerLabel: {
     fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.75)',
@@ -1095,7 +1103,9 @@ const styles = StyleSheet.create({
 
   // ── Hero Row ──
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.sm },
+  heroRowNarrow: { flexDirection: 'column' },
   heroStats: { flex: 1, gap: spacing.sm },
+  heroStatsNarrow: { width: '100%' },
   heroStatItem: { backgroundColor: colors.bgSection, borderRadius: borderRadius.md, padding: spacing.sm },
   heroStatNum: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   heroStatLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },

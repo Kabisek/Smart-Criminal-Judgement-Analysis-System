@@ -12,7 +12,7 @@ export default function AboutScreen() {
         <View style={styles.hero}>
           <Container>
             <Text style={styles.heroTag}>OUR VISION</Text>
-            <Text style={styles.heroTitle}>Pioneering Legal AI for the Sri Lankan Justice System</Text>
+            <Text style={[styles.heroTitle, isNarrow && styles.heroTitleSmall]}>Pioneering Legal AI for the Sri Lankan Justice System</Text>
             <Text style={styles.heroSub}>
               Bridging the gap between historical precedent and modern efficiency through high-dimensional semantic analysis.
             </Text>
@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
   },
   heroTag: { color: colors.accent, fontWeight: '700', letterSpacing: 2, fontSize: 13, marginBottom: spacing.md, textAlign: 'center' },
   heroTitle: { color: '#FFFFFF', fontSize: 40, fontWeight: '800', textAlign: 'center', maxWidth: 900, lineHeight: 52, alignSelf: 'center' },
+  heroTitleSmall: { fontSize: 28, lineHeight: 36 },
   heroSub: { color: '#E0E6ED', fontSize: 18, textAlign: 'center', maxWidth: 700, marginTop: spacing.md, opacity: 0.9, lineHeight: 28, alignSelf: 'center' },
   content: { paddingVertical: spacing.xxl },
   sectionRow: { flexDirection: 'row', gap: spacing.xl, marginBottom: 60, alignItems: 'center' },

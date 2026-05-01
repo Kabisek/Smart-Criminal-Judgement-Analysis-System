@@ -200,9 +200,43 @@ export function Layout({
   children: React.ReactNode;
   noPadding?: boolean;
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const router = useRouter();
+
+  const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
+  const handleNav = (href: string) => {
+    router.push(href as any);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <View style={styles.page}>
-      <Header onMenuPress={() => { }} />
+      <Header onMenuPress={toggleMenu} />
+      
+      {mobileMenuOpen && (
+        <View style={styles.mobileOverlay}>
+          <Pressable style={styles.closeBtn} onPress={toggleMenu}>
+            <Text style={styles.closeBtnText}>✕</Text>
+          </Pressable>
+          <View style={styles.mobileMenuContent}>
+            <Text style={styles.mobileMenuTitle}>JUREKA MENU</Text>
+            {NAV_LINKS.map(link => (
+              <Pressable key={link.href} onPress={() => handleNav(link.href)} style={styles.mobileNavItem}>
+                <Text style={styles.mobileNavText}>{link.label}</Text>
+              </Pressable>
+            ))}
+            <View style={styles.mobileDivider} />
+            <Text style={styles.mobileMenuSub}>ANALYTICAL TOOLS</Text>
+            {ANALYSIS_TOOLS.map(link => (
+              <Pressable key={link.href} onPress={() => handleNav(link.href)} style={styles.mobileNavItem}>
+                <Text style={styles.mobileNavText}>{link.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.main, !noPadding && styles.mainPadding]}
@@ -383,5 +417,62 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textOnDark,
     opacity: 0.85,
+  },
+  mobileOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#1B2B48',
+    zIndex: 10000,
+    padding: spacing.xl,
+    paddingTop: 80,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '300',
+  },
+  mobileMenuContent: {
+    gap: spacing.lg,
+  },
+  mobileMenuTitle: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: spacing.sm,
+  },
+  mobileMenuSub: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: spacing.md,
+  },
+  mobileNavItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  mobileNavText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  mobileDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: spacing.md,
   },
 });
