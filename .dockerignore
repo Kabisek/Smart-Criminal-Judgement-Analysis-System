@@ -1,0 +1,20 @@
+# Keep the image small; models come from Drive at runtime (runtime_artifacts) or env.
+.git
+.gitignore
+**/.venv
+**/.venv1
+**/venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+.env
+.env.*
+frontend
+**/node_modules
+**/.expo
+**/uploads
+**/results
+**/output
+# Optional: uncomment if you never bake data into the image
+# backend/data/chroma_db
+# backend/data/chroma_db_comp2

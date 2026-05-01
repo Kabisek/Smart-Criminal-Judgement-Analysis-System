@@ -277,8 +277,11 @@ from chromadb.utils import embedding_functions
 
 # --- CONFIGURATION ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data", "structured")
+# Data is now in backend/data/structured (global source)
+DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "data", "structured")
+# DB is now in backend/comp1/data/chroma_db
 DB_DIR = os.path.join(BASE_DIR, "data", "chroma_db")
+# Model is in backend/comp1/models/sri_lanka_legal_bert
 MODEL_PATH = os.path.join(BASE_DIR, "models", "sri_lanka_legal_bert")
 
 def build_db():
@@ -289,8 +292,8 @@ def build_db():
     print(f"🚀 Loading Fine-Tuned Model from: {MODEL_PATH}")
     try:
         emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=MODEL_PATH)
-    except:
-        print("❌ Model not found. Check path.")
+    except Exception as e:
+        print(f"❌ Error loading model: {e}")
         return
 
     client = chromadb.PersistentClient(path=DB_DIR)

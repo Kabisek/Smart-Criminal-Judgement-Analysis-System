@@ -1,7 +1,7 @@
 """
 Argument Pattern Extraction Module
 Extracts argument patterns from similar cases.
-Uses KNN (trained model, cosine similarity) - compulsory. ChromaDB for document lookup.
+Uses KNN (trained model, cosine similarity) when available; falls back to ChromaDB search.
 """
 
 import json
@@ -29,7 +29,7 @@ def _build_case_info_from_chroma(chroma_id: str, meta: Dict, document: str) -> D
 
 
 class ArgumentExtractor:
-    """Extract argument patterns from similar cases. KNN is compulsory for pattern extraction."""
+    """Extract argument patterns from similar cases. Uses KNN when available, else ChromaDB."""
 
     def __init__(
         self,
@@ -37,7 +37,7 @@ class ArgumentExtractor:
         collection_name: str = "legal_cases",
     ):
         """
-        Initialize argument extractor with ChromaDB and KNN retriever (compulsory).
+        Initialize argument extractor with ChromaDB and optional KNN retriever.
 
         Args:
             chroma_persist_dir: Path to ChromaDB (default: from config)
@@ -49,7 +49,7 @@ class ArgumentExtractor:
         self._init_knn()
 
     def _init_chroma(self, chroma_persist_dir: str, collection_name: str):
-        """Initialize ChromaDB store."""
+        """Initialize ChromaDB store. Gracefully degrades if ChromaDB is corrupted."""
         try:
             from comp2.src.retrieval.chroma_store import ChromaStore
             from comp2.api.config import CHROMA_PERSIST_DIR, CHROMA_COLLECTION_NAME
@@ -78,7 +78,7 @@ class ArgumentExtractor:
             self.chroma_store = None
 
     def _init_knn(self) -> None:
-        """Initialize KNN retriever for pattern extraction (compulsory)."""
+        """Initialize KNN retriever for pattern extraction (trained model, cosine similarity)."""
         try:
             from comp2.src.ml_utils.knn_retriever import KNNRetriever
             self.knn_retriever = KNNRetriever(chroma_store=self.chroma_store)
@@ -97,7 +97,7 @@ class ArgumentExtractor:
     ) -> List[Dict[str, Any]]:
         """
         Extract argument patterns from similar cases.
-        KNN is compulsory - uses trained model + ChromaDB.get_by_ids. No fallback.
+        Uses KNN (trained model, cosine similarity) when available; else ChromaDB search.
 
         Args:
             query_embedding: Embedding vector of the new case
@@ -105,30 +105,33 @@ class ArgumentExtractor:
 
         Returns:
             List of argument patterns from similar cases
-
-        Raises:
-            RuntimeError: If KNN or ChromaDB not available
         """
         if self.chroma_store is None:
-            raise RuntimeError(
-                "ChromaDB not available. Run backend2 Notebook 03, then copy chroma_db to backend/data/chroma_db_comp2/"
-            )
-
-        if not self.knn_retriever or not self.knn_retriever.is_available():
-            raise RuntimeError(
-                "KNN model required for argument pattern extraction. "
-                "Copy final_nearest_neighbors_model.pkl from backend2/data/models to backend/data/models."
-            )
-
-        chroma_ids, distances = self.knn_retriever.find_similar(query_embedding, top_k=top_k)
-        if not chroma_ids:
+            logger.warning("ChromaDB not available; returning empty argument patterns")
             return []
 
-        metadatas, documents = self.chroma_store.get_by_ids(chroma_ids)
-        logger.info(f"Argument patterns from KNN (cosine similarity): {len(chroma_ids)} cases")
+        ids = []
+        distances = []
+        metadatas = []
+        documents = []
+
+        if self.knn_retriever and self.knn_retriever.is_available():
+            chroma_ids, dists = self.knn_retriever.find_similar(query_embedding, top_k=top_k)
+            if chroma_ids:
+                metadatas, documents = self.chroma_store.get_by_ids(chroma_ids)
+                ids = chroma_ids
+                distances = dists
+                logger.info(f"Argument patterns from KNN (cosine similarity): {len(ids)} cases")
+        else:
+            ids, distances, metadatas, documents = self.chroma_store.search(
+                query_embedding, n_results=top_k
+            )
+
+        if not ids:
+            return []
 
         argument_patterns = []
-        for i, cid in enumerate(chroma_ids):
+        for i, cid in enumerate(ids):
             distance = distances[i] if i < len(distances) else 0.0
             meta = metadatas[i] if metadatas and i < len(metadatas) else {}
             doc = documents[i] if documents and i < len(documents) else ""
@@ -172,6 +175,7 @@ class ArgumentExtractor:
         """Extract judge information from case (supports ChromaDB metadata)."""
         judge_info = {"judge_names": [], "key_statements": []}
 
+        # Try judge_info_json first
         judge_info_json = case_info.get("judge_info_json", "{}")
         if judge_info_json and isinstance(judge_info_json, str):
             try:
@@ -194,6 +198,7 @@ class ArgumentExtractor:
             except json.JSONDecodeError:
                 pass
 
+        # Fallback: judge_names from metadata (string, e.g. "Judge A | Judge B")
         if not judge_info["judge_names"]:
             judge_names_str = case_info.get("judge_names", case_info.get("judges", ""))
             if judge_names_str:
@@ -203,6 +208,7 @@ class ArgumentExtractor:
                     if n.strip()
                 ]
 
+        # Use judge_statement column (ChromaDB metadata) when available
         judge_statement = case_info.get("judge_statement", case_info.get("judge_statements_and_judgments", ""))
         if judge_statement and not judge_info["key_statements"]:
             for part in str(judge_statement).split("|")[:5]:

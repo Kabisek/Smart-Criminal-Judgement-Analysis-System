@@ -384,16 +384,24 @@ class EnhancedLegalAgent:
             )
         }
     
-    def generate_arguments_report(self, case_text: str, similar_cases: List[Dict], case_ids: List[str], distances: List[float] = None, case_dict: Dict = None, cluster_id: int = None) -> Dict:
+    def generate_arguments_report(
+        self,
+        case_text: str,
+        similar_cases: List[Dict],
+        case_ids: List[str],
+        distances: List[float] = None,
+        case_dict: Dict = None,
+        cluster_id: int = None,
+    ) -> Dict:
         """
         Generate Output File 2: Arguments report with adversarial simulation
-        
+
         Args:
             case_text: Text content of the case
             similar_cases: List of similar case dictionaries
             case_ids: List of case IDs corresponding to similar cases
             cluster_id: K-Means predicted cluster (0 to n_clusters-1), or None for fallback
-            
+
         Returns:
             Dict: Structured arguments report
         """
@@ -452,9 +460,29 @@ class EnhancedLegalAgent:
         
         # Combine contexts
         full_context = case_context + model_patterns_context
-        
+
+        # Build whitelist for anti-hallucination (allowed case IDs and judge names from context)
+        allowed_case_ids, allowed_judge_names = self._build_grounding_whitelist(
+            case_ids, case_dict, model_patterns
+        )
+
+        # Empty-context fallback: avoid LLM when no retrieval context (would hallucinate)
+        if not case_ids and not model_patterns:
+            logger.warning("No similar cases or model patterns. Cannot generate grounded arguments.")
+            arguments = [{
+                "title": "Insufficient Context",
+                "content": "No similar cases were retrieved. Run backend2 Notebook 03 to populate ChromaDB and ensure chroma_db_comp2 has case data.",
+                "perspective": "neutral",
+                "strength_score": 0.0,
+                "supporting_cases": [],
+                "judge_names": [],
+                "judge_statements": [],
+                "legal_principles": [],
+                "argument_points": [],
+                "model_extracted_points": [],
+            }]
         # Step 1: Generate arguments using trained models only (no LLM)
-        if self.model_only_mode and self.model_argument_generator:
+        elif self.model_only_mode and self.model_argument_generator:
             # Use model-based generation only
             arguments = self.model_argument_generator.generate_arguments_from_patterns(
                 model_patterns,
@@ -462,10 +490,17 @@ class EnhancedLegalAgent:
                 similar_cases,
                 case_ids
             )
-            logger.info("✅ Generated arguments using trained models only (no LLM)")
+            logger.info("Generated arguments using trained models only (no LLM)")
         else:
-            # LLM-based generation (model_only_mode is False)
-            arguments = self._generate_multi_perspective_arguments(case_text, full_context, case_ids, model_patterns, all_model_points)
+            # LLM-based generation (model_only_mode is False) with anti-hallucination
+            arguments = self._generate_multi_perspective_arguments(
+                case_text, full_context, case_ids, model_patterns, all_model_points,
+                allowed_case_ids=allowed_case_ids,
+                allowed_judge_names=allowed_judge_names,
+            )
+            arguments = self._validate_and_filter_arguments(
+                arguments, allowed_case_ids, allowed_judge_names
+            )
         
         # Normalize: ensure every argument has 'argument_points' populated
         # LLM path uses 'model_extracted_points'; model path sets 'argument_points' directly.
@@ -508,15 +543,104 @@ class EnhancedLegalAgent:
         
         return report
     
-    def _generate_multi_perspective_arguments(self, case_text: str, case_context: str, case_ids: List[str], model_patterns: List[Dict] = None, all_model_points: List[str] = None) -> List[Dict]:
-        """Generate arguments from multiple perspectives (combining LLM and model-based patterns)"""
+    def _build_grounding_whitelist(
+        self,
+        case_ids: List[str],
+        case_dict: Optional[Dict],
+        model_patterns: List[Dict],
+    ) -> tuple:
+        """Build whitelist of allowed case IDs and judge names from retrieved context (anti-hallucination)."""
+        allowed_case_ids = set(case_ids) if case_ids else set()
+        allowed_judge_names = set()
+
+        for p in model_patterns or []:
+            cid = p.get("case_id")
+            if cid:
+                allowed_case_ids.add(str(cid))
+            judges = p.get("judge_names", [])
+            if isinstance(judges, list):
+                for j in judges:
+                    if j and isinstance(j, str):
+                        allowed_judge_names.add(j.strip())
+            elif isinstance(judges, str):
+                for n in judges.replace("|", ",").split(","):
+                    if n.strip():
+                        allowed_judge_names.add(n.strip())
+
+        if case_dict:
+            for cid, data in case_dict.items():
+                if cid:
+                    allowed_case_ids.add(str(cid))
+                if isinstance(data, dict):
+                    jn = data.get("judge_names", data.get("judges", ""))
+                    if jn:
+                        for n in str(jn).replace("|", ",").split(","):
+                            if n.strip():
+                                allowed_judge_names.add(n.strip())
+
+        return allowed_case_ids, allowed_judge_names
+
+    def _validate_and_filter_arguments(
+        self,
+        arguments: List[Dict],
+        allowed_case_ids: set,
+        allowed_judge_names: set,
+    ) -> List[Dict]:
+        """Filter arguments to remove unverified citations (anti-hallucination post-process)."""
+        if not arguments:
+            return arguments
+        for arg in arguments:
+            if not isinstance(arg, dict):
+                continue
+            # Filter supporting_cases to whitelist (only when whitelist is non-empty)
+            sc = arg.get("supporting_cases", [])
+            if sc and allowed_case_ids:
+                filtered = [c for c in sc if str(c) in allowed_case_ids]
+                if len(filtered) < len(sc):
+                    logger.warning(f"Filtered {len(sc) - len(filtered)} unverified case citations from argument")
+                arg["supporting_cases"] = filtered
+            # Filter judge_names to whitelist (only when whitelist is non-empty)
+            jn = arg.get("judge_names", [])
+            if jn and allowed_judge_names:
+                jn_list = jn if isinstance(jn, list) else [jn]
+                filtered = [j for j in jn_list if str(j).strip() in allowed_judge_names]
+                if len(filtered) < len(jn_list):
+                    logger.warning(f"Filtered {len(jn_list) - len(filtered)} unverified judge names from argument")
+                arg["judge_names"] = filtered if filtered else jn_list
+        return arguments
+
+    def _generate_multi_perspective_arguments(
+        self,
+        case_text: str,
+        case_context: str,
+        case_ids: List[str],
+        model_patterns: List[Dict] = None,
+        all_model_points: List[str] = None,
+        allowed_case_ids: set = None,
+        allowed_judge_names: set = None,
+    ) -> List[Dict]:
+        """Generate arguments from multiple perspectives (combining LLM and model-based patterns)."""
+        allowed_case_ids = allowed_case_ids or set()
+        allowed_judge_names = allowed_judge_names or set()
+
+        grounding_parts = [
+            "CRITICAL ANTI-HALLUCINATION: Cite ONLY from the similar cases and model patterns provided above. "
+            "Do NOT invent case IDs, judge names, quotes, or legal principles. "
+            "If information is not in the context, omit it or say 'not specified'.",
+        ]
+        if allowed_case_ids:
+            grounding_parts.append(f"Use ONLY these case IDs: {list(allowed_case_ids)[:20]}.")
+        if allowed_judge_names:
+            grounding_parts.append(f"Use ONLY these judge names: {list(allowed_judge_names)[:30]}.")
+        grounding_rule = " ".join(grounding_parts)
+
         system_prompt = """
         You are a legal expert generating strategic arguments from multiple perspectives.
-        You have access to both LLM-generated arguments and model-extracted argument patterns from similar cases.
+        You have access to model-extracted argument patterns from similar cases.
         Combine these sources to create comprehensive, well-supported arguments.
         Output strictly in JSON format as a list of argument objects.
         IMPORTANT: Include judge names and their statements when available from the model patterns.
-        """
+        """ + grounding_rule
         
         # Build model patterns section if available
         model_section = ""
@@ -625,6 +749,7 @@ class EnhancedLegalAgent:
         ]
         
         REMEMBER: Generate actual content, not template text. Use real information from the similar cases provided.
+        Cite ONLY case IDs and judge names from the whitelist above. Do NOT invent any citations.
         Output ONLY the JSON array, no additional text.
         """
         
@@ -713,6 +838,7 @@ class EnhancedLegalAgent:
         You are a legal expert performing adversarial simulation (Devil's Advocate).
         For each argument, generate counter-arguments and rebuttals.
         Output strictly in JSON format.
+        ANTI-HALLUCINATION: Generate counter-arguments using general legal reasoning. Do NOT invent new case names, judge names, or quotes. You may reference the supporting cases already cited in the argument, but do not fabricate additional precedents.
         """
         
         enhanced_args = []

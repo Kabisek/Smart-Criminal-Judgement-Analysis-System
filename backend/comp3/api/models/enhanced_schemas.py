@@ -13,37 +13,13 @@ class DetailedPredictionRequest(BaseModel):
     language: str = Field(default="en", description="Response language: en, si, ta")
 
 class SimilarCase(BaseModel):
-    # Core identification and similarity
     case_id: str
     similarity_score: float
-    citation: Optional[str] = None
-    
-    # Case facts and summary
     case_summary: str
     outcome: str
-    
-    # Temporal information
-    year: Optional[int] = None
-    decision_date: Optional[str] = Field(None, description="Date when judgment was delivered (YYYY-MM-DD)")
-    
-    # Legal details
     key_legal_points: List[str]
-    offence: Optional[str] = None
-    grounds: Optional[str] = None
-    appeal_grounds_list: Optional[List[str]] = Field(None, description="Structured list of appeal grounds")
-    
-    # Case outcome information
-    verdict_reasoning: Optional[str] = Field(None, description="Why the appeal was allowed/dismissed - judge's reasoning")
-    judge_commentary: Optional[str] = Field(None, description="Key remarks and observations from the judge")
-    
-    # Additional metadata
-    high_court: Optional[str] = None
-    conviction_status: Optional[str] = None
-    evidence_types: Optional[List[str]] = Field(None, description="Types of evidence presented in the case")
-    
-    # Analytics
-    appeal_success_rate: Optional[float] = Field(None, description="Success rate for similar cases with same grounds")
-    precedent_value: Optional[str] = Field(None, description="Relevance/binding nature of this precedent")
+    citation: Optional[str] = None
+    year: Optional[int] = None
 
 class LegalFactor(BaseModel):
     factor_name: str
@@ -82,22 +58,6 @@ class DetailedPredictionResponse(BaseModel):
     model_version: str
     feature_importance: Dict[str, float]
     analysis_timestamp: datetime = Field(default_factory=datetime.now)
-
-    # New contextual analytics derived from historical data
-    context_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated statistics for offence, location and year relevant to the case"
-    )
-
-    # New analytics for grounds and evidence
-    grounds_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated success statistics for each detected ground of appeal"
-    )
-    evidence_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated success statistics for each detected evidence type"
-    )
 
 class EducationalResponse(BaseModel):
     # Learning content

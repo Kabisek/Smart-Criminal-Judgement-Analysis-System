@@ -69,7 +69,7 @@ app.include_router(comp3_enhanced.router, prefix=COMP3_API_PREFIX, tags=["appeal
 app.include_router(comp4_router)
 
 # ── COMPONENT 1: Initialize ChromaDB / Legal-BERT engine ─────────────────────
-DB_PATH = os.path.join(os.getcwd(), "data", "chroma_db")
+DB_PATH = os.path.join(os.getcwd(), "comp1", "data", "chroma_db")
 engine = LegalResourceExtractor(db_path=DB_PATH) if os.path.exists(DB_PATH) else None
 
 

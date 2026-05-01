@@ -52,62 +52,6 @@ class FeatureExtractor:
             'offence_category_grouped_Robbery_Theft': ['robbery', 'theft', 'burglary'],
             'offence_category_grouped_Fraud_Corruption': ['fraud', 'corruption', 'bribery'],
         }
-
-        # Approximate mapping for high court locations. This mapping is used
-        # to detect a location from the case description when present. The keys
-        # correspond to the canonical `high_court_location` values in the
-        # dataset. Feel free to add more as necessary.
-        self.location_keywords = {
-            'Colombo': ['colombo'],
-            'Matara': ['matara'],
-            'Puttalam': ['puttalam', 'puttlam'],
-            'Chilaw': ['chilaw'],
-            'Kurunegala': ['kurunegala'],
-            'Gampaha': ['gampaha'],
-            'Kalutara': ['kalutara'],
-            'Balapitiya': ['balapitiya'],
-            'Panadura': ['panadura'],
-            'Embilipitiya': ['embilipitiya'],
-            'Kandy': ['kandy'],
-            'Monaragala': ['monaragala'],
-            'Negombo': ['negombo'],
-            'Jaffna': ['jaffna'],
-            'Anuradhapura': ['anuradhapura'],
-            'Rathnapura': ['rathnapura', 'ratnapura'],
-            'Galle': ['galle'],
-            'Homagama': ['homagama'],
-            'Hambantota': ['hambantota'],
-            'Vavuniya': ['vavuniya']
-        }
-
-    def extract_case_context(self, text: str) -> Dict[str, Any]:
-        """
-        Extract simple contextual information (year and location) from the case description.
-
-        The year is inferred from patterns like "/2020" in case numbers or explicit dates.
-        The location is inferred by matching known keywords to high court locations.
-
-        Args:
-            text: Lowercased case description
-
-        Returns:
-            Dictionary with optional keys 'year' and 'location'
-        """
-        import re
-        context: Dict[str, Any] = {}
-        # Attempt to find a 4-digit year following a slash (e.g. "HC/567/2023")
-        match = re.search(r"/[0-9]{4}", text)
-        if match:
-            try:
-                context['year'] = int(match.group(0).strip('/'))
-            except Exception:
-                pass
-        # Match location keywords
-        for loc, kws in self.location_keywords.items():
-            if any(kw in text for kw in kws):
-                context['location'] = loc
-                break
-        return context
     
     def extract_features_from_text(self, case_description: str, feature_columns: List[str]) -> np.ndarray:
         """
@@ -185,8 +129,4 @@ class FeatureExtractor:
                                'coa_year', 'appeal_duration_days']:
                     detected_features['other'].append(col.replace('_', ' ').title())
         
-        # Also attach context information (year, location) for downstream analytics
-        context_info = self.extract_case_context(case_description.lower())
-        if context_info:
-            detected_features['context'] = context_info
         return detected_features

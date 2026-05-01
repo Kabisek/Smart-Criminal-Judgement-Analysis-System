@@ -64,20 +64,6 @@ class AppealPredictionResponse(BaseModel):
     similar_cases: List[SimilarCase] = Field(..., description="Similar historical cases")
     metadata: ModelMetadata = Field(..., description="Model metadata")
     timestamp: str = Field(..., description="Prediction timestamp")
-
-    # New aggregated analytics
-    context_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated statistics for offence, location and year relevant to the case"
-    )
-    grounds_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated success statistics for each detected ground of appeal"
-    )
-    evidence_analysis: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Aggregated success statistics for each detected evidence type"
-    )
     
     class Config:
         schema_extra = {

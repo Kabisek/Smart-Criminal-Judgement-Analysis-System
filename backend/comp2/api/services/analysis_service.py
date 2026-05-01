@@ -1,9 +1,8 @@
 """
 Analysis Service - Component 2
 ChromaDB-only retrieval. Builds case_info from ChromaDB search results.
-No feature_vectors.pkl, cleaned_cases.csv at runtime.
+No feature_vectors.pkl, merged_v2.csv, or NN model at runtime.
 """
-import os
 import sys
 import numpy as np
 from pathlib import Path
@@ -37,6 +36,7 @@ def _build_case_info_from_chroma(
 ) -> Dict[str, Any]:
     """Build case_info dict from ChromaDB search result (metadata + document)."""
     case_id = meta.get("case_id", chroma_id) if meta else chroma_id
+    # Extract case_id from chroma_id if format is "case_id_index"
     if "_" in str(case_id) and meta and "case_id" in meta:
         case_id = meta["case_id"]
     return {
@@ -60,10 +60,10 @@ class AnalysisService:
 
         try:
             self.processor = MultiFormatProcessor()
-            logger.info("✅ Document processor initialized")
+            logger.info("[OK] Document processor initialized")
 
             self.cleaner = TextCleaner()
-            logger.info("✅ Text cleaner initialized")
+            logger.info("[OK] Text cleaner initialized")
 
             if FINE_TUNED_MODEL_PATH:
                 logger.info(f"Using fine-tuned Legal-BERT from: {FINE_TUNED_MODEL_PATH}")
@@ -71,34 +71,35 @@ class AnalysisService:
             else:
                 logger.info(f"Using Legal-BERT (pre-trained): {EMBEDDING_MODEL_NAME}")
                 self.feature_extractor = FeatureExtractor(model_name=EMBEDDING_MODEL_NAME)
-            logger.info("✅ Feature extractor initialized with Legal-BERT")
+            logger.info("[OK] Feature extractor initialized with Legal-BERT")
 
+            # ChromaDB and ClusterPredictor: lazy init (only needed for arguments/process, not for case analysis)
             self._chroma_store = None
             self._cluster_predictor = None
 
+            # Initialize LLM client and enhanced agent
             try:
-                provider = os.getenv("LLM_PROVIDER", "groq").lower()
-                self.llm_client = LLMClient(provider=provider)
+                self.llm_client = LLMClient(provider="groq")
                 self.enhanced_agent = EnhancedLegalAgent(
                     self.llm_client,
                     use_model_arguments=True,
-                    model_only_mode=False,
+                    model_only_mode=False,  # Use LLM for rich arguments + adversarial simulation
                 )
                 logger.info(f"[OK] LLM client initialized: {self.llm_client.provider}")
                 logger.info("[OK] Model-only argument generation enabled")
             except Exception as e:
-                logger.warning(f"⚠️ LLM client initialization failed: {e}")
+                logger.warning(f"[WARN] LLM client initialization failed: {e}")
                 self.llm_client = None
                 self.enhanced_agent = None
 
-            logger.info("✅ Analysis Service initialized successfully")
+            logger.info("[OK] Analysis Service initialized successfully")
 
         except Exception as e:
-            logger.error(f"❌ Failed to initialize Analysis Service: {e}")
+            logger.error(f"[FAIL] Failed to initialize Analysis Service: {e}")
             raise
 
     def _get_chroma_store(self):
-        """Lazy init ChromaDB (required for arguments/process)."""
+        """Lazy init ChromaDB (required for arguments/process, not for case analysis)."""
         if self._chroma_store is None:
             if not CHROMA_PERSIST_DIR.exists():
                 raise FileNotFoundError(
@@ -119,7 +120,7 @@ class AnalysisService:
         return self._chroma_store
 
     def _get_cluster_predictor(self):
-        """Lazy init K-Means cluster predictor."""
+        """Lazy init K-Means cluster predictor (required for arguments/process)."""
         if self._cluster_predictor is None:
             self._cluster_predictor = ClusterPredictor()
         return self._cluster_predictor
@@ -223,7 +224,8 @@ class AnalysisService:
     async def analyze_case(self, file_path: str):
         """
         Analyze a case file and generate comprehensive case analysis (Output File 1).
-        Uses LLM only - no ChromaDB needed.
+        Uses LLM only - no ChromaDB or similar cases needed.
+        Returns analyzed_case, document_text, source_spans for document viewer.
         """
         from comp2.src.document_processing.source_mapper import SourceMapper
 
@@ -320,48 +322,12 @@ class AnalysisService:
                 cluster_id=cluster_id,
             )
 
-            analyzed_case = None
-            try:
-                analyzed_case = self.enhanced_agent.generate_analyzed_case_file(cleaned_text)
-            except Exception as e:
-                logger.warning(f"Could not generate analyzed_case for history: {e}")
-
             logger.info("Arguments generation completed successfully")
-            return {"arguments_report": arguments_report, "analyzed_case": analyzed_case}
+            return arguments_report
 
         except Exception as e:
             logger.error(f"Error during arguments generation - {str(e)}")
             raise
-
-    async def generate_arguments_from_text(self, case_text: str):
-        """Generate arguments report from raw text (for text-input flow)."""
-        if not case_text or len(case_text.strip()) < 50:
-            raise ValueError("Case text is too short or empty (minimum 50 characters)")
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
-            f.write(case_text)
-            temp_path = f.name
-        try:
-            return await self.generate_arguments(temp_path)
-        finally:
-            import os
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-
-    async def analyze_case_from_text(self, case_text: str):
-        """Analyze case from raw text (for text-input flow)."""
-        if not case_text or len(case_text.strip()) < 50:
-            raise ValueError("Case text is too short or empty (minimum 50 characters)")
-        import tempfile
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
-            f.write(case_text)
-            temp_path = f.name
-        try:
-            return await self.analyze_case(temp_path)
-        finally:
-            import os
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
 
 
 _analysis_service = None

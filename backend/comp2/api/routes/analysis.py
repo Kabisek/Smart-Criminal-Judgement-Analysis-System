@@ -1,4 +1,4 @@
-﻿"""
+"""
 Analysis Route
 Handles starting case analysis
 """
@@ -48,14 +48,22 @@ async def start_analysis(
     job_manager.update_job(request.job_id, status="processing", progress=0)
     
     # Run analysis in background
-    # FastAPI BackgroundTasks can handle async functions
     async def run_analysis_task():
         try:
-            await analysis_service.process_case(request.job_id, job["file_path"], top_k)
+            analyzed_case, arguments_report = await analysis_service.process_case(
+                job_id=request.job_id,
+                file_path=job["file_path"],
+                top_k=top_k,
+            )
+            job_manager.set_results(request.job_id, analyzed_case, arguments_report)
         except Exception as e:
-            # Error already logged and job status updated in process_case
-            pass
-    
+            job_manager.update_job(
+                request.job_id,
+                status="failed",
+                error=str(e),
+            )
+            raise
+
     background_tasks.add_task(run_analysis_task)
     
     return {

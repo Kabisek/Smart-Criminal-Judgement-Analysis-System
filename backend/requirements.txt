@@ -22,3 +22,4 @@ pymongo==4.16.0
 plotly==6.6.0
 torchvision==0.25.0
 faiss-cpu==1.13.2
+gdown==5.2.0

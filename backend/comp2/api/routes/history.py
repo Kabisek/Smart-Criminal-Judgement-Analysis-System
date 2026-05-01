@@ -1,4 +1,5 @@
-﻿from fastapi import APIRouter, HTTPException
+import logging
+from fastapi import APIRouter, HTTPException
 from typing import List
 from comp2.core.database import (
     # Comp1
@@ -87,7 +88,9 @@ async def list_comp2_history():
     try:
         return await get_comp2_list()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return empty list on MongoDB failure instead of 500; frontend shows "No past analyses"
+        logging.getLogger(__name__).warning("Comp2 history list failed (MongoDB?): %s", e)
+        return []
 
 @router.get("/comp2/{case_id}")
 async def fetch_comp2_history(case_id: str):

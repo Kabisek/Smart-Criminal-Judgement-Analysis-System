@@ -99,7 +99,6 @@ class PredictionService:
             
             # Find similar cases
             similar_cases = self.predictor.find_similar_cases(
-                case_description,  # ✅ Add case_description as first argument
                 prediction_result['bert_embedding'],
                 top_k=SIMILAR_CASES_TOP_K
             )
@@ -107,20 +106,13 @@ class PredictionService:
             # Get model metadata
             metadata = self.predictor.get_model_metadata()
             
-            # Pull out analytics if available
-            context_analysis = prediction_result.get('context_analysis', {})
-            grounds_analysis = prediction_result.get('grounds_analysis', {})
-            evidence_analysis = prediction_result.get('evidence_analysis', {})
-            # Create final response, including extended analytics
+            # Create final response
             response = {
                 'status': 'success',
                 'prediction': prediction_result['prediction'],
                 'confidence': prediction_result['confidence'],
                 'probabilities': prediction_result['probabilities'],
                 'detected_features': prediction_result['detected_features'],
-                'context_analysis': context_analysis,
-                'grounds_analysis': grounds_analysis,
-                'evidence_analysis': evidence_analysis,
                 'similar_cases': similar_cases,
                 'metadata': metadata,
                 'timestamp': datetime.now().isoformat()

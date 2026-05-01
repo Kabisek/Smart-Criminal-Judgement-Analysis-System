@@ -1,7 +1,7 @@
 """
 KNN Retriever - Trained Nearest Neighbors model for similarity search
 Uses cosine similarity to find k-nearest cases. Integrates with ChromaDB for document lookup.
-KNN is compulsory for argument pattern extraction.
+Used for argument pattern extraction so panel can validate both VectorDB and trained model.
 """
 import pickle
 import logging
@@ -43,7 +43,7 @@ class KNNRetriever:
         self._build_id_mapping()
 
     def _load_model(self) -> None:
-        """Load KNN model from disk. Required for argument pattern extraction."""
+        """Load KNN model from disk. Graceful fallback if missing."""
         for name in ("final_nearest_neighbors_model.pkl", "nearest_neighbors_model.pkl"):
             path = self.models_dir / name
             if path.exists():
@@ -57,7 +57,7 @@ class KNNRetriever:
 
         logger.warning(
             "KNN model not found. Copy final_nearest_neighbors_model.pkl from backend2/data/models. "
-            "Argument pattern extraction will fail."
+            "Falling back to ChromaDB-only retrieval."
         )
         self.model = None
 
