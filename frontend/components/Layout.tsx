@@ -153,33 +153,35 @@ export function Header({ onMenuPress }: { onMenuPress?: () => void }) {
 
 export function Footer() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const open = (url: string) => () => Linking.openURL(url);
   return (
     <View style={styles.footer}>
       <View style={[styles.footerInner, Platform.OS === 'web' && styles.footerInnerWeb]}>
-        <View style={styles.footerGrid}>
-          <View style={styles.footerBlock}>
+        <View style={[styles.footerGrid, isNarrow && { justifyContent: 'center' }]}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
             <Text style={styles.footerTitle}>Jureka</Text>
-            <Text style={styles.footerText}>
+            <Text style={[styles.footerText, isNarrow && { textAlign: 'center' }]}>
               Advanced Intelligent Legal Intelligence Layer. Case analysis, argument generation, and decision support for Sri Lankan Courts.
             </Text>
           </View>
-          <View style={styles.footerBlock}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
             <Text style={styles.footerTitle}>Useful Links</Text>
             <Pressable onPress={open('https://www.supremecourt.lk')}>
-              <Text style={styles.footerLink}>Supreme Court of Sri Lanka</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Supreme Court of Sri Lanka</Text>
             </Pressable>
             <Pressable onPress={open('https://www.courtappeal.lk')}>
-              <Text style={styles.footerLink}>Court of Appeal</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Court of Appeal</Text>
             </Pressable>
             <Pressable onPress={open('https://basl.lk')}>
-              <Text style={styles.footerLink}>Bar Association of Sri Lanka (BASL)</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Bar Association of Sri Lanka (BASL)</Text>
             </Pressable>
           </View>
-          <View style={styles.footerBlock}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
             <Text style={styles.footerTitle}>Contact</Text>
             <Pressable onPress={() => router.push('/contact')}>
-              <Text style={styles.footerLink}>Contact Us</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Contact Us</Text>
             </Pressable>
           </View>
         </View>

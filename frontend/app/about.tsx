@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Platform, ScrollView, useWindowDimensions } from 'react-native';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader } from '../components/ui';
 import { colors, typography, spacing } from '../theme';
 
 export default function AboutScreen() {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   return (
     <Layout noPadding>
       <ScrollView style={styles.scroll}>
@@ -18,7 +20,7 @@ export default function AboutScreen() {
         </View>
 
         <Container style={styles.content}>
-          <View style={styles.sectionRow}>
+          <View style={[styles.sectionRow, isNarrow && styles.sectionRowNarrow]}>
             <View style={styles.textBlock}>
               <Text style={styles.sectionHeading}>The Mission</Text>
               <Text style={styles.para}>
@@ -33,7 +35,7 @@ export default function AboutScreen() {
           </View>
 
           <Text style={styles.subHeading}>Core Pillars of Innovation</Text>
-          <View style={styles.pillGrid}>
+          <View style={[styles.pillGrid, isNarrow && styles.pillGridNarrow]}>
             <View style={[styles.pillCard, { borderLeftColor: '#3B82F6' }]}>
               <Text style={styles.pillIcon}>📊</Text>
               <Text style={styles.pillTitle}>Semantic Graphing</Text>
@@ -83,7 +85,8 @@ const styles = StyleSheet.create({
   heroTitle: { color: '#FFFFFF', fontSize: 40, fontWeight: '800', textAlign: 'center', maxWidth: 900, lineHeight: 52, alignSelf: 'center' },
   heroSub: { color: '#E0E6ED', fontSize: 18, textAlign: 'center', maxWidth: 700, marginTop: spacing.md, opacity: 0.9, lineHeight: 28, alignSelf: 'center' },
   content: { paddingVertical: spacing.xxl },
-  sectionRow: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: spacing.xl, marginBottom: 60, alignItems: 'center' },
+  sectionRow: { flexDirection: 'row', gap: spacing.xl, marginBottom: 60, alignItems: 'center' },
+  sectionRowNarrow: { flexDirection: 'column' },
   textBlock: { flex: 2 },
   sectionHeading: { fontSize: 28, fontWeight: 'bold', color: colors.primary, marginBottom: spacing.md },
   para: { fontSize: 16, color: colors.textSecondary, lineHeight: 28 },
@@ -98,7 +101,8 @@ const styles = StyleSheet.create({
   highlightVal: { fontSize: 48, fontWeight: '800', color: colors.accent },
   highlightLabel: { fontSize: 14, color: colors.textMuted, fontWeight: '600', textTransform: 'uppercase', marginTop: 8 },
   subHeading: { fontSize: 22, fontWeight: 'bold', color: colors.primary, marginBottom: spacing.xl, textAlign: Platform.OS === 'web' ? 'center' : 'left' },
-  pillGrid: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: spacing.lg, marginBottom: 60 },
+  pillGrid: { flexDirection: 'row', gap: spacing.lg, marginBottom: 60 },
+  pillGridNarrow: { flexDirection: 'column' },
   pillCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',

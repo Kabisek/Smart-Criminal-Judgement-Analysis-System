@@ -105,18 +105,18 @@ export default function HomeScreen() {
         </View>
 
         {role !== 'lawyer' && (
-          <View style={styles.ctaBanner}>
+          <View style={[styles.ctaBanner, isNarrow && styles.ctaBannerNarrow]}>
             <View style={styles.ctaText}>
-              <Text style={styles.ctaTitle}>Are you a Registered Lawyer?</Text>
-              <Text style={styles.ctaSub}>Authenticate your credentials to unlock the full predictive modeling and argument synthesis suite.</Text>
+              <Text style={[styles.ctaTitle, isNarrow && { textAlign: 'center' }]}>Are you a Registered Lawyer?</Text>
+              <Text style={[styles.ctaSub, isNarrow && { textAlign: 'center' }]}>Authenticate your credentials to unlock the full predictive modeling and argument synthesis suite.</Text>
             </View>
-            <Button onPress={() => router.push('/login')} style={styles.ctaBtn}>Verified Login</Button>
+            <Button onPress={() => router.push('/login')} style={[styles.ctaBtn, isNarrow && { width: '100%' }]}>Verified Login</Button>
           </View>
         )}
 
         <View style={styles.trustSection}>
           <Text style={styles.sectionTagCenter}>WHY TRUST US?</Text>
-          <View style={styles.trustGrid}>
+          <View style={[styles.trustGrid, isNarrow && styles.trustGridNarrow]}>
             <View style={styles.trustItem}>
               <View style={styles.trustIcon}><Text style={styles.trustIconText}>🛡</Text></View>
               <Text style={styles.trustTitle}>Data Security</Text>
@@ -282,19 +282,24 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     borderRadius: 20,
     marginTop: spacing.xxl,
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: colors.accent,
     gap: spacing.lg,
   },
+  ctaBannerNarrow: {
+    flexDirection: 'column',
+    padding: spacing.lg,
+  },
   ctaText: { flex: 1 },
   ctaTitle: { fontSize: 20, fontWeight: '800', color: colors.primary, marginBottom: 4 },
   ctaSub: { fontSize: 14, color: colors.textSecondary, opacity: 1 },
   ctaBtn: { minWidth: 180 },
   trustSection: { paddingVertical: spacing.xxl, marginTop: spacing.xxl },
-  trustGrid: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: spacing.xl },
+  trustGrid: { flexDirection: 'row', gap: spacing.xl },
+  trustGridNarrow: { flexDirection: 'column' },
   trustItem: { flex: 1, alignItems: 'center', textAlign: 'center' },
   trustIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md },
   trustIconText: { fontSize: 24 },
