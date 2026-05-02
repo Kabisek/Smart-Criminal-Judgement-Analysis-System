@@ -5,13 +5,7 @@ import { Platform } from 'react-native';
  */
 
 const getApiBase = (): string => {
-  // Use production backend if running on the web (Vercel)
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    if (host.includes('jurekasl.com') || host.includes('jureka.com') || host.includes('vercel.app')) {
-      return 'https://divanka-smart-criminal-judgement-api.hf.space';
-    }
-  }
+  // Force localhost for all platforms to avoid connection issues
   return 'http://127.0.0.1:8000';
 };
 
@@ -34,6 +28,7 @@ export const API_APPEAL_FIND_SIMILAR = API_BASE + '/api/v1/appeal/find/similar';
 export const API_APPEAL_ANALYZE_BATCH = API_BASE + '/api/v1/appeal/analyze/batch';
 export const API_APPEAL_MODEL_INFO = API_BASE + '/api/v1/appeal/model/info';
 export const API_APPEAL_HEALTH = API_BASE + '/api/v1/appeal/health';
+export const API_APPEAL_FAIRNESS_REPORT = API_BASE + '/api/v1/appeal/dashboard/fairness-report';
 
 
 // ── Component-scoped history endpoints ───────────────────────────────
@@ -226,7 +221,6 @@ export interface DetectedFeatures {
   grounds: string[];
   evidence: string[];
   offence: string[];
-  appeal_type: string[];
   other: string[];
 }
 
@@ -236,6 +230,40 @@ export interface DetailedPredictionResponse {
   confidence: number;
   probabilities: PredictionProbabilities;
   detected_features: DetectedFeatures;  // Add this missing field
+  confidence_band?: string;
+  manual_review_required?: boolean;
+  reliability_note?: string;
+  abstained?: boolean;
+  review_priority?: string;
+  top_outcomes?: Array<{ rank: number; outcome: string; probability: number }>;
+  reason_trace?: string[];
+  shap_summary?: Record<string, unknown>;
+  confidence_interval?: {
+    method?: string;
+    lower_pct?: number | null;
+    upper_pct?: number | null;
+    half_width_pct?: number;
+    top_two_margin?: number;
+    qualitative_width?: string;
+    summary_line?: string;
+  };
+  precedent_trend?: {
+    direction?: string;
+    summary?: string;
+    precedents_considered?: number;
+    year_span?: number[];
+    by_year?: Array<{
+      year: number;
+      n: number;
+      appeal_allowed_pct: number;
+      appeal_dismissed_pct: number;
+      partly_allowed_pct: number;
+    }>;
+  };
+  governance_note?: string;
+  context_analysis?: Record<string, unknown>;
+  grounds_analysis?: Record<string, unknown>;
+  evidence_analysis?: Record<string, unknown>;
 
   // Enhanced analysis
   legal_reasoning: string;
@@ -315,6 +343,9 @@ export interface AppealPredictionResponse {
   similar_cases: SimilarCase[];
   metadata: ModelMetadata;
   timestamp: string;
+  governance_note?: string;
+  confidence_interval?: DetailedPredictionResponse['confidence_interval'];
+  precedent_trend?: DetailedPredictionResponse['precedent_trend'];
 }
 
 export interface Comp3HistoryRecord {
@@ -370,6 +401,133 @@ export async function predictAppealOutcomeDetailed(request: DetailedPredictionRe
     return await res.json();
   } catch (err) {
     console.error('predictAppealOutcomeDetailed failed:', err);
+    return null;
+  }
+}
+
+export interface Comp3DashboardAnalytics {
+  filters: {
+    years: number[];
+    offences: string[];
+    courts: string[];
+    regions: string[];
+  };
+  applied_filters: {
+    year?: number | null;
+    offence?: string | null;
+    high_court?: string | null;
+    region?: string | null;
+  };
+  kpis: {
+    total_cases: number;
+    allowed_rate: number;
+    dismissed_rate: number;
+    partly_rate: number;
+  };
+  outcome_distribution: Array<{ outcome: string; count: number }>;
+  yearly_trend: Array<{ year: number; total: number; allowed: number; partly: number; dismissed: number }>;
+  offence_distribution: Array<{ offence: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  court_distribution: Array<{ court: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  region_distribution: Array<{ region: string; total: number; allowed: number; partly: number; dismissed: number }>;
+  appeal_type_distribution?: Array<{
+    appeal_type: string;
+    total: number;
+    allowed: number;
+    partly: number;
+    dismissed: number;
+  }>;
+  table_rows: Array<{
+    case_id: string;
+    year?: number;
+    offence: string;
+    offence_raw?: string | null;
+    court: string;
+    court_raw?: string | null;
+    region?: string;
+    outcome: string;
+    summary: string;
+    summary_detail?: string;
+    judgment_file_summary?: string;
+    judgment_file_summary_detail?: string;
+    appeal_analysis_summary?: string;
+    appeal_analysis_summary_detail?: string;
+  }>;
+}
+
+export async function getComp3DashboardAnalytics(params?: {
+  year?: number;
+  offence?: string;
+  high_court?: string;
+  region?: string;
+}): Promise<Comp3DashboardAnalytics | null> {
+  try {
+    const qs = new URLSearchParams();
+    if (params?.year != null) qs.set('year', String(params.year));
+    if (params?.offence) qs.set('offence', params.offence);
+    if (params?.high_court) qs.set('high_court', params.high_court);
+    if (params?.region) qs.set('region', params.region);
+
+    const url = `${API_APPEAL_PREDICT_DETAILED.replace('/predict/detailed', '/dashboard/analytics')}${qs.toString() ? `?${qs.toString()}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error('getComp3DashboardAnalytics failed:', res.status, res.statusText);
+      return null;
+    }
+    const payload = await res.json();
+    return payload?.analytics ?? null;
+  } catch (err) {
+    console.error('getComp3DashboardAnalytics failed:', err);
+    return null;
+  }
+}
+
+export interface Comp3FairnessReportPayload {
+  generated_at?: string;
+  dataset_rows?: number;
+  min_slice_n?: number;
+  overall?: Record<string, number | string>;
+  by_offence?: Array<{
+    slice_value: string;
+    n: number;
+    appeal_allowed_pct: number;
+    partly_allowed_pct: number;
+    appeal_dismissed_pct: number;
+    low_sample: boolean;
+  }>;
+  by_court?: Array<{
+    slice_value: string;
+    n: number;
+    appeal_allowed_pct: number;
+    partly_allowed_pct: number;
+    appeal_dismissed_pct: number;
+    low_sample: boolean;
+  }>;
+  by_year?: Array<{
+    year: number;
+    n: number;
+    appeal_allowed_pct: number;
+    partly_allowed_pct: number;
+    appeal_dismissed_pct: number;
+    low_sample: boolean;
+  }>;
+  notes?: string[];
+  error?: string;
+}
+
+export async function getComp3FairnessReport(minSliceN?: number): Promise<Comp3FairnessReportPayload | null> {
+  try {
+    const qs = new URLSearchParams();
+    if (minSliceN != null) qs.set('min_slice_n', String(minSliceN));
+    const url = `${API_APPEAL_FAIRNESS_REPORT}${qs.toString() ? `?${qs.toString()}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error('getComp3FairnessReport failed:', res.status, res.statusText);
+      return null;
+    }
+    const payload = await res.json();
+    return payload?.report ?? null;
+  } catch (err) {
+    console.error('getComp3FairnessReport failed:', err);
     return null;
   }
 }

@@ -14,10 +14,54 @@ from comp3.api.models.enhanced_schemas import (
     LearningRequest, AssessmentRequest, AssessmentResponse,
     SimilarCase, LegalFactor, StrategyRecommendation
 )
-from comp3.api.services.prediction_service import get_prediction_service
+from comp3.api.services.prediction_service import get_prediction_service, GOVERNANCE_NOTE
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get("/dashboard/analytics")
+async def get_dashboard_analytics(
+    year: int | None = None,
+    offence: str | None = None,
+    high_court: str | None = None,
+    region: str | None = None,
+):
+    """
+    Provide full-dataset analytics payload for interactive dashboard views.
+    """
+    try:
+        prediction_service = get_prediction_service()
+        analytics = await prediction_service.get_dashboard_analytics(
+            year=year,
+            offence=offence,
+            high_court=high_court,
+            region=region,
+        )
+        return {
+            "status": "success",
+            "analytics": analytics,
+            "generated_at": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error building dashboard analytics response: {e}")
+        raise HTTPException(status_code=500, detail=f"Dashboard analytics failed: {str(e)}")
+
+
+@router.get("/dashboard/fairness-report")
+async def get_fairness_report(min_slice_n: int = 25):
+    """
+    Dataset-level outcome distribution by offence group, court, and year.
+    Flags small slices; does not measure model error (use offline batch audit for that).
+    """
+    try:
+        prediction_service = get_prediction_service()
+        report = await prediction_service.get_fairness_slice_report(min_slice_n=min_slice_n)
+        return {"status": "success", "report": report}
+    except Exception as e:
+        logger.error(f"Error building fairness report: {e}")
+        raise HTTPException(status_code=500, detail=f"Fairness report failed: {str(e)}")
+
 
 @router.post("/predict/detailed", response_model=DetailedPredictionResponse)
 async def predict_detailed_outcome(request: DetailedPredictionRequest):
@@ -57,35 +101,74 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
         # Make basic prediction
         basic_result = await prediction_service.predict_appeal_outcome(request.case_description)
         
-        # Generate enhanced analysis based on user type
-        enhanced_analysis = await _generate_enhanced_analysis(
-            request.case_description, 
-            basic_result, 
-            request.user_type,
-            request.analysis_level
+        is_domain_mismatch = (
+            basic_result.get('abstained', False)
+            and basic_result.get('prediction') == 'Insufficient_Legal_Context'
         )
+
+        # Generate enhanced analysis only for in-domain legal inputs.
+        if is_domain_mismatch:
+            enhanced_analysis = {
+                'legal_reasoning': basic_result.get(
+                    'reliability_note',
+                    'Input does not appear to be a legal criminal appeal case.'
+                ),
+                'key_factors': [],
+                'risk_assessment': 'High Risk: Domain mismatch input. Provide legal case details.',
+                'strategy_recommendations': [],
+                'legal_concepts': [],
+                'methodology_explanation': 'Analysis abstained due to non-legal/non-appeal input context.',
+                'feature_importance': {}
+            }
+        else:
+            enhanced_analysis = await _generate_enhanced_analysis(
+                request.case_description,
+                basic_result,
+                request.user_type,
+                request.analysis_level
+            )
         
         # Find similar cases if requested
         similar_cases = []
-        if request.include_precedents:
-            # Use the same similar cases from basic result to avoid duplicate async calls
+        if request.include_precedents and not is_domain_mismatch:
             similar_cases_data = basic_result.get('similar_cases', [])
             
-            # Convert to SimilarCase objects
+            # Convert to SimilarCase objects with all new fields
             for case in similar_cases_data:
-                # Convert similarity from percentage to score
                 similarity_score = case['similarity'] / 100.0
                 
-                # Lower threshold to 0.5 (50%) instead of 0.7 (70%)
                 if similarity_score >= 0.5:
                     similar_cases.append(SimilarCase(
+                        # Core
                         case_id=case['case_id'],
                         similarity_score=similarity_score,
-                        case_summary=case.get('facts', ''),
+                        citation=case.get('citation', case['case_id']),
+                        
+                        # Dates and summary
+                        year=case.get('year', None),
+                        decision_date=case.get('decision_date', None),
+                        case_summary=case['facts'][:300] + "..." if len(case['facts']) > 300 else case['facts'],
                         outcome=case['outcome'],
+                        
+                        # Legal information
                         key_legal_points=[case.get('grounds', '')],
-                        citation=None,  # Not available in current data
-                        year=None     # Not available in current data
+                        offence=case.get('offence', 'Not specified'),
+                        grounds=case.get('grounds', 'Not specified'),
+                        appeal_grounds_list=case.get('appeal_grounds_list', []),
+                        
+                        # Reasoning and commentary (NEW - MAIN ADD)
+                        verdict_reasoning=case.get('verdict_reasoning', None),
+                        judge_commentary=case.get('judge_commentary', None),
+                        
+                        # Metadata
+                        high_court=case.get('high_court', 'Not specified'),
+                        conviction_status=case.get('conviction_status', 'Not specified'),
+                        evidence_types=case.get('evidence_types', []),
+                        
+                        # Analytics
+                        appeal_success_rate=case.get('appeal_success_rate', None),
+                        precedent_value=case.get('precedent_value', None),
+                        relevance_badge=case.get('relevance_badge', 'medium')
                     ))
         
         # Create response
@@ -95,6 +178,17 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
             # Basic prediction
             prediction=basic_result['prediction'],
             confidence=basic_result['confidence'],
+            confidence_band=basic_result.get('confidence_band', 'low'),
+            manual_review_required=basic_result.get('manual_review_required', True),
+            reliability_note=basic_result.get('reliability_note', 'Manual legal review is recommended.'),
+            abstained=basic_result.get('abstained', False),
+            review_priority=basic_result.get('review_priority', 'medium'),
+            top_outcomes=basic_result.get('top_outcomes', []),
+            reason_trace=basic_result.get('reason_trace', []),
+            shap_summary=basic_result.get('shap_summary', {}),
+            confidence_interval=basic_result.get('confidence_interval'),
+            precedent_trend=basic_result.get('precedent_trend'),
+            governance_note=GOVERNANCE_NOTE,
             probabilities=basic_result['probabilities'],
             detected_features=basic_result['detected_features'],  # Add this line
             
@@ -116,6 +210,13 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
             model_version="Improved Ensemble v2.0",
             feature_importance=enhanced_analysis['feature_importance']
         )
+        # Attach analytics (context, grounds and evidence) to the response (if available)
+        try:
+            response.context_analysis = basic_result.get('context_analysis', {})  # type: ignore
+            response.grounds_analysis = basic_result.get('grounds_analysis', {})  # type: ignore
+            response.evidence_analysis = basic_result.get('evidence_analysis', {})  # type: ignore
+        except Exception:
+            pass
         
         logger.info(f"Detailed prediction completed: {response.prediction} with {response.confidence:.1f}% confidence")
         return response
@@ -284,7 +385,16 @@ async def analyze_batch_cases(request: BatchAnalysisRequest):
             detailed_response = DetailedPredictionResponse(
                 prediction=basic_result['prediction'],
                 confidence=basic_result['confidence'],
+                confidence_band=basic_result.get('confidence_band', 'low'),
+                manual_review_required=basic_result.get('manual_review_required', True),
+                reliability_note=basic_result.get('reliability_note', 'Manual legal review is recommended.'),
+                abstained=basic_result.get('abstained', False),
+                review_priority=basic_result.get('review_priority', 'medium'),
+                top_outcomes=basic_result.get('top_outcomes', []),
+                reason_trace=basic_result.get('reason_trace', []),
+                shap_summary=basic_result.get('shap_summary', {}),
                 probabilities=basic_result['probabilities'],
+                detected_features=basic_result.get('detected_features', {}),
                 legal_reasoning=enhanced_analysis['legal_reasoning'],
                 key_factors=enhanced_analysis['key_factors'],
                 risk_assessment=enhanced_analysis['risk_assessment'],
@@ -325,6 +435,19 @@ async def analyze_batch_cases(request: BatchAnalysisRequest):
 # Helper functions
 async def _generate_enhanced_analysis(case_description: str, basic_result: Dict, user_type: str, analysis_level: str) -> Dict[str, Any]:
     """Generate enhanced analysis based on user type and preferences"""
+    if basic_result.get('abstained', False) and basic_result.get('prediction') == 'Insufficient_Legal_Context':
+        return {
+            'legal_reasoning': basic_result.get(
+                'reliability_note',
+                'Input does not appear to be a legal criminal appeal case.'
+            ),
+            'key_factors': [],
+            'risk_assessment': 'High Risk: Domain mismatch input. Provide legal case details.',
+            'strategy_recommendations': [],
+            'legal_concepts': [],
+            'methodology_explanation': 'Analysis abstained due to non-legal/non-appeal input context.',
+            'feature_importance': {}
+        }
     
     # Extract key factors from detected features
     detected_features = basic_result.get('detected_features', {})
@@ -540,16 +663,22 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
         
         # Make basic prediction to get BERT embedding
         basic_result = await prediction_service.predict_appeal_outcome(case_description)
+
+        # Guardrail: never return precedents for out-of-domain inputs.
+        if basic_result.get('abstained', False) and basic_result.get('prediction') == 'Insufficient_Legal_Context':
+            logger.info("Skipping similar-case search due to input domain mismatch")
+            return []
         
         # Find similar cases using service
         similar_cases_data = prediction_service.predictor.find_similar_cases(
+            case_description,
             basic_result['bert_embedding'], 
             top_k=max_results
         )
         
         logger.info(f"Found {len(similar_cases_data)} similar cases from service")
         
-        # Convert to SimilarCase objects
+        # Convert to SimilarCase objects with ALL NEW FIELDS
         similar_cases = []
         for case in similar_cases_data:
             # Convert similarity from percentage to score
@@ -557,16 +686,41 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
             
             logger.info(f"Processing case {case['case_id']} with similarity {similarity_score:.3f} (threshold: {threshold})")
             
-            # Lower threshold to 0.5 (50%) instead of 0.7 (70%)
+            # Filter by threshold
             if similarity_score >= threshold:
                 similar_cases.append(SimilarCase(
+                    # Core fields
                     case_id=case['case_id'],
                     similarity_score=similarity_score,
-                    case_summary=case['facts'][:200] + "..." if len(case['facts']) > 200 else case['facts'],
+                    citation=case.get('citation', case['case_id']),
+                    
+                    # Summary and facts
+                    case_summary=case['facts'][:300] + "..." if len(case['facts']) > 300 else case['facts'],
                     outcome=case['outcome'],
+                    
+                    # Temporal
+                    year=case.get('year', None),
+                    decision_date=case.get('decision_date', None),
+                    
+                    # Legal details
                     key_legal_points=[case['grounds'][:100] + "..." if len(case['grounds']) > 100 else case['grounds']],
-                    citation=None,  # Not available in current data
-                    year=None     # Not available in current data
+                    offence=case.get('offence', 'Not specified'),
+                    grounds=case.get('grounds', 'Not specified'),
+                    appeal_grounds_list=case.get('appeal_grounds_list', []),
+                    
+                    # Verdict information (NEW)
+                    verdict_reasoning=case.get('verdict_reasoning', None),
+                    judge_commentary=case.get('judge_commentary', None),
+                    
+                    # Metadata
+                    high_court=case.get('high_court', 'Not specified'),
+                    conviction_status=case.get('conviction_status', 'Not specified'),
+                    evidence_types=case.get('evidence_types', []),
+                    
+                    # Analytics
+                    appeal_success_rate=case.get('appeal_success_rate', None),
+                    precedent_value=case.get('precedent_value', None),
+                    relevance_badge=case.get('relevance_badge', 'medium')
                 ))
         
         logger.info(f"Returning {len(similar_cases)} similar cases after filtering")
@@ -574,11 +728,42 @@ async def _find_similar_cases(case_description: str, max_results: int = 5, thres
         
     except Exception as e:
         logger.error(f"Error finding similar cases: {e}")
-        # Fallback to empty list
         return []
 
 async def _generate_educational_content(case_description: str, basic_result: Dict, learning_mode: str, difficulty_level: str) -> Dict[str, Any]:
     """Generate educational content for students"""
+    if basic_result.get('abstained', False) and basic_result.get('prediction') == 'Insufficient_Legal_Context':
+        return {
+            'legal_concepts': [],
+            'methodology_explanation': 'Learning analysis skipped: input is outside legal appeal domain.',
+            'quiz_questions': [
+                "Which parts of your text describe the criminal case facts?",
+                "Can you add the grounds of appeal and evidence types?",
+                "Can you mention the trial/high-court decision and appeal request?"
+            ],
+            'further_reading': [
+                "How to write a criminal appeal case summary",
+                "Essential fields: facts, evidence, grounds, sentence, appellate relief"
+            ],
+            'case_study': {
+                'title': "Input Validation Guidance",
+                'case_type': "Insufficient_Legal_Context",
+                'key_learning': "Provide legal appeal-specific details before analysis.",
+                'discussion_points': ["Case facts", "Grounds of appeal", "Evidence"]
+            },
+            'learning_objectives': [
+                "Differentiate legal-case input from general text",
+                "Provide mandatory legal context for analysis",
+                "Avoid non-domain descriptions"
+            ],
+            'concept_mastery': {
+                "Input Structuring": 0.0
+            },
+            'next_topics': [
+                "Criminal appeal drafting basics",
+                "Evidence and grounds mapping"
+            ]
+        }
     
     return {
         'legal_concepts': _extract_legal_concepts(basic_result.get('detected_features', {})),

@@ -39,11 +39,11 @@ BERT_MODEL_NAME = "nlpaueb/legal-bert-base-uncased"
 BERT_MAX_LENGTH = 512
 
 # Feature Configuration - updated for improved model
-NUM_TRADITIONAL_FEATURES = 49
+NUM_TRADITIONAL_FEATURES = 53
 NUM_BERT_FEATURES = 100
 NUM_TFIDF_FEATURES = 50
-TOTAL_FEATURES = 199
-SELECTED_FEATURES = 199
+TOTAL_FEATURES = 203
+SELECTED_FEATURES = 203
 
 # Prediction thresholds
 HIGH_CONFIDENCE_THRESHOLD = 60.0
@@ -58,9 +58,9 @@ CLASS_LABELS = ['Appeal_Allowed', 'Appeal_Dismissed', 'Partly_Allowed']
 
 # Model metadata defaults - updated for improved model
 DEFAULT_METADATA = {
-    'accuracy': 0.7975,
-    'model_name': 'Improved Calibrated Ensemble',
-    'training_date': '2026-03-01',
-    'training_samples': 1092,
-    'num_features': 199
+    'accuracy': 0.6299,
+    'model_name': 'Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)',
+    'training_date': '2026-04-30',
+    'training_samples': 478,
+    'num_features': 203
 }

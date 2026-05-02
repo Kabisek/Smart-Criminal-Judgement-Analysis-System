@@ -28,6 +28,7 @@ class SimilarCase(BaseModel):
     offence: str = Field(..., description="Offence type")
     high_court: str = Field(..., description="High court location")
     grounds: str = Field(..., description="Grounds of appeal")
+    relevance_badge: Optional[str] = Field("medium", description="Precedent relevance badge: high, medium, low")
 
 class ModelMetadata(BaseModel):
     """Model metadata information"""
@@ -59,11 +60,33 @@ class AppealPredictionResponse(BaseModel):
     status: str = Field(..., description="Prediction status")
     prediction: str = Field(..., description="Predicted outcome")
     confidence: float = Field(..., ge=0, le=100, description="Confidence percentage")
+    confidence_band: str = Field(..., description="Reliability band: low, medium, high")
+    manual_review_required: bool = Field(..., description="Whether manual legal review is mandatory")
+    reliability_note: str = Field(..., description="Safety guidance for interpreting the prediction")
+    abstained: bool = Field(..., description="Whether model abstained due to low confidence/ambiguity")
+    review_priority: str = Field(..., description="Recommended review priority: low, medium, high")
+    top_outcomes: List[Dict[str, Any]] = Field(default_factory=list, description="Top-N ranked outcome probabilities")
+    reason_trace: List[str] = Field(default_factory=list, description="Short explanation bullets for prediction reasoning")
+    shap_summary: Dict[str, Any] = Field(default_factory=dict, description="SHAP-style explanation payload/status")
     probabilities: PredictionProbabilities = Field(..., description="Detailed probabilities")
     detected_features: DetectedFeatures = Field(..., description="Detected features")
     similar_cases: List[SimilarCase] = Field(..., description="Similar historical cases")
     metadata: ModelMetadata = Field(..., description="Model metadata")
     timestamp: str = Field(..., description="Prediction timestamp")
+
+    # New aggregated analytics
+    context_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated statistics for offence, location and year relevant to the case"
+    )
+    grounds_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated success statistics for each detected ground of appeal"
+    )
+    evidence_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated success statistics for each detected evidence type"
+    )
     
     class Config:
         schema_extra = {

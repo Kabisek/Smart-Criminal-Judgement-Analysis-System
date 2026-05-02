@@ -1,0 +1,10 @@
+{
+  "model": "ExtraTrees",
+  "threshold": 0.43,
+  "test_accuracy": 0.6278586278586279,
+  "weighted_f1": 0.6265689953397595,
+  "macro_f1": 0.5919316563834837,
+  "balanced_acc": 0.6043883591302746,
+  "partly_recall": 0.515625,
+  "auc_macro_ovr": 0.760013524227754
+}

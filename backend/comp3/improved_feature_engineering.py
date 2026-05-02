@@ -12,6 +12,25 @@ import pickle
 import re
 from datetime import datetime
 
+LEAKAGE_FORBIDDEN_COLUMNS = [
+    'court_of_appeal_analysis_summary',
+    'coa_final_outcome_class',
+    'coa_conviction_status',
+    'coa_sentence_type',
+    'release_ordered',
+    'final_charge_after_appeal',
+    'combined_outcome',
+    'conviction_clean'
+]
+
+PRE_APPEAL_TEXT_COLUMNS = [
+    'brief_facts_summary',
+    'grounds_of_appeal_raw_text_summary',
+    'hc_judgment_summary',
+    'defence_version_summary',
+    'witness_evidence_analysis_summary'
+]
+
 def improved_feature_engineering():
     """Run improved feature engineering pipeline"""
     
@@ -25,13 +44,23 @@ def improved_feature_engineering():
     df = pd.read_csv('dataset_cleaned_v2.csv')
     print(f"Loaded: {len(df)} records")
     print()
+
+    # Apply a strict leakage-safe policy for feature generation.
+    present_forbidden = [c for c in LEAKAGE_FORBIDDEN_COLUMNS if c in df.columns]
+    if present_forbidden:
+        print("Leakage guard: excluding post-judgment/proxy columns from inputs")
+        print(f"Excluded columns: {present_forbidden}")
+        df = df.drop(columns=present_forbidden)
+        print()
     
     # 1. FIXED TF-IDF with proper parameters
     print("Step 1: Improved TF-IDF Vectorization")
     print("-" * 50)
     
     # Combine text columns
-    text_columns = ['brief_facts_summary', 'grounds_of_appeal_raw_text_summary', 'court_of_appeal_analysis_summary']
+    text_columns = [col for col in PRE_APPEAL_TEXT_COLUMNS if col in df.columns]
+    if not text_columns:
+        raise ValueError("No valid pre-appeal text columns found for feature engineering.")
     df['combined_text'] = df[text_columns].fillna('').agg(' '.join, axis=1)
     
     # Remove empty texts
@@ -122,6 +151,8 @@ def improved_feature_engineering():
     
     # Clean target variable
     df = df.dropna(subset=['outcome_clean'])
+    # Keep feature matrix aligned with the filtered target rows.
+    all_features = all_features.loc[df.index]
     y = df['outcome_clean'].values
     
     # Encode target
@@ -150,26 +181,70 @@ def improved_feature_engineering():
     print(f"  TF-IDF features: {tfidf_count} ({tfidf_count/len(selected_features)*100:.1f}%)")
     print()
     
-    # 7. Train-test split with temporal validation
-    print("Step 6: Temporal Train/Test Split")
+    # 7. Train-test split with grouped temporal validation
+    print("Step 6: Grouped Temporal Train/Test Split")
     print("-" * 50)
-    
-    # Sort by year and split
-    df_sorted = df.sort_values('coa_year').reset_index(drop=True)
-    all_features_sorted = all_features.loc[df_sorted.index]
-    y_sorted = y_encoded[df_sorted.index]
-    
-    split_idx = int(len(df_sorted) * 0.8)
-    
-    X_train = all_features_sorted.iloc[:split_idx]
-    X_test = all_features_sorted.iloc[split_idx:]
-    y_train = y_sorted[:split_idx]
-    y_test = y_sorted[split_idx:]
-    
+
+    split_meta = {}
+    if 'coa_year' not in df.columns:
+        raise ValueError("coa_year is required for temporal split.")
+
+    case_col = 'court_of_appeal_case_no' if 'court_of_appeal_case_no' in df.columns else None
+    years = pd.to_numeric(df['coa_year'], errors='coerce')
+    years = years.fillna(years.median() if years.notna().any() else 0)
+
+    if case_col:
+        case_year_df = pd.DataFrame({
+            'case_id': df[case_col].fillna('unknown_case'),
+            'coa_year': years,
+        })
+        # Assign each case to its latest observed year to avoid train/test leakage.
+        case_year_summary = case_year_df.groupby('case_id', as_index=False)['coa_year'].max()
+        # Strict temporal cutoff (80th percentile of case-level years).
+        cutoff_year = float(np.quantile(case_year_summary['coa_year'].values, 0.8))
+
+        train_cases = set(case_year_summary[case_year_summary['coa_year'] < cutoff_year]['case_id'])
+        test_cases = set(case_year_summary[case_year_summary['coa_year'] >= cutoff_year]['case_id'])
+
+        # Fallback safety if one side becomes empty.
+        if not train_cases or not test_cases:
+            case_year_summary = case_year_summary.sort_values(['coa_year', 'case_id']).reset_index(drop=True)
+            split_case_idx = int(len(case_year_summary) * 0.8)
+            train_cases = set(case_year_summary.iloc[:split_case_idx]['case_id'])
+            test_cases = set(case_year_summary.iloc[split_case_idx:]['case_id'])
+            cutoff_year = float(case_year_summary.iloc[split_case_idx]['coa_year']) if split_case_idx < len(case_year_summary) else float(case_year_summary['coa_year'].max())
+
+        train_mask = case_year_df['case_id'].isin(train_cases).values
+        test_mask = case_year_df['case_id'].isin(test_cases).values
+        split_meta['split_strategy'] = 'grouped_temporal_by_case'
+        split_meta['temporal_cutoff_year'] = cutoff_year
+        split_meta['n_train_cases'] = len(train_cases)
+        split_meta['n_test_cases'] = len(test_cases)
+    else:
+        # Fallback: strict temporal split by year ordering.
+        df_sorted = df.assign(_coa_year_num=years).sort_values('_coa_year_num')
+        split_idx = int(len(df_sorted) * 0.8)
+        train_idx = df_sorted.iloc[:split_idx].index
+        test_idx = df_sorted.iloc[split_idx:].index
+        train_mask = df.index.isin(train_idx)
+        test_mask = df.index.isin(test_idx)
+        split_meta['split_strategy'] = 'temporal_row_split_fallback'
+
+    X_train = all_features.loc[df.index[train_mask]]
+    X_test = all_features.loc[df.index[test_mask]]
+    y_train = y_encoded[train_mask]
+    y_test = y_encoded[test_mask]
+
+    if len(np.unique(y_train)) < len(label_encoder.classes_) or len(np.unique(y_test)) < 2:
+        raise ValueError("Temporal/grouped split produced insufficient class coverage. Adjust split strategy.")
+
+    train_years = years[train_mask]
+    test_years = years[test_mask]
+
     print(f"Training set: {len(X_train)} samples")
     print(f"Test set: {len(X_test)} samples")
-    print(f"Years in train: {df_sorted['coa_year'].iloc[:split_idx].min()}-{df_sorted['coa_year'].iloc[:split_idx].max()}")
-    print(f"Years in test: {df_sorted['coa_year'].iloc[split_idx:].min()}-{df_sorted['coa_year'].iloc[split_idx:].max()}")
+    print(f"Years in train: {train_years.min()}-{train_years.max()}")
+    print(f"Years in test: {test_years.min()}-{test_years.max()}")
     print()
     
     # 8. Scale features
@@ -224,6 +299,7 @@ def improved_feature_engineering():
             'tfidf': tfidf_count
         },
         'target_classes': list(label_encoder.classes_),
+        **split_meta,
         'creation_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
@@ -252,7 +328,7 @@ def extract_all_legal_features(df):
     features = pd.DataFrame(index=df.index)
     
     # 1. Text statistics
-    text_cols = ['brief_facts_summary', 'grounds_of_appeal_raw_text_summary', 'court_of_appeal_analysis_summary']
+    text_cols = [col for col in PRE_APPEAL_TEXT_COLUMNS if col in df.columns]
     for col in text_cols:
         if col in df.columns:
             features[f'{col}_length'] = df[col].fillna('').str.len()

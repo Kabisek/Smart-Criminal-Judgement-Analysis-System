@@ -8,15 +8,22 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  useWindowDimensions,
+  Modal,
+  Platform,
+  Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader, Button } from '../components/ui';
 import { colors, typography, spacing, borderRadius } from '../theme';
 import React, { useState, useEffect, useRef } from 'react';
+import { ExpandableText, AnimatedBar, SectionDivider, PillChip } from '../components/comp3/CommonWidgets';
 import {
   predictAppealOutcomeDetailed,
+  getComp3DashboardAnalytics,
+  getComp3FairnessReport,
+  Comp3DashboardAnalytics,
+  Comp3FairnessReportPayload,
   saveComp3History,
   DetailedPredictionRequest,
   AppealPredictionResponse,
@@ -26,6 +33,50 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type AnyPredictionResult = AppealPredictionResponse | DetailedPredictionResponse;
+type DashboardCaseRow = Comp3DashboardAnalytics['table_rows'][number];
+
+function escapeCsvCell(v: unknown): string {
+  const s = v == null ? '' : String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+async function exportDashboardCasesToCsv(rows: Comp3DashboardAnalytics['table_rows']): Promise<void> {
+  const headers = [
+    'case_id',
+    'year',
+    'offence',
+    'offence_raw',
+    'court',
+    'court_raw',
+    'region',
+    'outcome',
+    'summary',
+    'judgment_file_summary_detail',
+    'appeal_analysis_summary_detail',
+  ] as const;
+  const lines = [headers.join(',')];
+  for (const r of rows) {
+    lines.push(headers.map((h) => escapeCsvCell((r as Record<string, unknown>)[h])).join(','));
+  }
+  const csv = lines.join('\n');
+  const fname = `comp3-dashboard-cases-${new Date().toISOString().slice(0, 10)}.csv`;
+  if (Platform.OS === 'web' && typeof globalThis !== 'undefined') {
+    const doc = (globalThis as unknown as { document?: { createElement: (t: string) => any } }).document;
+    if (doc?.createElement) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = doc.createElement('a');
+      a.href = url;
+      a.download = fname;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+  }
+  const body = csv.length > 120000 ? `${csv.slice(0, 120000)}\n... (truncated)` : csv;
+  await Share.share({ message: body, title: fname });
+}
 
 interface ContextStat {
   allowed_rate: number;
@@ -72,20 +123,44 @@ const OUTCOME_THEME = {
     icon: '⚖️',
     label: 'Partly Allowed',
   },
+  Insufficient_Legal_Context: {
+    color: '#6B7280',
+    bg: '#F3F4F6',
+    text: '#374151',
+    light: '#F9FAFB',
+    icon: '⛔',
+    label: 'Abstained (Invalid Input)',
+  },
+  Other: {
+    color: '#64748B',
+    bg: '#F1F5F9',
+    text: '#334155',
+    light: '#F8FAFC',
+    icon: '◆',
+    label: 'Other',
+  },
 };
 
 function getTheme(prediction: string) {
-  return OUTCOME_THEME[prediction as keyof typeof OUTCOME_THEME] ?? OUTCOME_THEME.Partly_Allowed;
+  return OUTCOME_THEME[prediction as keyof typeof OUTCOME_THEME] ?? OUTCOME_THEME.Insufficient_Legal_Context;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function countDetectedFeatures(features: Record<string, string[]> | undefined): number {
+type FeatureBuckets = {
+  grounds?: string[];
+  evidence?: string[];
+  offence?: string[];
+  other?: string[];
+};
+
+function countDetectedFeatures(features: FeatureBuckets | undefined): number {
   if (!features) return 0;
-  return Object.values(features).reduce((s, a) => s + (Array.isArray(a) ? a.length : 0), 0);
+  const groups = [features.grounds, features.evidence, features.offence, features.other];
+  return groups.reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
 }
 
-function flatFeatures(features: Record<string, string[]> | undefined): string[] {
+function flatFeatures(features: FeatureBuckets | undefined): string[] {
   if (!features) return [];
   return [
     ...(features.grounds ?? []),
@@ -102,56 +177,6 @@ function simBadgeStyle(pct: number): { bg: string; text: string } {
 }
 
 // ─── ExpandableText ───────────────────────────────────────────────────────────
-
-const TRUNCATE_LIMIT = 300;
-
-function ExpandableText({ text, style, limit = TRUNCATE_LIMIT }: { text: string; style?: any; limit?: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const needs = text.length > limit;
-  const display = needs && !expanded ? text.substring(0, limit) + '…' : text;
-  return (
-    <Text style={style}>
-      {display}
-      {needs && (
-        <Text onPress={() => setExpanded(p => !p)} style={styles.readMoreLink}>
-          {expanded ? '  Show Less ▲' : '  Read More ▼'}
-        </Text>
-      )}
-    </Text>
-  );
-}
-
-// ─── AnimatedBar ──────────────────────────────────────────────────────────────
-
-function AnimatedBar({ value, color, height = 8 }: { value: number; color: string; height?: number }) {
-  const anim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    Animated.timing(anim, {
-      toValue: value,
-      duration: 900,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [value]);
-  const width = anim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
-  return (
-    <View style={[styles.barTrack, { height }]}>
-      <Animated.View style={[styles.barFill, { width, backgroundColor: color, height }]} />
-    </View>
-  );
-}
-
-// ─── SectionDivider ───────────────────────────────────────────────────────────
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <View style={styles.dividerRow}>
-      <View style={styles.dividerLine} />
-      <Text style={styles.dividerLabel}>{label}</Text>
-      <View style={styles.dividerLine} />
-    </View>
-  );
-}
 
 // ─── SkeletonCard ─────────────────────────────────────────────────────────────
 
@@ -223,10 +248,9 @@ function VerdictBanner({ prediction, confidence }: { prediction: string; confide
       style={[
         styles.verdictBanner,
         { backgroundColor: theme.color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-        isNarrow && styles.verdictBannerNarrow,
       ]}
     >
-      <View style={[styles.verdictBannerLeft, isNarrow && styles.verdictBannerLeftNarrow]}>
+      <View style={styles.verdictBannerLeft}>
         <Text style={styles.verdictIcon}>{theme.icon}</Text>
         <View>
           <Text style={styles.verdictBannerLabel}>PREDICTED OUTCOME</Text>
@@ -238,16 +262,6 @@ function VerdictBanner({ prediction, confidence }: { prediction: string; confide
         <Text style={styles.verdictConfLabel}>confidence</Text>
       </View>
     </Animated.View>
-  );
-}
-
-// ─── PillChip ─────────────────────────────────────────────────────────────────
-
-function PillChip({ label, accentColor }: { label: string; accentColor: string }) {
-  return (
-    <View style={[styles.pillChip, { borderLeftColor: accentColor }]}>
-      <Text style={styles.pillChipText}>{label}</Text>
-    </View>
   );
 }
 
@@ -288,9 +302,9 @@ function ProgressTracker({ step, text }: { step: number; text: string }) {
     <Card style={styles.progressCard} title="🔄 Processing Analysis">
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>{text}</Text>
-        <View style={[styles.progressSteps, isNarrow && styles.progressStepsNarrow]}>
+        <View style={styles.progressSteps}>
           {steps.map((label, idx) => (
-            <View key={idx} style={[styles.progressStep, isNarrow && styles.progressStepNarrow]}>
+            <View key={idx} style={styles.progressStep}>
               <View style={[styles.progressStepCircle, step >= idx && { backgroundColor: colors.accent }]}>
                 {step > idx
                   ? <Text style={styles.progressStepCheck}>✓</Text>
@@ -311,7 +325,7 @@ function ProgressTracker({ step, text }: { step: number; text: string }) {
 
 // ─── ProbabilityMeters ────────────────────────────────────────────────────────
 
-function ProbabilityMeters({ probabilities }: { probabilities: Record<string, number> }) {
+function ProbabilityMeters({ probabilities }: { probabilities: Record<string, number> | { Appeal_Allowed: number; Appeal_Dismissed: number; Partly_Allowed: number } }) {
   const config: Record<string, { label: string; color: string }> = {
     Appeal_Allowed: { label: 'Appeal Allowed', color: '#059669' },
     Appeal_Dismissed: { label: 'Appeal Dismissed', color: '#DC2626' },
@@ -404,8 +418,6 @@ function GroundsOrEvidenceSection({ title, data }: { title: string; data: Record
 
 export default function Component3Screen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const isNarrow = width < 768;
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnyPredictionResult | null>(null);
   const [caseDescription, setCaseDescription] = useState('');
@@ -413,6 +425,15 @@ export default function Component3Screen() {
   const [progressStep, setProgressStep] = useState(0);
   const [progressText, setProgressText] = useState('');
   const [inputFocused, setInputFocused] = useState(false);
+  const [activeResultTab, setActiveResultTab] = useState<'summary' | 'dashboard'>('summary');
+  const [selectedYear, setSelectedYear] = useState<string>('All');
+  const [selectedOffence, setSelectedOffence] = useState<string>('All');
+  const [selectedCourt, setSelectedCourt] = useState<string>('All');
+  const [selectedRegion, setSelectedRegion] = useState<string>('All');
+  const [dashboardData, setDashboardData] = useState<Comp3DashboardAnalytics | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [dashboardCaseDetail, setDashboardCaseDetail] = useState<DashboardCaseRow | null>(null);
+  const [fairnessReport, setFairnessReport] = useState<Comp3FairnessReportPayload | null>(null);
 
   const isDetailed = (r: AnyPredictionResult): r is DetailedPredictionResponse =>
     'legal_reasoning' in r;
@@ -425,6 +446,13 @@ export default function Component3Screen() {
     setAnalyzing(true);
     setError(null);
     setResult(null);
+    setActiveResultTab('summary');
+    setSelectedYear('All');
+    setSelectedOffence('All');
+    setSelectedCourt('All');
+    setSelectedRegion('All');
+    setDashboardData(null);
+    setDashboardCaseDetail(null);
     setProgressStep(0);
     setProgressText('⏳ Step 1/4: Extracting features...');
     try {
@@ -473,6 +501,39 @@ export default function Component3Screen() {
   const wordCount = caseDescription.split(/\s+/).filter(w => w.length > 0).length;
   const charProgress = Math.min(caseDescription.length / 500, 1);
   const extResult = result as any;
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      if (!result || activeResultTab !== 'dashboard') return;
+      setDashboardLoading(true);
+      const data = await getComp3DashboardAnalytics({
+        year: selectedYear !== 'All' ? Number(selectedYear) : undefined,
+        offence: selectedOffence !== 'All' ? selectedOffence : undefined,
+        high_court: selectedCourt !== 'All' ? selectedCourt : undefined,
+        region: selectedRegion !== 'All' ? selectedRegion : undefined,
+      });
+      setDashboardData(data);
+      setDashboardLoading(false);
+    };
+    loadDashboard();
+  }, [result, activeResultTab, selectedYear, selectedOffence, selectedCourt, selectedRegion]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadFairness = async () => {
+      if (!result || activeResultTab !== 'dashboard') return;
+      const fr = await getComp3FairnessReport(25);
+      if (!cancelled) setFairnessReport(fr);
+    };
+    loadFairness();
+    return () => {
+      cancelled = true;
+    };
+  }, [result, activeResultTab]);
+
+  useEffect(() => {
+    setDashboardCaseDetail(null);
+  }, [selectedYear, selectedOffence, selectedCourt, selectedRegion]);
 
   return (
     <Layout>
@@ -524,7 +585,7 @@ export default function Component3Screen() {
             </View>
 
             {caseDescription.length > 0 && caseDescription.length < 100 && (
-              <Text style={styles.warningText}>⚠️ At least 100 characters needed for accurate prediction</Text>
+              <Text style={styles.warningText}>⚠️ At least 50 characters needed for prediction</Text>
             )}
             {error && (
               <View style={styles.errorBox}>
@@ -553,8 +614,54 @@ export default function Component3Screen() {
           {/* ── Results ── */}
           {result && (() => {
             const theme = getTheme(result.prediction);
+            const isAbstained = Boolean((result as any).abstained);
+            const isDomainMismatch = result.prediction === 'Insufficient_Legal_Context';
+            const yearOptions = ['All', ...((dashboardData?.filters.years ?? []).map(String))];
+            const offenceOptions = ['All', ...(dashboardData?.filters.offences ?? [])];
+            const courtOptions = ['All', ...(dashboardData?.filters.courts ?? [])];
+            const regionOptions = ['All', ...(dashboardData?.filters.regions ?? [])];
+            const activeFilterParts: string[] = [];
+            if (selectedYear !== 'All') activeFilterParts.push(`Year ${selectedYear}`);
+            if (selectedOffence !== 'All') activeFilterParts.push(`Offence: ${selectedOffence}`);
+            if (selectedCourt !== 'All') activeFilterParts.push(`Court: ${selectedCourt}`);
+            if (selectedRegion !== 'All') activeFilterParts.push(`Region: ${selectedRegion}`);
+            const activeFilterSummary =
+              activeFilterParts.length === 0
+                ? 'Showing every judgment in the dataset.'
+                : `Narrowed to: ${activeFilterParts.join(' · ')}`;
+            const outcomeCounts = {
+              Appeal_Allowed: dashboardData?.outcome_distribution.find((o) => o.outcome === 'Appeal_Allowed')?.count ?? 0,
+              Partly_Allowed: dashboardData?.outcome_distribution.find((o) => o.outcome === 'Partly_Allowed')?.count ?? 0,
+              Appeal_Dismissed: dashboardData?.outcome_distribution.find((o) => o.outcome === 'Appeal_Dismissed')?.count ?? 0,
+            };
+            const totalFiltered = Math.max(dashboardData?.kpis.total_cases ?? 0, 1);
+            const byYear = dashboardData?.yearly_trend ?? [];
+
             return (
               <>
+                <Card style={styles.resultCard}>
+                  <View style={styles.resultTabsRow}>
+                    <Pressable
+                      onPress={() => setActiveResultTab('summary')}
+                      style={[styles.resultTabBtn, activeResultTab === 'summary' && styles.resultTabBtnActive]}
+                    >
+                      <Text style={[styles.resultTabText, activeResultTab === 'summary' && styles.resultTabTextActive]}>
+                        Summary
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setActiveResultTab('dashboard')}
+                      style={[styles.resultTabBtn, activeResultTab === 'dashboard' && styles.resultTabBtnActive]}
+                    >
+                      <Text style={[styles.resultTabText, activeResultTab === 'dashboard' && styles.resultTabTextActive]}>
+                        Past cases & trends
+                      </Text>
+                    </Pressable>
+                  </View>
+                </Card>
+
+                {activeResultTab === 'summary' ? (
+                  <>
                 {/* 1. Animated Verdict Banner */}
                 <VerdictBanner prediction={result.prediction} confidence={result.confidence} />
 
@@ -562,9 +669,9 @@ export default function Component3Screen() {
 
                 {/* 2. Confidence Ring + hero stats */}
                 <Card style={[styles.resultCard, { borderTopWidth: 4, borderTopColor: theme.color }]}>
-                  <View style={[styles.heroRow, isNarrow && styles.heroRowNarrow]}>
+                  <View style={styles.heroRow}>
                     <ConfidenceRing confidence={result.confidence} color={theme.color} />
-                    <View style={[styles.heroStats, isNarrow && styles.heroStatsNarrow]}>
+                    <View style={styles.heroStats}>
                       <View style={[styles.heroStatItem, { backgroundColor: theme.light }]}>
                         <Text style={[styles.heroStatNum, { color: theme.color }]}>
                           {theme.icon} {theme.label}
@@ -591,7 +698,7 @@ export default function Component3Screen() {
                         <Text style={styles.legalReasoningEyebrow}>AI Legal Reasoning</Text>
                         <Text style={styles.legalReasoning}>{result.legal_reasoning}</Text>
                       </View>
-                      <View style={[styles.detectedFeaturesGrid, isNarrow && styles.detectedFeaturesGridNarrow]}>
+                      <View style={styles.detectedFeaturesGrid}>
                         <View style={styles.featureCol}>
                           <Text style={styles.featureSectionTitle}>⚖️ Grounds</Text>
                           {(result.key_factors?.length ?? 0) > 0
@@ -609,17 +716,23 @@ export default function Component3Screen() {
                             : <Text style={styles.noFeaturesText}>None detected</Text>}
                         </View>
                       </View>
-                      <View style={[styles.compactRow, isNarrow && styles.compactRowNarrow]}>
+                      <View style={styles.compactRow}>
                         {result.risk_assessment && (
                           <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>⚠️ Risk Level</Text>
-                            <Text style={styles.compactValue}>{result.risk_assessment.split(':')[0]}</Text>
+                            <Text style={styles.compactLabel}>⚠️ Case confidence note</Text>
+                            <Text style={styles.compactValue}>
+                              {result.risk_assessment.includes(':')
+                                ? result.risk_assessment.split(':')[1].trim()
+                                : result.risk_assessment}
+                            </Text>
                           </View>
                         )}
                         {(result.strategy_recommendations?.length ?? 0) > 0 && (
                           <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>💡 Strategy</Text>
-                            <Text style={styles.compactValue}>{result.strategy_recommendations[0].recommendation.split(' ')[0]}</Text>
+                            <Text style={styles.compactLabel}>💡 Suggested next step</Text>
+                            <Text style={styles.compactValue}>
+                              {result.strategy_recommendations[0].recommendation}
+                            </Text>
                           </View>
                         )}
                       </View>
@@ -672,43 +785,6 @@ export default function Component3Screen() {
                   )}
                 </Card>
 
-                {/* Enhanced Legal Analysis */}
-                {isDetailed(result) && (
-                  <Card style={styles.resultCard} title="⚖️ Legal Analysis">
-                    <View style={styles.enhancedSection}>
-                      <View style={styles.legalReasoningBox}>
-                        <Text style={styles.legalReasoningEyebrow}>Detailed Reasoning</Text>
-                        <Text style={styles.legalReasoning}>{result.legal_reasoning}</Text>
-                      </View>
-                      {(result.key_factors?.length ?? 0) > 0 && (
-                        <View>
-                          <Text style={styles.compactSectionLabel}>🎯 Key Factors</Text>
-                          {result.key_factors.slice(0, 3).map((factor: any, i: number) => (
-                            <View key={i} style={styles.factorItem}>
-                              <View style={[styles.factorDot, { backgroundColor: theme.color }]} />
-                              <Text style={styles.factorName}>{factor.factor_name}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                      <View style={styles.compactRow}>
-                        {result.risk_assessment && (
-                          <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>⚠️ Risk</Text>
-                            <Text style={styles.compactValue}>{result.risk_assessment.split(':')[0]}</Text>
-                          </View>
-                        )}
-                        {(result.strategy_recommendations?.length ?? 0) > 0 && (
-                          <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>💡 Strategy</Text>
-                            <Text style={styles.compactValue}>{result.strategy_recommendations[0].recommendation.split(' ')[0]}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </Card>
-                )}
-
                 {/* 4. Animated Probability Bars */}
                 <ProbabilityMeters probabilities={result.probabilities} />
 
@@ -723,11 +799,17 @@ export default function Component3Screen() {
                 {/* Why This Prediction */}
                 <Card style={styles.resultCard} title="💡 Why This Prediction?">
                   <View style={styles.reasoningSection}>
-                    <Text style={styles.reasoningText}>
-                      {'Based on '}
-                      <Text style={{ fontWeight: '700' }}>{flatFeatures(result.detected_features).join(', ')}</Text>
-                      {' and legal pattern analysis:'}
-                    </Text>
+                    {isAbstained ? (
+                      <Text style={styles.reasoningText}>
+                        {(result as any).reliability_note || 'Input does not match legal appeal domain. Prediction abstained.'}
+                      </Text>
+                    ) : (
+                      <Text style={styles.reasoningText}>
+                        {'Based on '}
+                        <Text style={{ fontWeight: '700' }}>{flatFeatures(result.detected_features).join(', ')}</Text>
+                        {' and legal pattern analysis:'}
+                      </Text>
+                    )}
                     {result.prediction === 'Appeal_Allowed' && result.confidence > 60 && (
                       <View style={[styles.reasoningBlock, { borderLeftColor: '#059669', backgroundColor: '#ECFDF5' }]}>
                         <Text style={[styles.reasoningTitle, { color: '#059669' }]}>🟢 Strong indicators for Appeal Allowed</Text>
@@ -744,7 +826,7 @@ export default function Component3Screen() {
                         </Text>
                       </View>
                     )}
-                    {result.confidence < 55 && (
+                    {!isAbstained && result.confidence < 55 && (
                       <View style={[styles.reasoningBlock, { borderLeftColor: '#D97706', backgroundColor: '#FFFBEB' }]}>
                         <Text style={[styles.reasoningTitle, { color: '#D97706' }]}>🟡 Mixed signals — borderline case</Text>
                         <Text style={styles.reasoningPoints}>
@@ -752,75 +834,29 @@ export default function Component3Screen() {
                         </Text>
                       </View>
                     )}
-                  </View>
-                </Card>
-
-                {/* Feature Detection */}
-                <Card style={styles.resultCard} title="🔍 Feature Detection">
-                  <View style={styles.zoneRoot}>
-                    <View style={[styles.zoneRootBadge, { backgroundColor: theme.color }]}>
-                      <Text style={styles.zoneRootBadgeText}>⚖</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.zoneRootTitle}>Legal Analysis Complete</Text>
-                      <Text style={styles.zoneRootSub}>{countDetectedFeatures(result.detected_features)} features extracted</Text>
-                    </View>
-                  </View>
-                  <View style={styles.zoneTwoCol}>
-                    <View style={styles.zoneSection}>
-                      <Text style={[styles.zoneLabel, { color: '#059669' }]}>⚖️ Grounds</Text>
-                      {(result.detected_features?.grounds?.length ?? 0) > 0
-                        ? result.detected_features.grounds.map((g: string, i: number) => (
-                            <View key={i} style={[styles.treeItem, { borderLeftColor: '#059669' }]}>
-                              <Text style={styles.treeItemTitle}>{g}</Text>
-                            </View>
-                          ))
-                        : <Text style={styles.emptyState}>None detected</Text>}
-                    </View>
-                    <View style={styles.zoneSection}>
-                      <Text style={[styles.zoneLabel, { color: '#D97706' }]}>🔬 Evidence</Text>
-                      {(result.detected_features?.evidence?.length ?? 0) > 0
-                        ? result.detected_features.evidence.map((e: string, i: number) => (
-                            <View key={i} style={[styles.treeItem, { borderLeftColor: '#D97706' }]}>
-                              <Text style={styles.treeItemTitle}>{e}</Text>
-                            </View>
-                          ))
-                        : <Text style={styles.emptyState}>None detected</Text>}
-                    </View>
-                  </View>
-                  <View style={styles.zoneSideBySide}>
-                    {(result.detected_features?.offence?.length ?? 0) > 0 && (
-                      <View style={styles.zoneColumn}>
-                        <Text style={[styles.zoneLabel, { color: '#6366F1' }]}>📋 Offence</Text>
-                        {result.detected_features.offence.map((o: string, i: number) => (
-                          <View key={i} style={[styles.treeItem, { borderLeftColor: '#6366F1' }]}>
-                            <Text style={styles.treeItemTitle}>{o}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    {(result.detected_features?.other?.length ?? 0) > 0 && (
-                      <View style={styles.zoneColumn}>
-                        <Text style={[styles.zoneLabel, { color: colors.textSecondary }]}>📎 Other</Text>
-                        {result.detected_features.other.slice(0, 3).map((o: string, i: number) => (
-                          <View key={i} style={styles.treeItem}>
-                            <Text style={styles.treeItemTitle}>{o}</Text>
-                          </View>
+                    {isDetailed(result) && (result.reason_trace?.length ?? 0) > 0 && (
+                      <View style={{ marginTop: spacing.sm }}>
+                        <Text style={styles.compactSectionLabel}>🧾 Explanation Trace</Text>
+                        {result.reason_trace!.slice(0, 5).map((line: string, i: number) => (
+                          <Text key={i} style={styles.traceLine}>
+                            • {line}
+                          </Text>
                         ))}
                       </View>
                     )}
                   </View>
                 </Card>
 
-                <SectionDivider label="📚 SIMILAR PRECEDENTS" />
+                {!isDomainMismatch && <SectionDivider label="📚 SIMILAR PRECEDENTS" />}
 
                 {/* 5. Similar Cases with all improvements */}
+                {!isDomainMismatch && (
                 <Card style={styles.resultCard} title="📚 Similar Historical Cases">
                   <Text style={styles.sectionSubtitle}>AI-matched court case precedents</Text>
 
                   {/* Aggregate outcome bar */}
                   {(() => {
-                    const cases = result.similar_cases.slice(0, 3);
+                    const cases = (result.similar_cases as any[]).slice(0, 3);
                     const allowed = cases.filter(c => c.outcome === 'Appeal_Allowed').length;
                     const dismissed = cases.filter(c => c.outcome === 'Appeal_Dismissed').length;
                     const partly = cases.filter(c => c.outcome === 'Partly_Allowed').length;
@@ -841,7 +877,7 @@ export default function Component3Screen() {
                     );
                   })()}
 
-                  {result.similar_cases.slice(0, 3).map((c, idx) => {
+                  {(result.similar_cases as any[]).slice(0, 3).map((c: any, idx: number) => {
                     const simPct = c.similarity_score ? Math.round(c.similarity_score * 100) : 0;
                     const cTheme = getTheme(c.outcome ?? '');
                     const simBadge = simBadgeStyle(simPct);
@@ -980,12 +1016,403 @@ export default function Component3Screen() {
                     );
                   })}
                 </Card>
+                )}
+                  </>
+                ) : (
+                  <>
+                    <Card style={styles.resultCard} title="ℹ️ How to use this tab">
+                      <Text style={styles.dashboardIntroText}>
+                        The charts below summarise past Court of Appeal judgments stored in the dataset. They help you see broad patterns—they do not decide your appeal. Use the{' '}
+                        <Text style={{ fontWeight: '700' }}>Summary</Text>
+                        {' '}tab for the outcome on your case text; use{' '}
+                        <Text style={{ fontWeight: '700' }}>Past cases & trends</Text>
+                        {' '}to browse similar judgments.
+                      </Text>
+                    </Card>
+
+                    {fairnessReport && !fairnessReport.error && (fairnessReport.dataset_rows ?? 0) > 0 && (
+                      <Card style={styles.resultCard} title="⚖️ Label balance (full dataset)">
+                        <Text style={styles.dashboardIntroText}>
+                          These figures describe how outcomes are distributed in the stored judgments—not model accuracy.
+                          Slices with few rows are marked “low sample.”
+                        </Text>
+                        <Text style={[styles.dashboardSubText, { marginTop: spacing.sm }]}>
+                          Corpus: {fairnessReport.dataset_rows} rows · flag when n is below {fairnessReport.min_slice_n ?? 25}
+                        </Text>
+                        <Text style={[styles.compactSectionLabel, { marginTop: spacing.sm }]}>By offence (top)</Text>
+                        {(fairnessReport.by_offence ?? []).slice(0, 6).map((row) => (
+                          <Text key={row.slice_value} style={styles.fairnessSliceRow}>
+                            {row.slice_value}: n={row.n} — allowed {row.appeal_allowed_pct}% · partly {row.partly_allowed_pct}% · dismissed {row.appeal_dismissed_pct}%
+                            {row.low_sample ? ' · low sample' : ''}
+                          </Text>
+                        ))}
+                        {(fairnessReport.notes ?? []).length > 0 && (
+                          <Text style={[styles.filterHintText, { marginTop: spacing.sm }]}>
+                            {fairnessReport.notes?.join(' ')}
+                          </Text>
+                        )}
+                      </Card>
+                    )}
+
+                    <Card style={styles.resultCard} title="🔎 Narrow the list">
+                      <View style={styles.filterToolbar}>
+                        <Text style={styles.activeFilterSummary} numberOfLines={4}>{activeFilterSummary}</Text>
+                        <Pressable
+                          onPress={() => {
+                            setSelectedYear('All');
+                            setSelectedOffence('All');
+                            setSelectedCourt('All');
+                            setSelectedRegion('All');
+                          }}
+                          style={styles.filterClearBtn}
+                        >
+                          <Text style={styles.filterClearBtnText}>Reset choices</Text>
+                        </Pressable>
+                      </View>
+                      <Text style={styles.filterLabel}>Year of judgment</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {yearOptions.map((option) => (
+                          <Pressable
+                            key={`y-${option}`}
+                            onPress={() => setSelectedYear(option)}
+                            style={[styles.filterChip, selectedYear === option && styles.filterChipActive]}
+                          >
+                            <Text style={[styles.filterChipText, selectedYear === option && styles.filterChipTextActive]}>{option}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                      <Text style={styles.filterLabel}>Type of offence (broad categories)</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {offenceOptions.map((option) => (
+                          <Pressable
+                            key={`o-${option}`}
+                            onPress={() => setSelectedOffence(option)}
+                            style={[styles.filterChip, selectedOffence === option && styles.filterChipActive]}
+                          >
+                            <Text style={[styles.filterChipText, selectedOffence === option && styles.filterChipTextActive]}>{option}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                      <Text style={styles.filterLabel}>High Court bench (standard names)</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {courtOptions.map((option) => (
+                          <Pressable
+                            key={`c-${option}`}
+                            onPress={() => setSelectedCourt(option)}
+                            style={[styles.filterChip, selectedCourt === option && styles.filterChipActive]}
+                          >
+                            <Text style={[styles.filterChipText, selectedCourt === option && styles.filterChipTextActive]}>{option}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                      <Text style={styles.filterLabel}>Area linked to the offence location</Text>
+                      <Text style={styles.filterHintText}>
+                        “Location not stated” means the judgment record has no place written down. “Location not mapped” means a place was written, but it did not match a known area name in our list (for example “School” or a very small village). Every row still counts once in the totals above.
+                      </Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+                        {regionOptions.map((option) => (
+                          <Pressable
+                            key={`r-${option}`}
+                            onPress={() => setSelectedRegion(option)}
+                            style={[styles.filterChip, selectedRegion === option && styles.filterChipActive]}
+                          >
+                            <Text style={[styles.filterChipText, selectedRegion === option && styles.filterChipTextActive]}>{option}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📊 How those appeals ended">
+                      <Text style={styles.dashboardSubText}>Judgments in this slice: {dashboardData?.kpis.total_cases ?? 0}</Text>
+                      <View style={styles.outcomeDonutWrap}>
+                        <View style={styles.outcomeDonutTrack}>
+                          {outcomeCounts.Appeal_Allowed > 0 && (
+                            <View style={[styles.outcomeDonutSeg, { flex: outcomeCounts.Appeal_Allowed, backgroundColor: '#059669' }]} />
+                          )}
+                          {outcomeCounts.Partly_Allowed > 0 && (
+                            <View style={[styles.outcomeDonutSeg, { flex: outcomeCounts.Partly_Allowed, backgroundColor: '#D97706' }]} />
+                          )}
+                          {outcomeCounts.Appeal_Dismissed > 0 && (
+                            <View style={[styles.outcomeDonutSeg, { flex: outcomeCounts.Appeal_Dismissed, backgroundColor: '#DC2626' }]} />
+                          )}
+                          {outcomeCounts.Appeal_Allowed + outcomeCounts.Partly_Allowed + outcomeCounts.Appeal_Dismissed === 0 && (
+                            <View style={[styles.outcomeDonutSeg, { flex: 1, backgroundColor: colors.border }]} />
+                          )}
+                        </View>
+                        <View style={styles.outcomeDonutCenter} pointerEvents="none">
+                          <View style={{ alignItems: 'center' }}>
+                            <Text style={styles.outcomeDonutCenterNum}>{dashboardData?.kpis.total_cases ?? 0}</Text>
+                            <Text style={styles.outcomeDonutCenterLbl}>judgments</Text>
+                          </View>
+                        </View>
+                      </View>
+                      <View style={styles.outcomeDonutLegend}>
+                        <Text style={[styles.legendItem, { color: '#059669' }]}>
+                          ✅ Appeal allowed {((outcomeCounts.Appeal_Allowed / totalFiltered) * 100).toFixed(1)}% ({outcomeCounts.Appeal_Allowed})
+                        </Text>
+                        <Text style={[styles.legendItem, { color: '#D97706' }]}>
+                          ⚖️ Partly allowed {((outcomeCounts.Partly_Allowed / totalFiltered) * 100).toFixed(1)}% ({outcomeCounts.Partly_Allowed})
+                        </Text>
+                        <Text style={[styles.legendItem, { color: '#DC2626' }]}>
+                          ❌ Appeal dismissed {((outcomeCounts.Appeal_Dismissed / totalFiltered) * 100).toFixed(1)}% ({outcomeCounts.Appeal_Dismissed})
+                        </Text>
+                      </View>
+                      <View style={styles.meterRow}>
+                        <Text style={styles.meterLabel}>✅ Appeal allowed</Text>
+                        <View style={{ flex: 2 }}>
+                          <AnimatedBar value={(outcomeCounts.Appeal_Allowed / totalFiltered) * 100} color="#059669" height={8} />
+                        </View>
+                        <Text style={[styles.meterPct, { color: '#059669' }]}>{outcomeCounts.Appeal_Allowed}</Text>
+                      </View>
+                      <View style={styles.meterRow}>
+                        <Text style={styles.meterLabel}>⚖️ Partly allowed</Text>
+                        <View style={{ flex: 2 }}>
+                          <AnimatedBar value={(outcomeCounts.Partly_Allowed / totalFiltered) * 100} color="#D97706" height={8} />
+                        </View>
+                        <Text style={[styles.meterPct, { color: '#D97706' }]}>{outcomeCounts.Partly_Allowed}</Text>
+                      </View>
+                      <View style={styles.meterRow}>
+                        <Text style={styles.meterLabel}>❌ Appeal dismissed</Text>
+                        <View style={{ flex: 2 }}>
+                          <AnimatedBar value={(outcomeCounts.Appeal_Dismissed / totalFiltered) * 100} color="#DC2626" height={8} />
+                        </View>
+                        <Text style={[styles.meterPct, { color: '#DC2626' }]}>{outcomeCounts.Appeal_Dismissed}</Text>
+                      </View>
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📌 Main offence categories (tap a row to filter)">
+                      {(dashboardData?.offence_distribution ?? []).length === 0 ? (
+                        <Text style={styles.emptyState}>Nothing to show for these choices—try resetting or widening a filter.</Text>
+                      ) : (
+                        (dashboardData?.offence_distribution ?? []).map((row, idx) => (
+                          <Pressable
+                            key={`off-${row.offence}-${idx}`}
+                            onPress={() => setSelectedOffence(row.offence)}
+                            style={styles.distRow}
+                          >
+                            <View style={styles.distRowHeader}>
+                              <Text style={styles.distRowTitle} numberOfLines={1}>{row.offence}</Text>
+                              <Text style={styles.distRowCount}>{row.total}</Text>
+                            </View>
+                            <View style={styles.distStackBar}>
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.allowed, 0.01), backgroundColor: '#059669' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.partly, 0.01), backgroundColor: '#D97706' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.dismissed, 0.01), backgroundColor: '#DC2626' }]} />
+                            </View>
+                          </Pressable>
+                        ))
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="🏛️ High Courts with the most judgments (tap a row to filter)">
+                      {(dashboardData?.court_distribution ?? []).length === 0 ? (
+                        <Text style={styles.emptyState}>Nothing to show for these choices—try resetting or widening a filter.</Text>
+                      ) : (
+                        (dashboardData?.court_distribution ?? []).map((row, idx) => (
+                          <Pressable
+                            key={`ct-${row.court}-${idx}`}
+                            onPress={() => setSelectedCourt(row.court)}
+                            style={styles.distRow}
+                          >
+                            <View style={styles.distRowHeader}>
+                              <Text style={styles.distRowTitle} numberOfLines={1}>{row.court}</Text>
+                              <Text style={styles.distRowCount}>{row.total}</Text>
+                            </View>
+                            <View style={styles.distStackBar}>
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.allowed, 0.01), backgroundColor: '#059669' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.partly, 0.01), backgroundColor: '#D97706' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.dismissed, 0.01), backgroundColor: '#DC2626' }]} />
+                            </View>
+                          </Pressable>
+                        ))
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📍 Areas inferred from the offence location (tap a row to filter)">
+                      {(dashboardData?.region_distribution ?? []).length === 0 ? (
+                        <Text style={styles.emptyState}>Nothing to show for these choices—try resetting or widening a filter.</Text>
+                      ) : (
+                        (dashboardData?.region_distribution ?? []).map((row, idx) => (
+                          <Pressable
+                            key={`rg-${row.region}-${idx}`}
+                            onPress={() => setSelectedRegion(row.region)}
+                            style={styles.distRow}
+                          >
+                            <View style={styles.distRowHeader}>
+                              <Text style={styles.distRowTitle} numberOfLines={1}>{row.region}</Text>
+                              <Text style={styles.distRowCount}>{row.total}</Text>
+                            </View>
+                            <View style={styles.distStackBar}>
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.allowed, 0.01), backgroundColor: '#059669' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.partly, 0.01), backgroundColor: '#D97706' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.dismissed, 0.01), backgroundColor: '#DC2626' }]} />
+                            </View>
+                          </Pressable>
+                        ))
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📑 Kind of appeal (read-only chart)">
+                      {(dashboardData?.appeal_type_distribution ?? []).length === 0 ? (
+                        <Text style={styles.emptyState}>Appeal type is not available for this slice.</Text>
+                      ) : (
+                        (dashboardData?.appeal_type_distribution ?? []).map((row, idx) => (
+                          <View key={`at-${row.appeal_type}-${idx}`} style={styles.distRow}>
+                            <View style={styles.distRowHeader}>
+                              <Text style={styles.distRowTitle} numberOfLines={1}>{row.appeal_type}</Text>
+                              <Text style={styles.distRowCount}>{row.total}</Text>
+                            </View>
+                            <View style={styles.distStackBar}>
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.allowed, 0.01), backgroundColor: '#059669' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.partly, 0.01), backgroundColor: '#D97706' }]} />
+                              <View style={[styles.distStackSeg, { flex: Math.max(row.dismissed, 0.01), backgroundColor: '#DC2626' }]} />
+                            </View>
+                          </View>
+                        ))
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📈 Outcomes by year (tap a year to focus)">
+                      {byYear.length > 0 ? byYear.map((row, idx) => (
+                        <Pressable
+                          key={`${row.year}-${idx}`}
+                          onPress={() => setSelectedYear(String(row.year))}
+                          style={styles.yearTrendRow}
+                        >
+                          <Text style={styles.yearTrendTitle}>{String(row.year)}</Text>
+                          <View style={styles.yearTrendBars}>
+                            <View style={[styles.yearSeg, { flex: row.allowed || 0.01, backgroundColor: '#059669' }]} />
+                            <View style={[styles.yearSeg, { flex: row.partly || 0.01, backgroundColor: '#D97706' }]} />
+                            <View style={[styles.yearSeg, { flex: row.dismissed || 0.01, backgroundColor: '#DC2626' }]} />
+                          </View>
+                          <Text style={styles.yearTrendCount}>{row.total}</Text>
+                        </Pressable>
+                      )) : (
+                        <Text style={styles.emptyState}>No year-by-year data for these choices.</Text>
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="📋 Sample of matching judgments">
+                      <View style={styles.caseTableToolbar}>
+                        <Text style={styles.caseTableToolbarHint}>The list below shows 10 judgments; download includes up to 200 rows that match your choices.</Text>
+                        <Button
+                          variant="secondary"
+                          disabled={!dashboardData?.table_rows?.length}
+                          onPress={() => {
+                            void (async () => {
+                              try {
+                                await exportDashboardCasesToCsv(dashboardData?.table_rows ?? []);
+                              } catch (e) {
+                                console.error('CSV export failed', e);
+                              }
+                            })();
+                          }}
+                        >
+                          Download as spreadsheet
+                        </Button>
+                      </View>
+                      {dashboardLoading ? (
+                        <View style={{ paddingVertical: spacing.md }}>
+                          <ActivityIndicator size="small" color={colors.accent} />
+                        </View>
+                      ) : (dashboardData?.table_rows?.length ?? 0) > 0 ? (dashboardData?.table_rows ?? []).slice(0, 10).map((c: DashboardCaseRow, idx: number) => (
+                        <Pressable
+                          key={`${c.case_id}-${idx}`}
+                          onPress={() => setDashboardCaseDetail(c)}
+                          style={({ pressed }) => [styles.caseTableRow, pressed && { opacity: 0.85, backgroundColor: colors.bgSection }]}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.caseId}>#{idx + 1} {c.case_id}</Text>
+                            <Text style={styles.caseTableMeta}>
+                              {c.year ?? 'N/A'} • {c.offence ?? 'N/A'} • {c.court ?? 'N/A'}
+                              {c.region ? ` • ${c.region}` : ''}
+                            </Text>
+                            <Text style={styles.caseTableHint}>Tap to read summary text →</Text>
+                          </View>
+                          <View style={[styles.caseOutcome, { backgroundColor: getTheme(c.outcome ?? '').bg }]}>
+                            <Text style={[styles.caseOutcomeText, { color: getTheme(c.outcome ?? '').text }]}>
+                              {getTheme(c.outcome ?? '').label}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      )) : (
+                        <Text style={styles.emptyState}>No judgments match these choices.</Text>
+                      )}
+                    </Card>
+
+                    <Card style={styles.resultCard} title="🧭 Using this with care">
+                      <Text style={styles.reasoningText}>Suggested review level: <Text style={{ fontWeight: '700' }}>{String((result as any).review_priority ?? 'medium').toUpperCase()}</Text></Text>
+                      <Text style={styles.reasoningText}>Lawyer review: <Text style={{ fontWeight: '700' }}>{(result as any).manual_review_required ? 'Treat as required' : 'Treat as recommended'}</Text></Text>
+                      <Text style={styles.reasoningText}>Charts and similar cases support your own judgment; they are not a substitute for reading the law, the record, or advice from qualified counsel.</Text>
+                    </Card>
+                  </>
+                )}
               </>
             );
           })()}
 
         </View>
       </Container>
+
+      <Modal
+        visible={dashboardCaseDetail != null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDashboardCaseDetail(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Judgment details</Text>
+              <Pressable onPress={() => setDashboardCaseDetail(null)} style={styles.modalCloseBtn}>
+                <Text style={styles.modalCloseText}>✕</Text>
+              </Pressable>
+            </View>
+            {dashboardCaseDetail && (
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator>
+                <Text style={styles.modalCaseId}>{dashboardCaseDetail.case_id}</Text>
+                <View style={styles.modalMetaRow}>
+                  <Text style={styles.modalMeta}>Year: {dashboardCaseDetail.year ?? '—'}</Text>
+                  <Text style={styles.modalMeta}>Court: {dashboardCaseDetail.court}</Text>
+                </View>
+                {dashboardCaseDetail.court_raw && dashboardCaseDetail.court_raw !== dashboardCaseDetail.court && (
+                  <Text style={styles.modalMeta}>Court name as in record: {dashboardCaseDetail.court_raw}</Text>
+                )}
+                <Text style={styles.modalMeta}>Region: {dashboardCaseDetail.region ?? '—'}</Text>
+                <Text style={styles.modalMeta}>Offence category (broad): {dashboardCaseDetail.offence}</Text>
+                {dashboardCaseDetail.offence_raw && dashboardCaseDetail.offence_raw !== dashboardCaseDetail.offence && (
+                  <Text style={styles.modalMeta}>Offence wording in record: {dashboardCaseDetail.offence_raw}</Text>
+                )}
+                <View style={[styles.caseOutcome, { alignSelf: 'flex-start', marginTop: spacing.sm, backgroundColor: getTheme(dashboardCaseDetail.outcome).bg }]}>
+                  <Text style={[styles.caseOutcomeText, { color: getTheme(dashboardCaseDetail.outcome).text }]}>
+                    {getTheme(dashboardCaseDetail.outcome).label}
+                  </Text>
+                </View>
+                <Text style={styles.modalSectionTitle}>Facts from the judgment</Text>
+                <Text style={styles.modalBodyText}>
+                  {dashboardCaseDetail.summary_detail || dashboardCaseDetail.summary || 'No brief facts text is available for this judgment.'}
+                </Text>
+                {(dashboardCaseDetail.judgment_file_summary_detail || dashboardCaseDetail.judgment_file_summary) && (
+                  <>
+                    <Text style={[styles.modalSectionTitle, { marginTop: spacing.md }]}>Summary of the judgment (from the record)</Text>
+                    <Text style={styles.modalBodyText}>
+                      {dashboardCaseDetail.judgment_file_summary_detail || dashboardCaseDetail.judgment_file_summary}
+                    </Text>
+                  </>
+                )}
+                {(dashboardCaseDetail.appeal_analysis_summary_detail || dashboardCaseDetail.appeal_analysis_summary) && (
+                  <>
+                    <Text style={[styles.modalSectionTitle, { marginTop: spacing.md }]}>How the Court of Appeal reasoned</Text>
+                    <Text style={styles.modalBodyText}>
+                      {dashboardCaseDetail.appeal_analysis_summary_detail || dashboardCaseDetail.appeal_analysis_summary}
+                    </Text>
+                  </>
+                )}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </Layout>
   );
 }
@@ -1045,9 +1472,7 @@ const styles = StyleSheet.create({
   progressContainer: { gap: spacing.md },
   progressText: { fontSize: 14, fontWeight: '500', color: colors.primary, textAlign: 'center' },
   progressSteps: { flexDirection: 'row', justifyContent: 'space-between' },
-  progressStepsNarrow: { flexDirection: 'column', gap: spacing.md, alignItems: 'center' },
   progressStep: { alignItems: 'center', flex: 1 },
-  progressStepNarrow: { width: '100%', flexDirection: 'row', gap: spacing.md, justifyContent: 'flex-start' },
   progressStepCircle: {
     width: 28, height: 28, borderRadius: 14, backgroundColor: colors.border,
     alignItems: 'center', justifyContent: 'center', marginBottom: 4,
@@ -1076,17 +1501,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18, shadowRadius: 8, elevation: 6,
   },
-  verdictBannerNarrow: {
-    flexDirection: 'column',
-    gap: spacing.md,
-    alignItems: 'center',
-  },
   verdictBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  verdictBannerLeftNarrow: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-  },
   verdictIcon: { fontSize: 32 },
   verdictBannerLabel: {
     fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.75)',
@@ -1108,12 +1523,333 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
     borderRadius: borderRadius.lg, overflow: 'hidden',
   },
+  resultTabsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    padding: spacing.sm,
+  },
+  resultTabBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: colors.bgSection,
+  },
+  resultTabBtnActive: {
+    backgroundColor: '#E0ECFF',
+    borderColor: colors.accent,
+  },
+  resultTabText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  resultTabTextActive: {
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+  },
+  filterHintText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    lineHeight: 16,
+    marginTop: 4,
+    marginBottom: spacing.xs,
+  },
+  dashboardIntroText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  uncertaintyRow: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bgSection,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  uncertaintyEm: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  uncertaintyMeta: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  precedentTrendText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 21,
+  },
+  precedentYearLine: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  traceLine: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  govNoteText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  fairnessSliceRow: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  filterToolbar: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  activeFilterSummary: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.textSecondary,
+    lineHeight: 17,
+    fontWeight: '500',
+  },
+  filterClearBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.bgSection,
+  },
+  filterClearBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+  },
+  caseTableToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  caseTableToolbarHint: {
+    flex: 1,
+    fontSize: 11,
+    color: colors.textMuted,
+    minWidth: 160,
+  },
+  filterScroll: {
+    marginTop: spacing.xs,
+  },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    marginRight: spacing.xs,
+    backgroundColor: colors.bgSection,
+  },
+  filterChipActive: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#3B82F6',
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  filterChipTextActive: {
+    color: '#1D4ED8',
+    fontWeight: '700',
+  },
+  dashboardSubText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  yearTrendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  yearTrendTitle: {
+    width: 56,
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  yearTrendBars: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 10,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+  },
+  yearSeg: { height: '100%' },
+  yearTrendCount: {
+    width: 24,
+    textAlign: 'right',
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '700',
+  },
+  caseTableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.sm,
+  },
+  caseTableMeta: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  caseTableHint: {
+    fontSize: 10,
+    color: colors.accent,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+
+  outcomeDonutWrap: {
+    position: 'relative',
+    height: 40,
+    marginBottom: spacing.md,
+    justifyContent: 'center',
+  },
+  outcomeDonutTrack: {
+    flexDirection: 'row',
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+  },
+  outcomeDonutSeg: { height: '100%' },
+  outcomeDonutCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outcomeDonutCenterNum: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  outcomeDonutCenterLbl: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.textMuted,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
+  outcomeDonutLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+
+  distRow: {
+    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  distRowHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: spacing.sm,
+  },
+  distRowTitle: { flex: 1, fontSize: 12, fontWeight: '700', color: colors.textPrimary },
+  distRowCount: { fontSize: 12, fontWeight: '700', color: colors.textMuted },
+  distStackBar: {
+    flexDirection: 'row',
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: colors.border,
+  },
+  distStackSeg: { height: '100%' },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: colors.bgCard,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    maxHeight: '88%',
+    paddingBottom: spacing.lg,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: colors.textPrimary },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.bgSection,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseText: { fontSize: 16, color: colors.textSecondary, fontWeight: '700' },
+  modalBody: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
+  modalCaseId: { fontSize: 15, fontWeight: '800', color: colors.textPrimary, marginBottom: spacing.sm },
+  modalMetaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: 4 },
+  modalMeta: { fontSize: 12, color: colors.textSecondary, marginBottom: 4 },
+  modalSectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  modalBodyText: { fontSize: 14, lineHeight: 22, color: colors.textPrimary },
 
   // ── Hero Row ──
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.sm },
-  heroRowNarrow: { flexDirection: 'column' },
   heroStats: { flex: 1, gap: spacing.sm },
-  heroStatsNarrow: { width: '100%' },
   heroStatItem: { backgroundColor: colors.bgSection, borderRadius: borderRadius.md, padding: spacing.sm },
   heroStatNum: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
   heroStatLabel: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },

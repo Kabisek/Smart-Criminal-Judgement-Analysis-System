@@ -1,0 +1,156 @@
+{
+  "version": "v2_offline_cached",
+  "method": "real_shap_treeexplainer_ensemble_avg",
+  "method_details": {
+    "estimators_used": 2
+  },
+  "global_summary": {
+    "top_global_features": [
+      {
+        "feature": "tfidf_conviction",
+        "importance": 0.05245096116919653
+      },
+      {
+        "feature": "tfidf_consistent",
+        "importance": 0.04513772427758425
+      },
+      {
+        "feature": "tfidf_sentence",
+        "importance": 0.044827560046409
+      },
+      {
+        "feature": "tfidf_credible",
+        "importance": 0.04040505873869977
+      },
+      {
+        "feature": "tfidf_compensation",
+        "importance": 0.03951541915905559
+      },
+      {
+        "feature": "appeal_type_Sentence_Only",
+        "importance": 0.02579543364314735
+      },
+      {
+        "feature": "offence_category_Sexual_Offenses",
+        "importance": 0.02544771700025318
+      },
+      {
+        "feature": "tfidf_corroborated",
+        "importance": 0.021988969771718346
+      },
+      {
+        "feature": "tfidf_prosecution",
+        "importance": 0.021331240099105024
+      },
+      {
+        "feature": "tfidf_years",
+        "importance": 0.021006351100617087
+      },
+      {
+        "feature": "tfidf_code",
+        "importance": 0.017589598741283005
+      },
+      {
+        "feature": "tfidf_penal code",
+        "importance": 0.017551644482922894
+      },
+      {
+        "feature": "tfidf_counsel",
+        "importance": 0.01702220320847486
+      },
+      {
+        "feature": "tfidf_imposed",
+        "importance": 0.015066554939021695
+      },
+      {
+        "feature": "tfidf_allegedly",
+        "importance": 0.014953851870172034
+      },
+      {
+        "feature": "gnd_excessive_sentence",
+        "importance": 0.013842499009809325
+      },
+      {
+        "feature": "tfidf_medical evidence",
+        "importance": 0.013531064761607016
+      },
+      {
+        "feature": "offence_category_Drug_Related",
+        "importance": 0.013471905254597032
+      },
+      {
+        "feature": "appeal_duration_days",
+        "importance": 0.012915410875652988
+      },
+      {
+        "feature": "bert_574",
+        "importance": 0.01249563835294524
+      }
+    ]
+  },
+  "prediction_summary": {
+    "target_class_index": 0,
+    "top_feature_contributions": [
+      {
+        "feature": "tfidf_conviction",
+        "contribution": 0.09832286158866965,
+        "abs_contribution": 0.09832286158866965,
+        "value": -0.5539345830687175
+      },
+      {
+        "feature": "tfidf_sentence",
+        "contribution": -0.09394051887006484,
+        "abs_contribution": 0.09394051887006484,
+        "value": 2.328995140071598
+      },
+      {
+        "feature": "appeal_type_Sentence_Only",
+        "contribution": -0.0771645162924093,
+        "abs_contribution": 0.0771645162924093,
+        "value": 3.136671751621352
+      },
+      {
+        "feature": "tfidf_credible",
+        "contribution": 0.07332582149384247,
+        "abs_contribution": 0.07332582149384247,
+        "value": -0.6740554262789524
+      },
+      {
+        "feature": "offence_category_Drug_Related",
+        "contribution": 0.06345143236653222,
+        "abs_contribution": 0.06345143236653222,
+        "value": 2.0321837988642693
+      },
+      {
+        "feature": "tfidf_possession",
+        "contribution": 0.048425479653831205,
+        "abs_contribution": 0.048425479653831205,
+        "value": 1.6616028329327612
+      },
+      {
+        "feature": "tfidf_heroin",
+        "contribution": 0.045394763007073624,
+        "abs_contribution": 0.045394763007073624,
+        "value": 2.2134903547374267
+      },
+      {
+        "feature": "tfidf_counsel",
+        "contribution": -0.04095686404940739,
+        "abs_contribution": 0.04095686404940739,
+        "value": 0.7892993127674984
+      },
+      {
+        "feature": "tfidf_imposed",
+        "contribution": -0.04032587416562406,
+        "abs_contribution": 0.04032587416562406,
+        "value": 3.160569339150448
+      },
+      {
+        "feature": "tfidf_prosecution",
+        "contribution": -0.0376973063718121,
+        "abs_contribution": 0.0376973063718121,
+        "value": -0.954015962746954
+      }
+    ]
+  }
+}

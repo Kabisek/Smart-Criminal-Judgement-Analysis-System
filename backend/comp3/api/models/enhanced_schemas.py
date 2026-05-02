@@ -13,13 +13,38 @@ class DetailedPredictionRequest(BaseModel):
     language: str = Field(default="en", description="Response language: en, si, ta")
 
 class SimilarCase(BaseModel):
+    # Core identification and similarity
     case_id: str
     similarity_score: float
+    citation: Optional[str] = None
+    
+    # Case facts and summary
     case_summary: str
     outcome: str
-    key_legal_points: List[str]
-    citation: Optional[str] = None
+    
+    # Temporal information
     year: Optional[int] = None
+    decision_date: Optional[str] = Field(None, description="Date when judgment was delivered (YYYY-MM-DD)")
+    
+    # Legal details
+    key_legal_points: List[str]
+    offence: Optional[str] = None
+    grounds: Optional[str] = None
+    appeal_grounds_list: Optional[List[str]] = Field(None, description="Structured list of appeal grounds")
+    
+    # Case outcome information
+    verdict_reasoning: Optional[str] = Field(None, description="Why the appeal was allowed/dismissed - judge's reasoning")
+    judge_commentary: Optional[str] = Field(None, description="Key remarks and observations from the judge")
+    
+    # Additional metadata
+    high_court: Optional[str] = None
+    conviction_status: Optional[str] = None
+    evidence_types: Optional[List[str]] = Field(None, description="Types of evidence presented in the case")
+    
+    # Analytics
+    appeal_success_rate: Optional[float] = Field(None, description="Success rate for similar cases with same grounds")
+    precedent_value: Optional[str] = Field(None, description="Relevance/binding nature of this precedent")
+    relevance_badge: Optional[str] = Field("medium", description="Precedent relevance badge: high, medium, low")
 
 class LegalFactor(BaseModel):
     factor_name: str
@@ -37,6 +62,26 @@ class DetailedPredictionResponse(BaseModel):
     # Basic prediction
     prediction: str
     confidence: float
+    confidence_band: str = Field(default="low", description="Reliability band: low, medium, high")
+    manual_review_required: bool = Field(default=True, description="Whether manual legal review is mandatory")
+    reliability_note: str = Field(default="Manual legal review is recommended.", description="Safety guidance for interpreting prediction")
+    abstained: bool = Field(default=False, description="Whether model abstained due to low confidence/ambiguity")
+    review_priority: str = Field(default="medium", description="Recommended review priority: low, medium, high")
+    top_outcomes: List[Dict[str, Any]] = Field(default_factory=list, description="Top-N ranked outcome probabilities")
+    reason_trace: List[str] = Field(default_factory=list, description="Short explanation bullets for prediction reasoning")
+    shap_summary: Dict[str, Any] = Field(default_factory=dict, description="SHAP-style explanation payload/status")
+    confidence_interval: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Heuristic uncertainty band derived from class-probability separation (not a formal statistical CI)",
+    )
+    precedent_trend: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Descriptive outcome mix by year among retrieved similar precedents",
+    )
+    governance_note: Optional[str] = Field(
+        default=None,
+        description="Limitations: subgroup coverage, advisory-only use",
+    )
     probabilities: Dict[str, float]
     detected_features: Dict[str, List[str]]  # Add this missing field
     
@@ -58,6 +103,22 @@ class DetailedPredictionResponse(BaseModel):
     model_version: str
     feature_importance: Dict[str, float]
     analysis_timestamp: datetime = Field(default_factory=datetime.now)
+
+    # New contextual analytics derived from historical data
+    context_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated statistics for offence, location and year relevant to the case"
+    )
+
+    # New analytics for grounds and evidence
+    grounds_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated success statistics for each detected ground of appeal"
+    )
+    evidence_analysis: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Aggregated success statistics for each detected evidence type"
+    )
 
 class EducationalResponse(BaseModel):
     # Learning content
