@@ -35,6 +35,12 @@ from comp3.api.config import (
 
 logger = logging.getLogger(__name__)
 
+GOVERNANCE_NOTE = (
+    "This estimate is derived from historical appeal records and machine-learned patterns. "
+    "Accuracy can vary by offence type, court, and time period—especially where few examples exist. "
+    "It supports analysis only and does not replace professional legal advice."
+)
+
 # Short-lived cache for dashboard analytics (same filters → same payload within TTL).
 _DASHBOARD_CACHE: Dict[Tuple, Tuple[float, Dict[str, Any]]] = {}
 _DASHBOARD_CACHE_TTL_SEC = 120.0
@@ -170,6 +176,9 @@ class PredictionService:
                 'evidence_analysis': evidence_analysis,
                 'similar_cases': similar_cases,
                 'metadata': metadata,
+                'confidence_interval': prediction_result.get('confidence_interval'),
+                'precedent_trend': prediction_result.get('precedent_trend'),
+                'governance_note': GOVERNANCE_NOTE,
                 'timestamp': datetime.now().isoformat()
             }
             
@@ -465,6 +474,142 @@ class PredictionService:
                 "region_distribution": [],
                 "appeal_type_distribution": [],
                 "table_rows": [],
+            }
+
+    async def get_fairness_slice_report(self, min_slice_n: int = 25) -> Dict[str, Any]:
+        """
+        Label distribution and outcome rates by offence group, court, and year (dataset-level).
+        For model-error fairness, run the offline script with batch predictions.
+        """
+        try:
+            if not self.predictor:
+                raise RuntimeError("Predictor not initialized")
+
+            df_base = self.predictor.df_cases.copy()
+            if df_base.empty:
+                return {
+                    "generated_at": datetime.now().isoformat(),
+                    "dataset_rows": 0,
+                    "min_slice_n": min_slice_n,
+                    "overall": {},
+                    "by_offence": [],
+                    "by_court": [],
+                    "by_year": [],
+                    "notes": ["Dataset is empty."],
+                }
+
+            def simplify_outcome(val: str) -> str:
+                if isinstance(val, str):
+                    lower = val.lower()
+                    if lower.startswith('dismissed'):
+                        return 'Appeal_Dismissed'
+                    if lower.startswith('allowed'):
+                        return 'Appeal_Allowed'
+                    if lower.startswith('partly'):
+                        return 'Partly_Allowed'
+                return 'Other'
+
+            if 'result_category' not in df_base.columns:
+                if 'combined_outcome' in df_base.columns:
+                    df_base['result_category'] = df_base['combined_outcome'].apply(simplify_outcome)
+                else:
+                    df_base['result_category'] = 'Other'
+
+            og_col = offence_group_column(df_base)
+            df_base['_offence_group'] = (
+                df_base[og_col].fillna('Unknown').astype(str).replace('', 'Unknown')
+            )
+            if 'high_court_location' in df_base.columns:
+                df_base['_court_canon'] = df_base['high_court_location'].apply(canonicalize_high_court)
+            else:
+                df_base['_court_canon'] = 'Unknown'
+
+            total = int(len(df_base))
+            oc = df_base['result_category'].value_counts().to_dict()
+            allowed = int(oc.get('Appeal_Allowed', 0))
+            dismissed = int(oc.get('Appeal_Dismissed', 0))
+            partly = int(oc.get('Partly_Allowed', 0))
+            other = total - allowed - dismissed - partly
+
+            overall = {
+                "n": total,
+                "appeal_allowed_pct": round(100 * allowed / total, 2) if total else 0.0,
+                "partly_allowed_pct": round(100 * partly / total, 2) if total else 0.0,
+                "appeal_dismissed_pct": round(100 * dismissed / total, 2) if total else 0.0,
+                "other_pct": round(100 * other / total, 2) if total else 0.0,
+            }
+
+            def slice_stats(group_col: str, top: int = 40) -> List[Dict[str, Any]]:
+                rows_out: List[Dict[str, Any]] = []
+                for key in df_base[group_col].value_counts().head(top).index.tolist():
+                    grp = df_base[df_base[group_col] == key]
+                    n = int(len(grp))
+                    counts = grp['result_category'].value_counts().to_dict()
+                    a = int(counts.get('Appeal_Allowed', 0))
+                    p = int(counts.get('Partly_Allowed', 0))
+                    d = int(counts.get('Appeal_Dismissed', 0))
+                    rows_out.append({
+                        "slice_value": str(key),
+                        "n": n,
+                        "appeal_allowed_pct": round(100 * a / n, 2) if n else 0.0,
+                        "partly_allowed_pct": round(100 * p / n, 2) if n else 0.0,
+                        "appeal_dismissed_pct": round(100 * d / n, 2) if n else 0.0,
+                        "low_sample": n < min_slice_n,
+                    })
+                return rows_out
+
+            by_offence = slice_stats('_offence_group')
+            by_court = slice_stats('_court_canon')
+
+            by_year: List[Dict[str, Any]] = []
+            if 'coa_year' in df_base.columns:
+                for y in sorted(df_base['coa_year'].dropna().unique().tolist()):
+                    try:
+                        yi = int(y)
+                    except (TypeError, ValueError):
+                        continue
+                    grp = df_base[df_base['coa_year'] == y]
+                    n = int(len(grp))
+                    counts = grp['result_category'].value_counts().to_dict()
+                    a = int(counts.get('Appeal_Allowed', 0))
+                    p = int(counts.get('Partly_Allowed', 0))
+                    d = int(counts.get('Appeal_Dismissed', 0))
+                    by_year.append({
+                        "year": yi,
+                        "n": n,
+                        "appeal_allowed_pct": round(100 * a / n, 2) if n else 0.0,
+                        "partly_allowed_pct": round(100 * p / n, 2) if n else 0.0,
+                        "appeal_dismissed_pct": round(100 * d / n, 2) if n else 0.0,
+                        "low_sample": n < min_slice_n,
+                    })
+
+            notes = [
+                f"Slices with n < {min_slice_n} are flagged as low_sample (descriptive only).",
+                "This report reflects label distribution in the corpus, not model calibration or error rates.",
+            ]
+
+            return {
+                "generated_at": datetime.now().isoformat(),
+                "dataset_rows": total,
+                "min_slice_n": min_slice_n,
+                "overall": overall,
+                "by_offence": by_offence,
+                "by_court": by_court,
+                "by_year": by_year,
+                "notes": notes,
+            }
+        except Exception as e:
+            logger.error(f"Error building fairness slice report: {e}")
+            return {
+                "generated_at": datetime.now().isoformat(),
+                "error": str(e),
+                "dataset_rows": 0,
+                "min_slice_n": min_slice_n,
+                "overall": {},
+                "by_offence": [],
+                "by_court": [],
+                "by_year": [],
+                "notes": [],
             }
 
 # Singleton instance

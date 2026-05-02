@@ -70,6 +70,18 @@ class DetailedPredictionResponse(BaseModel):
     top_outcomes: List[Dict[str, Any]] = Field(default_factory=list, description="Top-N ranked outcome probabilities")
     reason_trace: List[str] = Field(default_factory=list, description="Short explanation bullets for prediction reasoning")
     shap_summary: Dict[str, Any] = Field(default_factory=dict, description="SHAP-style explanation payload/status")
+    confidence_interval: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Heuristic uncertainty band derived from class-probability separation (not a formal statistical CI)",
+    )
+    precedent_trend: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Descriptive outcome mix by year among retrieved similar precedents",
+    )
+    governance_note: Optional[str] = Field(
+        default=None,
+        description="Limitations: subgroup coverage, advisory-only use",
+    )
     probabilities: Dict[str, float]
     detected_features: Dict[str, List[str]]  # Add this missing field
     

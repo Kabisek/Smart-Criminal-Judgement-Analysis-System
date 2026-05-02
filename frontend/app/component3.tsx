@@ -21,7 +21,9 @@ import { ExpandableText, AnimatedBar, SectionDivider, PillChip } from '../compon
 import {
   predictAppealOutcomeDetailed,
   getComp3DashboardAnalytics,
+  getComp3FairnessReport,
   Comp3DashboardAnalytics,
+  Comp3FairnessReportPayload,
   saveComp3History,
   DetailedPredictionRequest,
   AppealPredictionResponse,
@@ -431,6 +433,7 @@ export default function Component3Screen() {
   const [dashboardData, setDashboardData] = useState<Comp3DashboardAnalytics | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardCaseDetail, setDashboardCaseDetail] = useState<DashboardCaseRow | null>(null);
+  const [fairnessReport, setFairnessReport] = useState<Comp3FairnessReportPayload | null>(null);
 
   const isDetailed = (r: AnyPredictionResult): r is DetailedPredictionResponse =>
     'legal_reasoning' in r;
@@ -514,6 +517,19 @@ export default function Component3Screen() {
     };
     loadDashboard();
   }, [result, activeResultTab, selectedYear, selectedOffence, selectedCourt, selectedRegion]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadFairness = async () => {
+      if (!result || activeResultTab !== 'dashboard') return;
+      const fr = await getComp3FairnessReport(25);
+      if (!cancelled) setFairnessReport(fr);
+    };
+    loadFairness();
+    return () => {
+      cancelled = true;
+    };
+  }, [result, activeResultTab]);
 
   useEffect(() => {
     setDashboardCaseDetail(null);
@@ -703,14 +719,20 @@ export default function Component3Screen() {
                       <View style={styles.compactRow}>
                         {result.risk_assessment && (
                           <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>⚠️ Risk Level</Text>
-                            <Text style={styles.compactValue}>{result.risk_assessment.split(':')[0]}</Text>
+                            <Text style={styles.compactLabel}>⚠️ Case confidence note</Text>
+                            <Text style={styles.compactValue}>
+                              {result.risk_assessment.includes(':')
+                                ? result.risk_assessment.split(':')[1].trim()
+                                : result.risk_assessment}
+                            </Text>
                           </View>
                         )}
                         {(result.strategy_recommendations?.length ?? 0) > 0 && (
                           <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>💡 Strategy</Text>
-                            <Text style={styles.compactValue}>{result.strategy_recommendations[0].recommendation.split(' ')[0]}</Text>
+                            <Text style={styles.compactLabel}>💡 Suggested next step</Text>
+                            <Text style={styles.compactValue}>
+                              {result.strategy_recommendations[0].recommendation}
+                            </Text>
                           </View>
                         )}
                       </View>
@@ -763,43 +785,6 @@ export default function Component3Screen() {
                   )}
                 </Card>
 
-                {/* Enhanced Legal Analysis */}
-                {isDetailed(result) && !isAbstained && (
-                  <Card style={styles.resultCard} title="⚖️ Legal Analysis">
-                    <View style={styles.enhancedSection}>
-                      <View style={styles.legalReasoningBox}>
-                        <Text style={styles.legalReasoningEyebrow}>Detailed Reasoning</Text>
-                        <Text style={styles.legalReasoning}>{result.legal_reasoning}</Text>
-                      </View>
-                      {(result.key_factors?.length ?? 0) > 0 && (
-                        <View>
-                          <Text style={styles.compactSectionLabel}>🎯 Key Factors</Text>
-                          {result.key_factors.slice(0, 3).map((factor: any, i: number) => (
-                            <View key={i} style={styles.factorItem}>
-                              <View style={[styles.factorDot, { backgroundColor: theme.color }]} />
-                              <Text style={styles.factorName}>{factor.factor_name}</Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                      <View style={styles.compactRow}>
-                        {result.risk_assessment && (
-                          <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>⚠️ Risk</Text>
-                            <Text style={styles.compactValue}>{result.risk_assessment.split(':')[0]}</Text>
-                          </View>
-                        )}
-                        {(result.strategy_recommendations?.length ?? 0) > 0 && (
-                          <View style={styles.compactItem}>
-                            <Text style={styles.compactLabel}>💡 Strategy</Text>
-                            <Text style={styles.compactValue}>{result.strategy_recommendations[0].recommendation.split(' ')[0]}</Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </Card>
-                )}
-
                 {/* 4. Animated Probability Bars */}
                 <ProbabilityMeters probabilities={result.probabilities} />
 
@@ -849,60 +834,13 @@ export default function Component3Screen() {
                         </Text>
                       </View>
                     )}
-                  </View>
-                </Card>
-
-                {/* Feature Detection */}
-                <Card style={styles.resultCard} title="🔍 Feature Detection">
-                  <View style={styles.zoneRoot}>
-                    <View style={[styles.zoneRootBadge, { backgroundColor: theme.color }]}>
-                      <Text style={styles.zoneRootBadgeText}>⚖</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.zoneRootTitle}>Legal Analysis Complete</Text>
-                      <Text style={styles.zoneRootSub}>{countDetectedFeatures(result.detected_features)} features extracted</Text>
-                    </View>
-                  </View>
-                  <View style={styles.zoneTwoCol}>
-                    <View style={styles.zoneSection}>
-                      <Text style={[styles.zoneLabel, { color: '#059669' }]}>⚖️ Grounds</Text>
-                      {(result.detected_features?.grounds?.length ?? 0) > 0
-                        ? result.detected_features.grounds.map((g: string, i: number) => (
-                            <View key={i} style={[styles.treeItem, { borderLeftColor: '#059669' }]}>
-                              <Text style={styles.treeItemTitle}>{g}</Text>
-                            </View>
-                          ))
-                        : <Text style={styles.emptyState}>None detected</Text>}
-                    </View>
-                    <View style={styles.zoneSection}>
-                      <Text style={[styles.zoneLabel, { color: '#D97706' }]}>🔬 Evidence</Text>
-                      {(result.detected_features?.evidence?.length ?? 0) > 0
-                        ? result.detected_features.evidence.map((e: string, i: number) => (
-                            <View key={i} style={[styles.treeItem, { borderLeftColor: '#D97706' }]}>
-                              <Text style={styles.treeItemTitle}>{e}</Text>
-                            </View>
-                          ))
-                        : <Text style={styles.emptyState}>None detected</Text>}
-                    </View>
-                  </View>
-                  <View style={styles.zoneSideBySide}>
-                    {(result.detected_features?.offence?.length ?? 0) > 0 && (
-                      <View style={styles.zoneColumn}>
-                        <Text style={[styles.zoneLabel, { color: '#6366F1' }]}>📋 Offence</Text>
-                        {result.detected_features.offence.map((o: string, i: number) => (
-                          <View key={i} style={[styles.treeItem, { borderLeftColor: '#6366F1' }]}>
-                            <Text style={styles.treeItemTitle}>{o}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                    {(result.detected_features?.other?.length ?? 0) > 0 && (
-                      <View style={styles.zoneColumn}>
-                        <Text style={[styles.zoneLabel, { color: colors.textSecondary }]}>📎 Other</Text>
-                        {result.detected_features.other.slice(0, 3).map((o: string, i: number) => (
-                          <View key={i} style={styles.treeItem}>
-                            <Text style={styles.treeItemTitle}>{o}</Text>
-                          </View>
+                    {isDetailed(result) && (result.reason_trace?.length ?? 0) > 0 && (
+                      <View style={{ marginTop: spacing.sm }}>
+                        <Text style={styles.compactSectionLabel}>🧾 Explanation Trace</Text>
+                        {result.reason_trace!.slice(0, 5).map((line: string, i: number) => (
+                          <Text key={i} style={styles.traceLine}>
+                            • {line}
+                          </Text>
                         ))}
                       </View>
                     )}
@@ -1091,6 +1029,30 @@ export default function Component3Screen() {
                         {' '}to browse similar judgments.
                       </Text>
                     </Card>
+
+                    {fairnessReport && !fairnessReport.error && (fairnessReport.dataset_rows ?? 0) > 0 && (
+                      <Card style={styles.resultCard} title="⚖️ Label balance (full dataset)">
+                        <Text style={styles.dashboardIntroText}>
+                          These figures describe how outcomes are distributed in the stored judgments—not model accuracy.
+                          Slices with few rows are marked “low sample.”
+                        </Text>
+                        <Text style={[styles.dashboardSubText, { marginTop: spacing.sm }]}>
+                          Corpus: {fairnessReport.dataset_rows} rows · flag when n is below {fairnessReport.min_slice_n ?? 25}
+                        </Text>
+                        <Text style={[styles.compactSectionLabel, { marginTop: spacing.sm }]}>By offence (top)</Text>
+                        {(fairnessReport.by_offence ?? []).slice(0, 6).map((row) => (
+                          <Text key={row.slice_value} style={styles.fairnessSliceRow}>
+                            {row.slice_value}: n={row.n} — allowed {row.appeal_allowed_pct}% · partly {row.partly_allowed_pct}% · dismissed {row.appeal_dismissed_pct}%
+                            {row.low_sample ? ' · low sample' : ''}
+                          </Text>
+                        ))}
+                        {(fairnessReport.notes ?? []).length > 0 && (
+                          <Text style={[styles.filterHintText, { marginTop: spacing.sm }]}>
+                            {fairnessReport.notes?.join(' ')}
+                          </Text>
+                        )}
+                      </Card>
+                    )}
 
                     <Card style={styles.resultCard} title="🔎 Narrow the list">
                       <View style={styles.filterToolbar}>
@@ -1605,6 +1567,51 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+  uncertaintyRow: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.bgSection,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  uncertaintyEm: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  uncertaintyMeta: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  precedentTrendText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 21,
+  },
+  precedentYearLine: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  traceLine: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  govNoteText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
+  fairnessSliceRow: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 4,
   },
   filterToolbar: {
     flexDirection: 'row',

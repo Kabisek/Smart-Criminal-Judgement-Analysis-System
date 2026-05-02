@@ -5,6 +5,8 @@ import pickle
 import pandas as pd
 import numpy as np
 import json
+import os
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Any, Tuple, Optional
 from sklearn.metrics.pairwise import cosine_similarity
@@ -75,6 +77,39 @@ class AppealPredictor:
         except Exception as e:
             logger.warning(f"Unable to load SHAP cache: {e}")
             self.shap_cache = {}
+
+    def _build_cached_local_contributions(self, selected_features: np.ndarray) -> List[Dict[str, Any]]:
+        """
+        Build row-specific local contributions from cached global importances.
+        Uses abs(feature_value) * abs(global_importance) as lightweight fallback.
+        """
+        try:
+            global_rows = self.shap_cache.get('global_summary', {}).get('top_global_features', [])
+            if not global_rows:
+                return []
+
+            row = np.asarray(selected_features, dtype=float).reshape(1, -1)[0]
+            feature_to_imp = {
+                str(r.get('feature')): float(r.get('importance', 0.0))
+                for r in global_rows
+                if r.get('feature') is not None
+            }
+
+            contributions: List[Dict[str, Any]] = []
+            feature_names = list(self.X_train_full.columns)
+            for i, feat_name in enumerate(feature_names):
+                if feat_name not in feature_to_imp:
+                    continue
+                contributions.append({
+                    'feature': feat_name,
+                    'contribution': float(abs(row[i]) * abs(feature_to_imp[feat_name])),
+                    'value': float(row[i]),
+                })
+
+            contributions.sort(key=lambda r: r['contribution'], reverse=True)
+            return contributions[:10]
+        except Exception:
+            return []
     
     def _load_models(self):
         """Load ML models and encoders"""
@@ -613,7 +648,138 @@ class AppealPredictor:
             ),
             'abstained': True,
             'review_priority': 'high',
-            'similar_cases': []
+            'similar_cases': [],
+            'confidence_interval': {
+                'method': 'not_applicable',
+                'lower_pct': None,
+                'upper_pct': None,
+                'summary_line': 'Confidence interval not computed because prediction was abstained.',
+            },
+            'precedent_trend': {
+                'direction': 'not_applicable',
+                'summary': 'Precedent trend unavailable for domain-mismatch input.',
+            },
+        }
+
+    def _estimate_confidence_interval(self, confidence_pct: float, probabilities: np.ndarray) -> Dict[str, Any]:
+        """
+        Heuristic uncertainty band from multiclass probabilities (not a formal CI).
+        Narrower when the top two classes are well separated.
+        """
+        probs = np.asarray(probabilities, dtype=float).flatten()
+        sorted_p = sorted(float(p) for p in probs)
+        sorted_p.reverse()
+        margin = (sorted_p[0] - sorted_p[1]) if len(sorted_p) >= 2 else float(sorted_p[0])
+        half_width = min(20.0, max(3.0, (1.0 - margin) * 35.0))
+        low = max(0.0, confidence_pct - half_width)
+        high = min(100.0, confidence_pct + half_width)
+        qual = 'narrow' if margin > 0.25 else ('moderate' if margin > 0.12 else 'wide')
+        summary_line = (
+            f"Estimated range for the reported confidence score (heuristic): about {low:.0f}%–{high:.0f}% "
+            f"(separation between the two largest class probabilities: {margin * 100:.1f} points)."
+        )
+        return {
+            'method': 'multiclass_margin_heuristic',
+            'lower_pct': round(low, 1),
+            'upper_pct': round(high, 1),
+            'half_width_pct': round(half_width, 1),
+            'top_two_margin': round(margin * 100, 2),
+            'qualitative_width': qual,
+            'summary_line': summary_line,
+        }
+
+    def _precedent_trend_from_similar(self, similar_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Aggregate outcomes by year across retrieved similar precedents."""
+        if not similar_cases:
+            return {
+                'direction': 'insufficient_data',
+                'precedents_considered': 0,
+                'precedents_with_year': 0,
+                'year_span': [],
+                'by_year': [],
+                'summary': 'No similar precedents available for trend comparison.',
+            }
+
+        rows: List[Tuple[int, str]] = []
+        for c in similar_cases:
+            y = c.get('year')
+            o = c.get('outcome')
+            if y is None or o is None:
+                continue
+            try:
+                rows.append((int(y), str(o)))
+            except (TypeError, ValueError):
+                continue
+
+        if not rows:
+            return {
+                'direction': 'insufficient_data',
+                'precedents_considered': len(similar_cases),
+                'precedents_with_year': 0,
+                'year_span': [],
+                'by_year': [],
+                'summary': 'Similar cases lack decision years; trend unavailable.',
+            }
+
+        by_year_counts: Dict[int, Dict[str, Any]] = defaultdict(
+            lambda: {'Appeal_Allowed': 0, 'Appeal_Dismissed': 0, 'Partly_Allowed': 0, 'n': 0}
+        )
+        for y, o in rows:
+            by_year_counts[y]['n'] += 1
+            if o in ('Appeal_Allowed', 'Appeal_Dismissed', 'Partly_Allowed'):
+                by_year_counts[y][o] += 1
+
+        years_sorted = sorted(by_year_counts.keys())
+        by_year_list: List[Dict[str, Any]] = []
+        for y in years_sorted:
+            d = by_year_counts[y]
+            n = max(int(d['n']), 1)
+            by_year_list.append({
+                'year': y,
+                'n': d['n'],
+                'appeal_allowed_pct': round(100 * d['Appeal_Allowed'] / n, 1),
+                'appeal_dismissed_pct': round(100 * d['Appeal_Dismissed'] / n, 1),
+                'partly_allowed_pct': round(100 * d['Partly_Allowed'] / n, 1),
+            })
+
+        def allowance_rate(yr: int) -> float:
+            dd = by_year_counts[yr]
+            n = max(int(dd['n']), 1)
+            return (dd['Appeal_Allowed'] + 0.5 * dd['Partly_Allowed']) / n
+
+        direction = 'flat'
+        summary = ''
+        if len(years_sorted) >= 2:
+            y_first, y_last = years_sorted[0], years_sorted[-1]
+            delta = allowance_rate(y_last) - allowance_rate(y_first)
+            if delta > 0.12:
+                direction = 'rising_allowed'
+                summary = (
+                    f"In these similar precedents, allowance-oriented outcomes are relatively more common "
+                    f"in {y_last} than in {y_first} (descriptive only; small sample)."
+                )
+            elif delta < -0.12:
+                direction = 'falling_allowed'
+                summary = (
+                    f"In these similar precedents, allowance-oriented outcomes are relatively less common "
+                    f"in {y_last} than in {y_first} (descriptive only; small sample)."
+                )
+            else:
+                direction = 'flat'
+                summary = (
+                    f"Similar precedents show a stable mix of outcomes between {y_first} and {y_last}."
+                )
+        else:
+            y0 = years_sorted[0]
+            summary = f"Precedent pool spans a single year ({y0}) with {by_year_counts[y0]['n']} case(s)."
+
+        return {
+            'direction': direction,
+            'precedents_considered': len(similar_cases),
+            'precedents_with_year': len(rows),
+            'year_span': [years_sorted[0], years_sorted[-1]],
+            'by_year': by_year_list,
+            'summary': summary,
         }
 
     def predict_appeal(self, case_description: str) -> Dict[str, Any]:
@@ -719,6 +885,14 @@ class AppealPredictor:
             except Exception as sc_e:
                 logger.error(f"Error finding similar cases: {sc_e}")
                 result['similar_cases'] = []
+
+            ci = self._estimate_confidence_interval(float(max(probabilities) * 100), probabilities)
+            result['confidence_interval'] = ci
+            result['precedent_trend'] = self._precedent_trend_from_similar(result.get('similar_cases', []))
+            extra_trace = [ci['summary_line']]
+            if result['precedent_trend'].get('summary'):
+                extra_trace.append(str(result['precedent_trend']['summary']))
+            result['reason_trace'] = result['reason_trace'] + extra_trace
 
             return result
             
@@ -827,11 +1001,15 @@ class AppealPredictor:
         if self.shap_cache:
             prediction_cache = self.shap_cache.get('prediction_summary', {})
             global_cache = self.shap_cache.get('global_summary', {})
+            local_dynamic = self._build_cached_local_contributions(selected_features)
             return {
                 'status': 'enabled_cached',
-                'message': 'Precomputed SHAP-style explanations loaded from offline cache.',
-                'top_feature_contributions': prediction_cache.get('top_feature_contributions', []),
-                'global_feature_importance': global_cache.get('top_global_features', [])
+                'message': 'Precomputed SHAP explanations loaded from offline cache.',
+                'method': self.shap_cache.get('method', 'offline_cache'),
+                'cache_version': self.shap_cache.get('version', 'unknown'),
+                'runtime_mode': os.getenv('COMP3_ENABLE_RUNTIME_SHAP', '0'),
+                'top_feature_contributions': local_dynamic or prediction_cache.get('top_feature_contributions', []),
+                'global_feature_importance': global_cache.get('top_global_features', []),
             }
 
         return {

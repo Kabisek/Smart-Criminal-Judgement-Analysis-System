@@ -14,7 +14,7 @@ from comp3.api.models.enhanced_schemas import (
     LearningRequest, AssessmentRequest, AssessmentResponse,
     SimilarCase, LegalFactor, StrategyRecommendation
 )
-from comp3.api.services.prediction_service import get_prediction_service
+from comp3.api.services.prediction_service import get_prediction_service, GOVERNANCE_NOTE
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -46,6 +46,22 @@ async def get_dashboard_analytics(
     except Exception as e:
         logger.error(f"Error building dashboard analytics response: {e}")
         raise HTTPException(status_code=500, detail=f"Dashboard analytics failed: {str(e)}")
+
+
+@router.get("/dashboard/fairness-report")
+async def get_fairness_report(min_slice_n: int = 25):
+    """
+    Dataset-level outcome distribution by offence group, court, and year.
+    Flags small slices; does not measure model error (use offline batch audit for that).
+    """
+    try:
+        prediction_service = get_prediction_service()
+        report = await prediction_service.get_fairness_slice_report(min_slice_n=min_slice_n)
+        return {"status": "success", "report": report}
+    except Exception as e:
+        logger.error(f"Error building fairness report: {e}")
+        raise HTTPException(status_code=500, detail=f"Fairness report failed: {str(e)}")
+
 
 @router.post("/predict/detailed", response_model=DetailedPredictionResponse)
 async def predict_detailed_outcome(request: DetailedPredictionRequest):
@@ -170,6 +186,9 @@ async def predict_detailed_outcome(request: DetailedPredictionRequest):
             top_outcomes=basic_result.get('top_outcomes', []),
             reason_trace=basic_result.get('reason_trace', []),
             shap_summary=basic_result.get('shap_summary', {}),
+            confidence_interval=basic_result.get('confidence_interval'),
+            precedent_trend=basic_result.get('precedent_trend'),
+            governance_note=GOVERNANCE_NOTE,
             probabilities=basic_result['probabilities'],
             detected_features=basic_result['detected_features'],  # Add this line
             
