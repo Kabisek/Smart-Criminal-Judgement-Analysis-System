@@ -1,8 +1,15 @@
 {
+    "pipeline": "paragraph_aligned_combined_text",
+    "tfidf_fit_scope": "train_split_only",
+    "feature_selection_scope": "train_split_only",
+    "excluded_inference_unavailable": [
+        "coa_year",
+        "appeal_duration_days"
+    ],
     "total_samples": 1251,
     "train_samples": 672,
     "test_samples": 579,
-    "total_features": 1821,
+    "total_features_raw": 1821,
     "selected_features": 203,
     "feature_composition": {
         "legal": 53,
@@ -18,5 +25,5 @@
     "temporal_cutoff_year": 2024.0,
     "n_train_cases": 626,
     "n_test_cases": 397,
-    "creation_date": "2026-04-30 20:28:25"
+    "creation_date": "2026-05-02 12:11:28"
 }

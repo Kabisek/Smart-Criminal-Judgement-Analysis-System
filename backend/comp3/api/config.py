@@ -58,9 +58,9 @@ CLASS_LABELS = ['Appeal_Allowed', 'Appeal_Dismissed', 'Partly_Allowed']
 
 # Model metadata defaults - updated for improved model
 DEFAULT_METADATA = {
-    'accuracy': 0.6299,
-    'model_name': 'Voting Ensemble (ExtraTrees+GB+CatBoost+SVM)',
-    'training_date': '2026-04-30',
-    'training_samples': 478,
+    'accuracy': 0.6218,
+    'model_name': 'Calibrated Voting Ensemble (SVM+LogisticRegression)',
+    'training_date': '2026-05-02',
+    'training_samples': 672,
     'num_features': 203
 }

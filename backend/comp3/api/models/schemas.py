@@ -59,7 +59,24 @@ class AppealPredictionResponse(BaseModel):
     """Response model for appeal prediction"""
     status: str = Field(..., description="Prediction status")
     prediction: str = Field(..., description="Predicted outcome")
-    confidence: float = Field(..., ge=0, le=100, description="Confidence percentage")
+    confidence: float = Field(
+        ...,
+        ge=0,
+        le=100,
+        description="Display confidence (margin-adjusted when top two classes are close; not raw softmax max)",
+    )
+    confidence_raw_max: Optional[float] = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Raw model max class probability (%) before margin blend",
+    )
+    probability_margin_points: Optional[float] = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Raw top1 minus top2 class probability in percentage points",
+    )
     confidence_band: str = Field(..., description="Reliability band: low, medium, high")
     manual_review_required: bool = Field(..., description="Whether manual legal review is mandatory")
     reliability_note: str = Field(..., description="Safety guidance for interpreting the prediction")
@@ -68,7 +85,17 @@ class AppealPredictionResponse(BaseModel):
     top_outcomes: List[Dict[str, Any]] = Field(default_factory=list, description="Top-N ranked outcome probabilities")
     reason_trace: List[str] = Field(default_factory=list, description="Short explanation bullets for prediction reasoning")
     shap_summary: Dict[str, Any] = Field(default_factory=dict, description="SHAP-style explanation payload/status")
-    probabilities: PredictionProbabilities = Field(..., description="Detailed probabilities")
+    probabilities: PredictionProbabilities = Field(
+        ...,
+        description="Display probabilities (blended toward uniform when top two classes are close)",
+    )
+    probabilities_model_raw: Optional[Dict[str, float]] = Field(
+        None, description="Raw model probabilities (%) for the three outcomes"
+    )
+    inference_calibration_notes: Optional[List[str]] = Field(
+        None,
+        description="Optional notes when dismissed-class boost or tie-break was applied",
+    )
     detected_features: DetectedFeatures = Field(..., description="Detected features")
     similar_cases: List[SimilarCase] = Field(..., description="Similar historical cases")
     metadata: ModelMetadata = Field(..., description="Model metadata")
