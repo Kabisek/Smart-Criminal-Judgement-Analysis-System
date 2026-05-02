@@ -23,3 +23,6 @@ plotly==6.6.0
 torchvision==0.25.0
 faiss-cpu==1.13.2
 gdown==5.2.0
+catboost==1.2.7
+lightgbm==4.6.0
+xgboost==2.1.3
