@@ -1001,7 +1001,7 @@ class AppealPredictor:
 
         return {
             'status': 'not_enabled_runtime',
-            'message': 'SHAP explanation cache not found. Run comp3/generate_shap_cache.py.',
+            'message': 'SHAP explanation cache (improved_shap_summary.json) not found; explanations are limited.',
             'top_feature_contributions': []
         }
 
