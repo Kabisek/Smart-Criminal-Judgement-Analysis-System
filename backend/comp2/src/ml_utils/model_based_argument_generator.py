@@ -1,4 +1,4 @@
-﻿"""
+"""
 Model-Based Argument Generator
 Generates arguments using trained models only (no LLM)
 """

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, Alert } from 'react-native';
+import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Platform, Alert, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader, Button } from '../components/ui';
@@ -19,11 +19,13 @@ const INITIAL_MESSAGES: Message[] = [
   { id: '3', sender: 'bot', text: 'வணக்கம்! நான் உங்கள் சட்ட வழிகாட்டி. இலங்கைச் சட்டத்தில் இன்று நான் உங்களுக்கு எவ்வாறு உதவ முடியும்?', lang: 'ta' },
 ];
 
-// ── UPDATE to your FastAPI base URL ──────────────────────────────────────────
-const API_BASE = 'http://localhost:8000';
+// ── API base URL ──────────────────────────────────────────
+const API_BASE = 'https://divanka-smart-criminal-judgement-api.hf.space';
 
 export default function Component4Screen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,9 +149,9 @@ export default function Component4Screen() {
           breadcrumb="Public Access → Multilingual Law Support"
         />
 
-        <View style={styles.chatWrapper}>
+        <View style={[styles.chatWrapper, isNarrow && styles.chatWrapperNarrow]}>
           {/* ── CHAT CARD (unchanged) ── */}
-          <Card style={styles.chatCard}>
+          <Card style={[styles.chatCard, isNarrow && styles.chatCardNarrow]}>
             <ScrollView
               ref={scrollViewRef}
               style={styles.msgScroll}
@@ -195,7 +197,7 @@ export default function Component4Screen() {
           <Card style={styles.infoSideCard}>
 
             {/* NEW: action buttons */}
-            <View style={styles.actionRow}>
+            <View style={[styles.actionRow, isNarrow && styles.actionRowNarrow]}>
               <Pressable style={styles.actionBtn} onPress={handleDeleteChat}>
                 <Text style={styles.actionBtnText}>🗑 Delete Chat</Text>
               </Pressable>
@@ -232,15 +234,22 @@ const styles = StyleSheet.create({
   // ── original styles (all unchanged) ────────────────────────────────────
   fullContainer: { flex: 1, paddingVertical: spacing.lg },
   chatWrapper: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'row',
     gap: spacing.lg,
     flex: 1,
+  },
+  chatWrapperNarrow: {
+    flexDirection: 'column',
   },
   chatCard: {
     flex: 3,
     height: Platform.OS === 'web' ? 600 : 500,
     padding: 0,
     overflow: 'hidden',
+  },
+  chatCardNarrow: {
+    flex: 0,
+    height: 500,
   },
   infoSideCard: { flex: 1, padding: spacing.lg },
   msgScroll: { flex: 1, backgroundColor: '#F9FAFB' },
@@ -321,6 +330,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  actionRowNarrow: {
+    flexDirection: 'column',
   },
   actionBtn: {
     flex: 1,

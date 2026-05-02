@@ -2,9 +2,8 @@
 Case Analysis Route
 Handles case analysis generation (Output File 1)
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Body
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from pathlib import Path
-from pydantic import BaseModel
 from comp2.api.services.file_service import save_uploaded_file
 from comp2.api.services.analysis_service import get_analysis_service
 from comp2.api.config import ALLOWED_FILE_TYPES, MAX_FILE_SIZE
@@ -77,47 +76,3 @@ async def analyze_case(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Unexpected error in analyze_case: {e}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-class TextInputRequest(BaseModel):
-    text: str
-
-
-@router.post("/analyze/text", response_model=AnalyzeCaseWithSpansResponse)
-async def analyze_case_from_text(body: TextInputRequest = Body(...)):
-    """
-    Analyze case from raw text (for text-input flow).
-    Use when the user pastes/enters case text instead of uploading a file.
-    """
-    try:
-        case_text = (body.text or "").strip()
-        if len(case_text) < 50:
-            raise HTTPException(
-                status_code=400,
-                detail="Case text is too short (minimum 50 characters required)"
-            )
-        if len(case_text) > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Case text exceeds maximum size ({MAX_FILE_SIZE} bytes)"
-            )
-
-        logger.info(f"Analyzing case from text ({len(case_text)} chars)")
-
-        analysis_service = get_analysis_service()
-        result = await analysis_service.analyze_case_from_text(case_text)
-
-        analyzed_case = {k: v for k, v in result.items() if k not in ("document_text", "source_spans")}
-        return {
-            "filename": "case_text.txt",
-            "file_size": len(case_text),
-            "analyzed_case": analyzed_case,
-            "document_text": result.get("document_text", []),
-            "source_spans": result.get("source_spans", []),
-            "status": "completed",
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error in analyze_case_from_text: {e}")
-        raise HTTPException(status_code=500, detail=str(e))

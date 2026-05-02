@@ -57,7 +57,8 @@ backend/comp1/models/sri_lanka_legal_bert/*.safetensors
 backend/comp1/models/sri_lanka_legal_bert/old/*.safetensors
 backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 
-# ignore large model files under comp4 (>100MB)
+# ignore large model files under comp4 (>100MB) — full NLLB folder from Drive (runtime_artifacts)
+backend/comp4/model_Component_ 4/nllb-merged/
 /backend/comp4/model_Component_ 4/**/model.safetensors
 /backend/comp1/data/structured
 /backend/data/chroma_db/chroma.sqlite3
@@ -70,3 +71,22 @@ backend/comp1/models/sri_lanka_legal_bert_old/*.safetensors
 /backend/temp_req/
 /skeleton_extracted/
 /temp_req/
+
+# Component 4 runtime cache (regenerated locally; optional to ignore)
+backend/comp4/data_component_4/cache.sqlite
+
+# Hugging Face / GitHub: keep under 10MB — use Google Drive + runtime_artifacts.py instead
+backend/data/processed/
+backend/data/structured/ocr_appeal_judgements.json
+backend/comp4/model_Component_ 4/LEGAL-TRANSLATOR-COMPLETE/
+# Bulk judgment PDFs + comp2 sklearn pickles (often >10MB; HF Git rejects)
+backend/data/judgments/
+backend/data/models/
+# comp3 weights (HF Hub rejects .pkl/.npy in Git — use GDRIVE_URL_COMP3_ARTIFACTS)
+backend/comp3/**/*.npy
+backend/comp3/**/*.pkl
+backend/comp3/**/*.png
+backend/comp3/NAVA/
+
+uploads/
+results/

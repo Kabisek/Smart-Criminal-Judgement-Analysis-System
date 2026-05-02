@@ -979,8 +979,7 @@ load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 class LegalResourceExtractor:
-    def __init__(self, db_path="data/chroma_db"):
-        # Load Fine-Tuned Model
+    def __init__(self, db_path="comp1/data/chroma_db", model_path="comp1/models/sri_lanka_legal_bert"):
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         model_path = os.path.join(BASE_DIR, "models", "sri_lanka_legal_bert")
         
@@ -992,7 +991,9 @@ class LegalResourceExtractor:
             self.emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="nlpaueb/legal-bert-base-uncased")
 
         self.client = chromadb.PersistentClient(path=db_path)
-        self.collection = self.client.get_collection(name="legal_knowledge_base", embedding_function=self.emb_fn)
+        self.collection = self.client.get_or_create_collection(
+            name="legal_knowledge_base", embedding_function=self.emb_fn
+        )
         
         # Only use Gemini for the final summary or complex query generation (Minimal usage)
         self.llm = genai.GenerativeModel(model_name="gemini-2.5-flash-lite")
@@ -1039,7 +1040,7 @@ class LegalResourceExtractor:
         except:
             return f"Legal defenses exceptions mitigation for {case_facts}"
 
-    def classify_local(self, text, doc_type):
+    def classify_local(self, text, doc_type, section="N/A"):
         """
         Classifies resources using Vector Cosine Similarity (No Gemini).
         """
@@ -1047,6 +1048,22 @@ class LegalResourceExtractor:
         if doc_type == "criminal_procedure": return "Procedure"
         if doc_type == "landmark_precedent": return "Binding Precedents" # Special handling later
         if doc_type == "recent_judgement": return "Persuasive Authority"
+
+        # Defense Heuristic: Sri Lanka Penal Code Sections 69 to 99 are General Exceptions (Defense)
+        if doc_type == "penal_code" and section != "N/A":
+            import re
+            match = re.search(r'\b(?:Section|Sec\.?)\s*(\d+[a-zA-Z]?)\b', section, re.IGNORECASE)
+            if not match:
+                match = re.search(r'\b(\d+[a-zA-Z]?)\b', section)
+            
+            if match:
+                try:
+                    num_str = re.search(r'\d+', match.group(1)).group()
+                    sec_num = int(num_str)
+                    if 69 <= sec_num <= 99:
+                        return "Defense"
+                except:
+                    pass
 
         # 2. Vector Math for Penal Code / Ambiguous items
         # Embed the text using the local model
@@ -1226,7 +1243,7 @@ class LegalResourceExtractor:
 
         for match in all_matches:
             # Use Local Vector Math to decide side
-            side = self.classify_local(match['excerpt'], match['type'])
+            side = self.classify_local(match['excerpt'], match['type'], match['section'])
             
             # Map 'side' to our JSON buckets
             target_bucket = ""

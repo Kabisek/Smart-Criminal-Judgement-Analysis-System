@@ -5,7 +5,13 @@ import { Platform } from 'react-native';
  */
 
 const getApiBase = (): string => {
-  // Force localhost for all platforms to avoid connection issues
+  // Use production backend if running on the web (Vercel)
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host.includes('jurekasl.com') || host.includes('jureka.com') || host.includes('vercel.app')) {
+      return 'https://divanka-smart-criminal-judgement-api.hf.space';
+    }
+  }
   return 'http://127.0.0.1:8000';
 };
 

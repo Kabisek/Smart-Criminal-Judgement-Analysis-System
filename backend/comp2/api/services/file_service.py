@@ -1,4 +1,4 @@
-﻿"""
+"""
 File Service
 Handles file uploads and storage
 """

@@ -85,4 +85,3 @@ class ArgumentsResponse(BaseModel):
     arguments_report: Dict[str, Any]
     similar_cases_count: int
     status: str
-    analyzed_case: Optional[Dict[str, Any]] = None  # For history (subject/accused)

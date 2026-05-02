@@ -1,17 +1,16 @@
 """
-Configuration for the FastAPI backend
-ChromaDB-only retrieval (no feature_vectors.pkl, no cleaned_cases.csv at runtime)
+Configuration for Component 2 - Adversarial Case Analysis
+ChromaDB-only retrieval (no feature_vectors.pkl, no merged_v2.csv at runtime)
 """
 import os
 from pathlib import Path
 
 # Base paths
-BASE_DIR = Path(__file__).parent.parent.parent  # comp2/api/config.py → comp2/api/ → comp2/ → backend/
+BASE_DIR = Path(__file__).parent.parent.parent  # comp2/api/config.py → backend/
 DATA_DIR = BASE_DIR / "data"
-MODELS_DIR = DATA_DIR / "models"
-PROCESSED_DIR = DATA_DIR / "processed"
 UPLOADS_DIR = BASE_DIR / "uploads"
 RESULTS_DIR = BASE_DIR / "results"
+MODELS_DIR = DATA_DIR / "models"  # Trained models (K-Means, etc.) copied from backend2
 
 # Create necessary directories
 UPLOADS_DIR.mkdir(exist_ok=True)
@@ -24,26 +23,17 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 # CORS Configuration
 CORS_ORIGINS = [
-    "http://localhost:5173",  # Vite dev server
-    "http://localhost:3000",  # Alternative React dev server
+    "http://localhost:5173",
+    "http://localhost:3000",
     "http://127.0.0.1:5173",
 ]
 
-# ChromaDB Vector Store - Component 2 (populated from backend2 Notebook 03)
+# ChromaDB Vector Store - Component 2 only (separate from Component 1's chroma_db)
+# Comp1 uses: data/chroma_db (collection: legal_knowledge_base)
+# Comp2 uses: data/chroma_db_comp2 (collection: legal_cases)
 CHROMA_PERSIST_DIR = DATA_DIR / "chroma_db_comp2"
 CHROMA_COLLECTION_NAME = "legal_cases"
 
-# Model paths (KNN and K-Means from backend2 Notebooks 04, 06)
-NEAREST_NEIGHBORS_MODEL_PATH = MODELS_DIR / "final_nearest_neighbors_model.pkl"
-
 # Embedding Model Configuration
-# Option 1: Use pre-trained Legal-BERT (recommended for legal domain)
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL", "nlpaueb/legal-bert-base-uncased")
-
-# Option 2: Use fine-tuned Legal-BERT model (if you have one)
-# Set this to the path of your fine-tuned model directory
-# Example: "data/models/sri_lanka_legal_bert" or "/path/to/your/fine-tuned-model"
 FINE_TUNED_MODEL_PATH = os.getenv("FINE_TUNED_MODEL_PATH", None)
-
-# If FINE_TUNED_MODEL_PATH is set, it will be used instead of EMBEDDING_MODEL_NAME
-# Otherwise, EMBEDDING_MODEL_NAME will be used (defaults to Legal-BERT)

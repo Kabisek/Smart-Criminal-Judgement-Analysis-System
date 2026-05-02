@@ -1,6 +1,7 @@
 """
 Cluster Predictor - K-Means integration for argument generation
 Loads trained K-Means model and predicts cluster for new case embeddings.
+Used for panel demonstration: best trained model in the pipeline.
 """
 import pickle
 import logging

@@ -1,0 +1,10 @@
+{
+  "model": "GB",
+  "threshold": 0.31,
+  "test_accuracy": 0.6257796257796258,
+  "weighted_f1": 0.6224438189896095,
+  "macro_f1": 0.587499186504986,
+  "balanced_acc": 0.603536138750691,
+  "partly_recall": 0.515625,
+  "auc_macro_ovr": 0.768998446281484
+}

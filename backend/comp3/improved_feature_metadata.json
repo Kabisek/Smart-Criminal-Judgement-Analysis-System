@@ -1,0 +1,22 @@
+{
+    "total_samples": 1251,
+    "train_samples": 672,
+    "test_samples": 579,
+    "total_features": 1821,
+    "selected_features": 203,
+    "feature_composition": {
+        "legal": 53,
+        "bert": 100,
+        "tfidf": 50
+    },
+    "target_classes": [
+        "Appeal_Allowed",
+        "Appeal_Dismissed",
+        "Partly_Allowed"
+    ],
+    "split_strategy": "grouped_temporal_by_case",
+    "temporal_cutoff_year": 2024.0,
+    "n_train_cases": 626,
+    "n_test_cases": 397,
+    "creation_date": "2026-04-30 20:28:25"
+}

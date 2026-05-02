@@ -9,11 +9,19 @@ from dotenv import load_dotenv
 
 # --- CONFIGURATION ---
 load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-print(os.getenv("GOOGLE_API_KEY"))
 
 # Global variable for Lazy Loading
 WHISPER_MODEL = None
+genai_configured = False
+
+def configure_genai():
+    global genai_configured
+    key = os.getenv("GOOGLE_API_KEY")
+    if key:
+        genai.configure(api_key=key)
+        print(f"   [Transcriber] Configured Gemini with API Key ending in: ...{key[-4:]}")
+    else:
+        print("   [Transcriber] ⚠️ Warning: GOOGLE_API_KEY not found in environment.")
 
 def get_whisper():
     """
@@ -39,12 +47,22 @@ def transcribe_with_gemini(audio_path):
     Primary Method: Cloud-based.
     Includes Retry Logic. Raises Error if all retries fail.
     """
+    configure_genai()
     print("   [1/2] Attempting Gemini (Cloud)...")
     audio_file = None
     
     try:
-        # 1. Upload File
-        audio_file = genai.upload_file(path=audio_path)
+        # 1. Upload File with explicit MIME type detection
+        import mimetypes
+        mime_type, _ = mimetypes.guess_type(audio_path)
+        if not mime_type:
+            # Fallback for common types if guess_type fails
+            if audio_path.endswith('.m4a'): mime_type = 'audio/x-m4a'
+            elif audio_path.endswith('.mp3'): mime_type = 'audio/mpeg'
+            else: mime_type = 'application/octet-stream'
+            
+        print(f"   [Transcriber] Uploading with MIME: {mime_type}")
+        audio_file = genai.upload_file(path=audio_path, mime_type=mime_type)
         
         # 2. Wait for processing
         for _ in range(20):
@@ -53,7 +71,7 @@ def transcribe_with_gemini(audio_path):
             time.sleep(1)
             audio_file = genai.get_file(audio_file.name)
 
-        # 3. Initialize Model (Use 1.5-flash for better stability)
+        # 3. Initialize Model (Use 1.5-flash - most stable free tier model)
         model = genai.GenerativeModel(model_name="gemini-2.5-flash")
         
         prompt = """

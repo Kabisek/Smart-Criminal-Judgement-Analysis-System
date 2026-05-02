@@ -1,4 +1,4 @@
-﻿"""
+"""
 Feature Extraction Module
 Converts text documents to vector embeddings using sentence transformers
 Supports Legal-BERT (pre-trained or fine-tuned) for legal domain embeddings
@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
-import pickle
 from tqdm import tqdm
 import logging
 import os
@@ -49,7 +48,7 @@ class FeatureExtractor:
             self.model_name = default_model
         
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
-        print(f"✅ Model loaded: {self.model_name}")
+        print(f"[OK] Model loaded: {self.model_name}")
         print(f"   Embedding dimension: {self.embedding_dim}")
     
     def extract_embeddings(self, texts: list, batch_size: int = 32, show_progress: bool = True) -> np.ndarray:
@@ -127,60 +126,4 @@ class FeatureExtractor:
         print(f"   Case IDs: {len(processed_case_ids)}")
         
         return embeddings, processed_case_ids
-    
-    def save_features(self, embeddings: np.ndarray, case_ids: list, 
-                     output_dir: str = "data/features"):
-        """
-        Save extracted features to disk
-        
-        Args:
-            embeddings: Embedding vectors
-            case_ids: List of case IDs
-            output_dir: Directory to save features
-        """
-        output_path = Path(output_dir)
-        output_path.mkdir(parents=True, exist_ok=True)
-        
-        # Save embeddings and case IDs
-        feature_data = {
-            'embeddings': embeddings,
-            'case_ids': case_ids,
-            'embedding_dim': embeddings.shape[1] if len(embeddings) > 0 else 0,
-            'num_cases': len(case_ids)
-        }
-        
-        feature_file = output_path / "feature_vectors.pkl"
-        with open(feature_file, 'wb') as f:
-            pickle.dump(feature_data, f)
-        
-        print(f"✅ Features saved to: {feature_file}")
-        print(f"   Embeddings: {embeddings.shape}")
-        print(f"   Case IDs: {len(case_ids)}")
-    
-    def load_features(self, feature_file: str = "data/features/feature_vectors.pkl") -> tuple:
-        """
-        Load features from disk
-        
-        Args:
-            feature_file: Path to feature file
-            
-        Returns:
-            tuple: (embeddings array, case_ids list)
-        """
-        feature_path = Path(feature_file)
-        
-        if not feature_path.exists():
-            raise FileNotFoundError(f"Feature file not found: {feature_file}")
-        
-        with open(feature_path, 'rb') as f:
-            feature_data = pickle.load(f)
-        
-        embeddings = feature_data['embeddings']
-        case_ids = feature_data['case_ids']
-        
-        print(f"✅ Features loaded from: {feature_file}")
-        print(f"   Embeddings shape: {embeddings.shape}")
-        print(f"   Case IDs: {len(case_ids)}")
-        
-        return embeddings, case_ids
 

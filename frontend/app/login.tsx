@@ -34,7 +34,7 @@ export default function LoginScreen() {
             <Container style={styles.container}>
                 <Card style={styles.loginCard}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>Lawyer Portal</Text>
+                        <Text style={styles.title}>Lawyer Login</Text>
                         <Text style={styles.subtitle}>Secure access for legal professionals</Text>
                     </View>
 
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: colors.primary,
         marginBottom: 8,
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,

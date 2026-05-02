@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Linking, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, Pressable, ScrollView, Linking, KeyboardAvoidingView, Platform, useWindowDimensions } from 'react-native';
 import { Layout } from '../components/Layout';
 import { Container, Card, PageHeader, Button } from '../components/ui';
 import { colors, typography, spacing } from '../theme';
@@ -10,6 +10,8 @@ const REGISTRY_CONTACTS = [
 ];
 
 export default function ContactScreen() {
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -28,7 +30,7 @@ export default function ContactScreen() {
       <Container>
         <PageHeader title="Get in Touch" breadcrumb="Home → Connect" />
 
-        <View style={styles.splitRow}>
+        <View style={[styles.splitRow, isNarrow && styles.splitRowNarrow]}>
           <View style={styles.formCol}>
             <Card title="Direct Inquiry" style={styles.formCard}>
               <Text style={styles.formText}>
@@ -117,7 +119,8 @@ export default function ContactScreen() {
 }
 
 const styles = StyleSheet.create({
-  splitRow: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: spacing.xl },
+  splitRow: { flexDirection: 'row', gap: spacing.xl },
+  splitRowNarrow: { flexDirection: 'column' },
   formCol: { flex: 1.5 },
   infoCol: { flex: 1 },
   formCard: {

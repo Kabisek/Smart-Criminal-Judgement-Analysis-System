@@ -9,6 +9,7 @@ import {
   useWindowDimensions,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import { colors, spacing, typography } from '../theme';
 import { useAuth } from './AuthContext';
@@ -47,13 +48,15 @@ export function Header({ onMenuPress }: { onMenuPress?: () => void }) {
           onPress={() => router.push('/')}
           style={({ pressed }) => [styles.logoWrap, pressed && styles.pressed]}
         >
-          {/* Professional SVG Logo Representation */}
           <View style={styles.logoIconContainer}>
-            <Text style={styles.logoIcon}>⚖</Text>
+            <Image 
+              source={require('../logo.png')} 
+              style={{ width: 32, height: 32, resizeMode: 'contain' }} 
+            />
           </View>
           <View>
-            <Text style={styles.logoText}>Smart Criminal Judgment</Text>
-            <Text style={styles.logoSubtext}>Analysis System</Text>
+            <Text style={styles.logoText}>Jureka</Text>
+            <Text style={styles.logoSubtext}>Intelligent Legal Layer</Text>
           </View>
         </Pressable>
         {isNarrow && onMenuPress ? (
@@ -150,38 +153,40 @@ export function Header({ onMenuPress }: { onMenuPress?: () => void }) {
 
 export function Footer() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isNarrow = width < 768;
   const open = (url: string) => () => Linking.openURL(url);
   return (
     <View style={styles.footer}>
       <View style={[styles.footerInner, Platform.OS === 'web' && styles.footerInnerWeb]}>
-        <View style={styles.footerGrid}>
-          <View style={styles.footerBlock}>
-            <Text style={styles.footerTitle}>Smart Criminal Judgment Analysis</Text>
-            <Text style={styles.footerText}>
-              Research project for Sri Lankan Courts. Case analysis, argument generation, and decision support.
+        <View style={[styles.footerGrid, isNarrow && { justifyContent: 'center' }]}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
+            <Text style={styles.footerTitle}>Jureka</Text>
+            <Text style={[styles.footerText, isNarrow && { textAlign: 'center' }]}>
+              Advanced Intelligent Legal Intelligence Layer. Case analysis, argument generation, and decision support for Sri Lankan Courts.
             </Text>
           </View>
-          <View style={styles.footerBlock}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
             <Text style={styles.footerTitle}>Useful Links</Text>
             <Pressable onPress={open('https://www.supremecourt.lk')}>
-              <Text style={styles.footerLink}>Supreme Court of Sri Lanka</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Supreme Court of Sri Lanka</Text>
             </Pressable>
             <Pressable onPress={open('https://www.courtappeal.lk')}>
-              <Text style={styles.footerLink}>Court of Appeal</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Court of Appeal</Text>
             </Pressable>
             <Pressable onPress={open('https://basl.lk')}>
-              <Text style={styles.footerLink}>Bar Association of Sri Lanka (BASL)</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Bar Association of Sri Lanka (BASL)</Text>
             </Pressable>
           </View>
-          <View style={styles.footerBlock}>
+          <View style={[styles.footerBlock, isNarrow && { alignItems: 'center', textAlign: 'center' }]}>
             <Text style={styles.footerTitle}>Contact</Text>
             <Pressable onPress={() => router.push('/contact')}>
-              <Text style={styles.footerLink}>Contact Us</Text>
+              <Text style={[styles.footerLink, isNarrow && { textAlign: 'center' }]}>Contact Us</Text>
             </Pressable>
           </View>
         </View>
         <Text style={styles.footerBottom}>
-          © 2025–2026 Smart Criminal Judgment Analysis System. Research Project. SLIIT.
+          © 2025–2026 Jureka Legal Intelligence Layer. Research Project. SLIIT.
         </Text>
       </View>
     </View>
@@ -195,9 +200,59 @@ export function Layout({
   children: React.ReactNode;
   noPadding?: boolean;
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const router = useRouter();
+  const { isLoggedIn: isAuthLoggedIn } = useAuth();
+
+  const toggleMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+
+  const handleNav = (href: string) => {
+    router.push(href as any);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <View style={styles.page}>
-      <Header onMenuPress={() => { }} />
+      <Header onMenuPress={toggleMenu} />
+      
+      {mobileMenuOpen && (
+        <View style={styles.mobileOverlay}>
+          <Pressable style={styles.closeBtn} onPress={toggleMenu}>
+            <Text style={styles.closeBtnText}>✕</Text>
+          </Pressable>
+          <View style={styles.mobileMenuContent}>
+            <Text style={styles.mobileMenuTitle}>JUREKA MENU</Text>
+            {NAV_LINKS.map(link => (
+              <Pressable key={link.href} onPress={() => handleNav(link.href)} style={styles.mobileNavItem}>
+                <Text style={styles.mobileNavText}>{link.label}</Text>
+              </Pressable>
+            ))}
+            <View style={styles.mobileDivider} />
+            <Text style={styles.mobileMenuSub}>ANALYTICAL TOOLS</Text>
+            {ANALYSIS_TOOLS.map(link => (
+              <Pressable 
+                key={link.href} 
+                onPress={() => {
+                  if (link.restricted && !isAuthLoggedIn) {
+                    handleNav('/login');
+                  } else {
+                    handleNav(link.href);
+                  }
+                }} 
+                style={styles.mobileNavItem}
+              >
+                <View style={styles.mobileNavItemInner}>
+                  <Text style={styles.mobileNavText}>{link.label}</Text>
+                  {link.restricted && !isAuthLoggedIn && (
+                    <Text style={styles.lockedIconMobile}>🔒</Text>
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[styles.main, !noPadding && styles.mainPadding]}
@@ -211,7 +266,12 @@ export function Layout({
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.bgBody },
+  page: { 
+    flex: 1, 
+    backgroundColor: colors.bgBody,
+    height: Platform.OS === 'web' ? '100vh' : '100%',
+    minHeight: Platform.OS === 'web' ? '100vh' : '100%',
+  },
   header: {
     backgroundColor: colors.bgHeader,
     paddingVertical: spacing.md,
@@ -345,7 +405,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     opacity: 0.7,
   },
-  scroll: { flex: 1 },
+  scroll: { 
+    flex: 1,
+    width: '100%',
+  },
   main: { flexGrow: 1 },
   mainPadding: { padding: spacing.lg },
   footer: {
@@ -378,5 +441,71 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textOnDark,
     opacity: 0.85,
+  },
+  mobileOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#1B2B48',
+    zIndex: 10000,
+    padding: spacing.xl,
+    paddingTop: 80,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '300',
+  },
+  mobileMenuContent: {
+    gap: spacing.lg,
+  },
+  mobileMenuTitle: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: spacing.sm,
+  },
+  mobileMenuSub: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: spacing.md,
+  },
+  mobileNavItem: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  mobileNavText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  mobileNavItemInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lockedIconMobile: {
+    fontSize: 20,
+    marginLeft: 10,
+  },
+  mobileDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginVertical: spacing.md,
   },
 });
