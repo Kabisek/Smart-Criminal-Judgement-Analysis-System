@@ -46,6 +46,8 @@ def _build_case_info_from_chroma(
         "judge_names": meta.get("judge_names", "") if meta else "",
         "judge_statement": meta.get("judge_statement", "") if meta else "",
         "year": meta.get("year", "Unknown") if meta else "Unknown",
+        "judgment_date_coa": meta.get("judgment_date_coa", "") if meta else "",
+        "judgment_date_hc": meta.get("judgment_date_hc", "") if meta else "",
         "source": meta.get("source", "") if meta else "",
         "file_path": meta.get("file_path", "") if meta else "",
     }

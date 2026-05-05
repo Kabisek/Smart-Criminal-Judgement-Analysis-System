@@ -528,6 +528,10 @@ class EnhancedLegalAgent:
                 if isinstance(case_data, dict):
                     if 'year' in case_data:
                         case_info['year'] = case_data['year']
+                    if 'judgment_date_coa' in case_data and case_data['judgment_date_coa']:
+                        case_info['judgment_date_coa'] = case_data['judgment_date_coa']
+                    if 'judgment_date_hc' in case_data and case_data['judgment_date_hc']:
+                        case_info['judgment_date_hc'] = case_data['judgment_date_hc']
                     if 'judge_names' in case_data and case_data['judge_names']:
                         case_info['judge_names'] = case_data['judge_names']
             similar_cases_list.append(case_info)

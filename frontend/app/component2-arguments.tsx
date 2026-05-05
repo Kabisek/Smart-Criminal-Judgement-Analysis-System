@@ -419,6 +419,8 @@ export default function ArgumentsScreen() {
             <th style="padding:10px 12px;text-align:left;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">#</th>
             <th style="padding:10px 12px;text-align:left;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">Case ID</th>
             <th style="padding:10px 12px;text-align:center;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">Year</th>
+            <th style="padding:10px 12px;text-align:center;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">COA Date</th>
+            <th style="padding:10px 12px;text-align:center;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">HC Date</th>
             <th style="padding:10px 12px;text-align:center;font-weight:700;color:#1E293B;border-bottom:2px solid #E2E8F0">Similarity</th>
           </tr>
         </thead>
@@ -428,6 +430,8 @@ export default function ArgumentsScreen() {
               <td style="padding:10px 12px;color:#6B7280;font-weight:700">${i + 1}</td>
               <td style="padding:10px 12px;color:#1E293B;font-weight:600">${(c.case_id ?? '').replace(/_/g, ' ')}</td>
               <td style="padding:10px 12px;color:#6B7280;text-align:center">${safe(c.year)}</td>
+              <td style="padding:10px 12px;color:#6B7280;text-align:center">${safe(c.judgment_date_coa)}</td>
+              <td style="padding:10px 12px;color:#6B7280;text-align:center">${safe(c.judgment_date_hc)}</td>
               <td style="padding:10px 12px;text-align:center">
                 <span style="background:#DBEAFE;color:#1D4ED8;border-radius:12px;padding:2px 8px;font-weight:700;font-size:12px">${Math.round((1 - (c.distance ?? 0)) * 100)}%</span>
               </td>
