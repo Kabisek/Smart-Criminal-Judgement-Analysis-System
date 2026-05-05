@@ -17,7 +17,7 @@ const CX = GW / 2;
 const CY = GH / 2 - 40; // Shifted center up slightly
 const HUB_R = 190;    // center → hub distance
 const RES_R = 120;    // hub → resource distance (slightly expanded)
-const MAX_RES = 5;
+const MAX_RES = 3;
 
 // Angles in °, anticlockwise from east (3 o'clock)
 const HUB_ANGLES: Record<string, number> = {
