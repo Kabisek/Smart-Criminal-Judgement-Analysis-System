@@ -128,10 +128,8 @@ function buildGraph(
         edges.push({ src: nid, tgt: kpid, hubEdge: false, color: '#FCD34D' });
 
         // 3. Add Principles under "KEY POINTS"
-        const hns = Array.isArray(item.headnotes) ? item.headnotes :
-          (typeof item.hn_str === 'string' ? item.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
+        const principles = Array.isArray(item.legal_points) ? item.legal_points : [];
 
-        const principles = hns.slice(0, 3);
         principles.forEach((hn: string, hi: number) => {
           const pspan = 60;
           const poff = principles.length > 1 ? (hi / (principles.length - 1) - 0.5) * pspan : 0;
@@ -769,21 +767,43 @@ export default function Component1Screen() {
                                       </View>
 
 
-                                      {(() => {
-                                        const hns = Array.isArray(item.headnotes) ? item.headnotes :
-                                          (typeof item.hn_str === 'string' ? item.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
-                                        return hns.length > 0 && (
-                                          <View style={styles.headnoteSection}>
-                                            <Text style={styles.headnoteTitle}>Key Legal Principles</Text>
-                                            {hns.map((hn: string, hi: number) => (
+                                      {/* Relevance Angle (NEW) */}
+                                      {item.relevance_angle && (
+                                        <View style={styles.relevanceBox}>
+                                          <Text style={styles.relevanceTitle}>🔍 Angle of Relevance</Text>
+                                          <Text style={styles.relevanceText}>{item.relevance_angle}</Text>
+                                        </View>
+                                      )}
+
+                                      {/* Legal Points (Ratio Decidendi) */}
+                                      {Array.isArray(item.legal_points) && item.legal_points.length > 0 && (
+                                        <View style={styles.headnoteSection}>
+                                          <Text style={styles.headnoteTitle}>Ratio Decidendi (Legal Principles)</Text>
+                                          {item.legal_points.map((pt: string, pi: number) => (
+                                            <View key={pi} style={styles.hnItem}>
+                                              <View style={[styles.hnBullet, { backgroundColor: '#D97706' }]} />
+                                              <Text style={styles.hnTxt}>{pt}</Text>
+                                            </View>
+                                          ))}
+                                        </View>
+                                      )}
+
+                                      {/* Fallback for old data */}
+                                      {!item.legal_points && (item.headnotes || item.hn_str) && (
+                                        <View style={styles.headnoteSection}>
+                                          <Text style={styles.headnoteTitle}>Key Headnotes</Text>
+                                          {(() => {
+                                            const hns = Array.isArray(item.headnotes) ? item.headnotes :
+                                              (typeof item.hn_str === 'string' ? item.hn_str.split('|').map((s: string) => s.trim()).filter(Boolean) : []);
+                                            return hns.map((hn: string, hi: number) => (
                                               <View key={hi} style={styles.hnItem}>
                                                 <View style={styles.hnBullet} />
                                                 <Text style={styles.hnTxt}>{hn}</Text>
                                               </View>
-                                            ))}
-                                          </View>
-                                        );
-                                      })()}
+                                            ));
+                                          })()}
+                                        </View>
+                                      )}
 
                                       {/* Cases Referred */}
                                       <View style={styles.headnoteSection}>
@@ -1222,6 +1242,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#92400E',
     lineHeight: 18,
+  },
+  relevanceBox: {
+    backgroundColor: '#EFF6FF',
+    margin: 12,
+    padding: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6',
+  },
+  relevanceTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1E40AF',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  relevanceText: {
+    fontSize: 13,
+    color: '#1E3A8A',
+    lineHeight: 20,
+    fontStyle: 'italic',
   },
 
   expandHint: { fontSize: 11, fontWeight: '700', marginTop: 8, textAlign: 'right' },
