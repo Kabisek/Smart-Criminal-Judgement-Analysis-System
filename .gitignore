@@ -66,13 +66,12 @@ backend/comp4/model_Component_ 4/nllb-merged/
 /backend/data/chroma_db_comp2/
 /backend/data/chroma_db_comp2/chroma.sqlite3
 
-<<<<<<< Updated upstream
 # others
 /backend/skeleton_extracted/
 /backend/temp_req/
 /skeleton_extracted/
 /temp_req/
-=======
+
 # Component 4 runtime cache (regenerated locally; optional to ignore)
 backend/comp4/data_component_4/cache.sqlite
 
@@ -91,4 +90,3 @@ backend/comp3/NAVA/
 
 uploads/
 results/
->>>>>>> Stashed changes

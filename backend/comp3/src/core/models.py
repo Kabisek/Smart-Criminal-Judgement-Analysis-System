@@ -14,6 +14,7 @@ import logging
 
 from .bert_processor import BERTProcessor
 from .feature_extractor import FeatureExtractor
+from .appeal_paragraph_features import traditional_feature_dict_for_columns
 
 logger = logging.getLogger(__name__)
 
@@ -440,116 +441,13 @@ class AppealPredictor:
         bert_features = self.bert_processor.get_embedding(case_description)
         bert_dict = {f'bert_{i}': val for i, val in enumerate(bert_features)}
 
-        # Extract traditional features
-        traditional_dict = {}
-        traditional_cols = [col for col in self.X_train_full.columns
-                            if not col.startswith('bert_') and not col.startswith('tfidf_')]
-        text = case_description.lower()
-
-        for col in traditional_cols:
-            if col == 'brief_facts_summary_length':
-                traditional_dict[col] = len(text)
-            elif col == 'brief_facts_summary_word_count':
-                traditional_dict[col] = len(text.split())
-            elif col == 'grounds_of_appeal_raw_text_summary_length':
-                traditional_dict[col] = len(text) * 0.4
-            elif col == 'grounds_of_appeal_raw_text_summary_word_count':
-                traditional_dict[col] = len(text.split()) * 0.4
-            elif col == 'court_of_appeal_analysis_summary_length':
-                traditional_dict[col] = len(text) * 0.3
-            elif col == 'court_of_appeal_analysis_summary_word_count':
-                traditional_dict[col] = len(text.split()) * 0.3
-            elif col.startswith('gnd_'):
-                if 'contradictions' in col and any(kw in text for kw in ['contradiction', 'inconsistent', 'conflicting']):
-                    traditional_dict[col] = 1.0
-                elif 'chain_of_custody' in col and any(kw in text for kw in ['chain of custody', 'custody', 'preservation']):
-                    traditional_dict[col] = 1.0
-                elif 'illegal_search' in col and any(kw in text for kw in ['illegal search', 'unlawful search', 'search raid']):
-                    traditional_dict[col] = 1.0
-                elif 'wrong_identification' in col and any(kw in text for kw in ['identification', 'identify', 'mistaken identity']):
-                    traditional_dict[col] = 1.0
-                elif 'dying_declaration' in col and any(kw in text for kw in ['dying declaration', 'deathbed statement']):
-                    traditional_dict[col] = 1.0
-                elif 'circumstantial' in col and any(kw in text for kw in ['circumstantial', 'indirect evidence']):
-                    traditional_dict[col] = 1.0
-                elif 'medical_inconsistency' in col and any(kw in text for kw in ['medical', 'jmo', 'post-mortem']):
-                    traditional_dict[col] = 1.0
-                elif 'misdirection' in col and any(kw in text for kw in ['misdirection', 'wrong direction', 'legal error']):
-                    traditional_dict[col] = 1.0
-                elif 'procedural_error' in col and any(kw in text for kw in ['procedural', 'procedure', 'process error']):
-                    traditional_dict[col] = 1.0
-                elif 'new_evidence' in col and any(kw in text for kw in ['new evidence', 'fresh evidence']):
-                    traditional_dict[col] = 1.0
-                elif 'excessive_sentence' in col and any(kw in text for kw in ['excessive', 'harsh', 'inadequate sentence']):
-                    traditional_dict[col] = 1.0
-                elif 'delay_prejudice' in col and any(kw in text for kw in ['delay', 'prejudice', 'lapse of time']):
-                    traditional_dict[col] = 1.0
-                elif 'judicial_bias' in col and any(kw in text for kw in ['bias', 'unfair', 'prejudiced judge']):
-                    traditional_dict[col] = 1.0
-                else:
-                    traditional_dict[col] = 0.0
-            elif col.startswith('eyewitness_') or 'eyewitness_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['eyewitness', 'witness', 'testimony']))
-            elif col.startswith('child_witness_') or 'child_witness_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['child witness', 'minor witness']))
-            elif col.startswith('expert_evidence_') or 'expert_evidence_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['expert', 'jmo', 'analyst', 'specialist']))
-            elif col.startswith('forensic_evidence_') or 'forensic_evidence_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['forensic', 'dna', 'fingerprint', 'ballistic']))
-            elif col.startswith('dying_declaration_present'):
-                traditional_dict[col] = float(any(kw in text for kw in ['dying declaration']))
-            elif col.startswith('confession_') or 'confession_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['confession', 'admitted', 'dock statement']))
-            elif col.startswith('procedural_defects_') or 'procedural_defects_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['procedural defect', 'process error', 'procedural']))
-            elif col.startswith('digital_evidence_') or 'digital_evidence_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['cctv', 'phone', 'digital', 'video', 'recording']))
-            elif col.startswith('hospital_treatment_') or 'hospital_treatment_details_present' in col:
-                traditional_dict[col] = float(any(kw in text for kw in ['hospital', 'medical treatment', 'admitted to hospital']))
-            elif col == 'medical_evidence_score':
-                medical_terms = ['medical', 'jmo', 'post-mortem', 'autopsy', 'pathologist', 'medical evidence']
-                traditional_dict[col] = float(sum(1 for term in medical_terms if term in text))
-            elif col.startswith('offence_category_'):
-                if 'Murder_Related' in col and any(kw in text for kw in ['murder', '296', 'homicide', 'culpable homicide']):
-                    traditional_dict[col] = 1.0
-                elif 'Sexual_Offenses' in col and any(kw in text for kw in ['rape', 'sexual', '363', '365', 'abuse']):
-                    traditional_dict[col] = 1.0
-                elif 'Drug_Related' in col and any(kw in text for kw in ['drug', 'narcotic', 'poisons', 'opium act', 'heroin']):
-                    traditional_dict[col] = 1.0
-                elif 'Robbery_Theft' in col and any(kw in text for kw in ['robbery', 'theft', 'burglary', '380', '394']):
-                    traditional_dict[col] = 1.0
-                elif 'Fraud_Corruption' in col and any(kw in text for kw in ['fraud', 'corruption', 'bribery', 'cheating']):
-                    traditional_dict[col] = 1.0
-                elif 'Firearms_Weapons' in col and any(kw in text for kw in ['firearm', 'weapon', 'explosives']):
-                    traditional_dict[col] = 1.0
-                elif 'Traffic_Vehicle' in col and any(kw in text for kw in ['traffic', 'vehicle', 'rash driving']):
-                    traditional_dict[col] = 1.0
-                elif 'Environmental' in col and any(kw in text for kw in ['environment', 'wildlife', 'forest']):
-                    traditional_dict[col] = 1.0
-                elif 'Customs' in col and any(kw in text for kw in ['customs', 'import', 'export']):
-                    traditional_dict[col] = 1.0
-                else:
-                    traditional_dict[col] = 0.0
-            elif col.startswith('appeal_type_'):
-                if 'Conviction_Only' in col and any(kw in text for kw in ['conviction', 'acquittal']):
-                    traditional_dict[col] = 1.0
-                elif 'Sentence_Only' in col and any(kw in text for kw in ['sentence', 'penalty', 'punishment']):
-                    traditional_dict[col] = 1.0
-                elif 'Revision' in col and any(kw in text for kw in ['revision', 'review']):
-                    traditional_dict[col] = 1.0
-                elif 'Writ' in col and any(kw in text for kw in ['writ', 'certiorari', 'mandamus']):
-                    traditional_dict[col] = 1.0
-                else:
-                    traditional_dict[col] = 0.0
-            elif col == 'coa_year':
-                traditional_dict[col] = 2024.0
-            elif col == 'appeal_duration_days':
-                traditional_dict[col] = 730.0
-            elif col == 'evidence_count':
-                evidence_cols = [c for c in traditional_cols if 'present' in c]
-                traditional_dict[col] = sum(traditional_dict.get(c, 0) for c in evidence_cols)
-            else:
-                traditional_dict[col] = 0.0
+        # Traditional features: same code path as training (single paragraph = combined_text).
+        traditional_cols = [
+            col
+            for col in self.X_train_full.columns
+            if not col.startswith("bert_") and not col.startswith("tfidf_")
+        ]
+        traditional_dict = traditional_feature_dict_for_columns(case_description, traditional_cols)
 
         # Combine all features
         all_features = {**traditional_dict, **tfidf_dict, **bert_dict}
@@ -660,6 +558,65 @@ class AppealPredictor:
                 'summary': 'Precedent trend unavailable for domain-mismatch input.',
             },
         }
+
+    def _margin_adjusted_distribution(self, probabilities: np.ndarray) -> Tuple[np.ndarray, float, float]:
+        """
+        When the top two classes are nearly tied, blend toward uniform so UI %
+        does not look overconfident (same narrative can fit multiple outcomes).
+
+        Returns:
+            adjusted_probs (sums to 1), margin_points (top1-top2 in 0-100 scale), raw_max_pct
+        """
+        p = np.asarray(probabilities, dtype=float).flatten()
+        p = np.clip(p, 1e-12, 1.0)
+        p = p / p.sum()
+        s = np.sort(p)
+        margin = float(s[-1] - s[-2])
+        # lambda -> 1 when margin >= 12 percentage points on probability scale
+        margin_full = 0.12
+        lam = min(1.0, margin / margin_full)
+        u = np.ones_like(p) / float(len(p))
+        adj = lam * p + (1.0 - lam) * u
+        adj = adj / adj.sum()
+        return adj, margin * 100.0, float(s[-1] * 100.0)
+
+    def _boost_dismissed_probability(self, probs: np.ndarray) -> Tuple[np.ndarray, bool]:
+        """
+        Multiply Appeal_Dismissed mass before renormalize (reduces systematic Allowed bias).
+
+        Set COMP3_DISMISS_PROB_BOOST=1.0 to disable. Default 1.12 is mild; try 1.2–1.35 if recall stays low.
+        """
+        boost = float(os.getenv("COMP3_DISMISS_PROB_BOOST", "1.12"))
+        p = np.asarray(probs, dtype=float).flatten().copy()
+        p = np.clip(p, 1e-12, 1.0)
+        p = p / p.sum()
+        if abs(boost - 1.0) < 1e-9:
+            return p, False
+        classes_l = list(self.label_encoder.classes_)
+        if "Appeal_Dismissed" not in classes_l:
+            return p, False
+        di = classes_l.index("Appeal_Dismissed")
+        p[di] *= boost
+        p = p / p.sum()
+        return p, True
+
+    def _should_tiebreak_to_dismissed(self, calibrated_probs: np.ndarray, chosen_idx: int) -> bool:
+        """
+        If model picks Appeal_Allowed but Dismissed is within COMP3_DISMISS_TIEBREAK_DELTA mass, prefer Dismissed.
+
+        Set COMP3_DISMISS_TIEBREAK_DELTA=0 to disable. Default 0.07 (probability scale).
+        """
+        delta = float(os.getenv("COMP3_DISMISS_TIEBREAK_DELTA", "0.07"))
+        if delta <= 0:
+            return False
+        classes_l = list(self.label_encoder.classes_)
+        if "Appeal_Allowed" not in classes_l or "Appeal_Dismissed" not in classes_l:
+            return False
+        ai, di = classes_l.index("Appeal_Allowed"), classes_l.index("Appeal_Dismissed")
+        if chosen_idx != ai:
+            return False
+        p = np.asarray(calibrated_probs, dtype=float).flatten()
+        return float(p[ai] - p[di]) < delta
 
     def _estimate_confidence_interval(self, confidence_pct: float, probabilities: np.ndarray) -> Dict[str, Any]:
         """
@@ -808,9 +765,21 @@ class AppealPredictor:
                 selected_features = df_features.values
                 logger.warning("Scaler is None - using unscaled features")
             
-            # Step 7: Make prediction
-            probabilities = self.model.predict_proba(selected_features)[0]
+            # Step 7: Make prediction (optional inference calibration for Appeal_Dismissed recall)
+            probabilities_raw_model = np.asarray(self.model.predict_proba(selected_features)[0], dtype=float)
+            probabilities, boost_changed = self._boost_dismissed_probability(probabilities_raw_model)
             prediction_idx = self._select_prediction_index(probabilities)
+            cal_notes: List[str] = []
+            if boost_changed:
+                cal_notes.append(
+                    f"Dismissed-class probability scaled (COMP3_DISMISS_PROB_BOOST={os.getenv('COMP3_DISMISS_PROB_BOOST', '1.12')}) before decision."
+                )
+            if self._should_tiebreak_to_dismissed(probabilities, prediction_idx):
+                classes_l = list(self.label_encoder.classes_)
+                prediction_idx = classes_l.index("Appeal_Dismissed")
+                cal_notes.append(
+                    f"Borderline Allowed vs Dismissed → Appeal_Dismissed (COMP3_DISMISS_TIEBREAK_DELTA={os.getenv('COMP3_DISMISS_TIEBREAK_DELTA', '0.07')})."
+                )
             predicted_class = self.label_encoder.inverse_transform([prediction_idx])[0]
             
             # Step 8: Detect features for display
@@ -842,26 +811,37 @@ class AppealPredictor:
                 logger.error(f"Error computing evidence analysis: {ee}")
                 evidence_analysis = {}
 
-            # Create reliability guidance for safer decision-support usage.
+            # Create reliability guidance for safer decision-support usage (unchanged policy on raw sklearn probs).
             confidence_band, manual_review_required, reliability_note, abstained, review_priority = self._assess_prediction_reliability(
-                float(max(probabilities) * 100),
-                probabilities
+                float(max(probabilities_raw_model) * 100),
+                probabilities_raw_model
             )
 
-            # Create result dictionary with analytics
+            p_adj, margin_points, raw_max_pct = self._margin_adjusted_distribution(probabilities)
+            # Create result dictionary with analytics (display uses margin-adjusted probs)
             probabilities_pct = {
-                'Appeal_Allowed': float(probabilities[0] * 100),
-                'Appeal_Dismissed': float(probabilities[1] * 100),
-                'Partly_Allowed': float(probabilities[2] * 100)
+                'Appeal_Allowed': float(p_adj[0] * 100),
+                'Appeal_Dismissed': float(p_adj[1] * 100),
+                'Partly_Allowed': float(p_adj[2] * 100)
             }
+            probabilities_raw_pct = {
+                'Appeal_Allowed': float(probabilities_raw_model[0] * 100),
+                'Appeal_Dismissed': float(probabilities_raw_model[1] * 100),
+                'Partly_Allowed': float(probabilities_raw_model[2] * 100)
+            }
+            display_confidence = float(np.max(p_adj) * 100)
             top_outcomes = self._get_top_outcomes(probabilities_pct)
             reason_trace = self._build_reason_trace(predicted_class, detected_features, top_outcomes)
             shap_summary = self._get_shap_summary(selected_features)
 
             result = {
                 'probabilities': probabilities_pct,
+                'probabilities_model_raw': probabilities_raw_pct,
                 'prediction': predicted_class,
-                'confidence': float(max(probabilities) * 100),
+                'confidence': display_confidence,
+                'confidence_raw_max': raw_max_pct,
+                'probability_margin_points': margin_points,
+                'inference_calibration_notes': cal_notes,
                 'top_outcomes': top_outcomes,
                 'reason_trace': reason_trace,
                 'shap_summary': shap_summary,
@@ -886,12 +866,19 @@ class AppealPredictor:
                 logger.error(f"Error finding similar cases: {sc_e}")
                 result['similar_cases'] = []
 
-            ci = self._estimate_confidence_interval(float(max(probabilities) * 100), probabilities)
+            ci = self._estimate_confidence_interval(display_confidence, p_adj)
             result['confidence_interval'] = ci
             result['precedent_trend'] = self._precedent_trend_from_similar(result.get('similar_cases', []))
             extra_trace = [ci['summary_line']]
             if result['precedent_trend'].get('summary'):
                 extra_trace.append(str(result['precedent_trend']['summary']))
+            if margin_points < 12.0:
+                extra_trace.append(
+                    f"Top two outcomes are close (margin ≈ {margin_points:.1f} points); "
+                    "displayed probabilities are blended toward a uniform mix for a more cautious read."
+                )
+            for cn in cal_notes:
+                extra_trace.append(cn)
             result['reason_trace'] = result['reason_trace'] + extra_trace
 
             return result
@@ -1014,7 +1001,7 @@ class AppealPredictor:
 
         return {
             'status': 'not_enabled_runtime',
-            'message': 'SHAP explanation cache not found. Run comp3/generate_shap_cache.py.',
+            'message': 'SHAP explanation cache (improved_shap_summary.json) not found; explanations are limited.',
             'top_feature_contributions': []
         }
 
@@ -1360,7 +1347,15 @@ class AppealPredictor:
             if os.path.exists(metadata_path):
                 with open(metadata_path, 'r') as f:
                     metadata = json.load(f)
-                
+                if 'accuracy' not in metadata and 'test_accuracy' in metadata:
+                    metadata['accuracy'] = metadata['test_accuracy']
+                if 'training_samples' not in metadata and 'n_train_samples' in metadata:
+                    metadata['training_samples'] = metadata['n_train_samples']
+                if 'num_features' not in metadata and 'n_features' in metadata:
+                    metadata['num_features'] = metadata['n_features']
+                if 'model_name' not in metadata:
+                    ens = metadata.get('ensemble_models') or metadata.get('model_type')
+                    metadata['model_name'] = str(ens) if ens else 'Calibrated Voting Ensemble'
                 # Ensure required fields for schema
                 required_fields = ['accuracy', 'model_name', 'training_date', 'training_samples', 'num_features']
                 for field in required_fields:
